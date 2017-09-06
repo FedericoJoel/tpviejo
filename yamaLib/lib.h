@@ -10,4 +10,6 @@
 
 void saludar();
 
+void checkStatus ();
+
 #endif /* LIB_H_ */
