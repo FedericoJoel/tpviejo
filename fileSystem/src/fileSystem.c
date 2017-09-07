@@ -9,20 +9,21 @@
  */
 
 #include "fileSystem.h"
-
 int main(void) {
-	ejecutarConsola();
+
+	//GENERAMOS UN THREAD PARA LA CONSOLA
+	pthread_t t_consola;
+	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
+
+	//ESPERAMOS A QUE TERMINEN TODOS LOS THREAD
+	pthread_join(t_consola,NULL);
+
+	return EXIT_SUCCESS;
 
 //	PRUEBA YAMALIB
 //	saludar();
 //	return EXIT_SUCCESS;
 
-//	PRUEBA DE COMMONS
-//	char* tiempo =  temporal_get_string_time();
-//	puts(tiempo);
-//	free(tiempo);
-//	return EXIT_SUCCESS;
-	return EXIT_SUCCESS;
 }
 
 
@@ -33,18 +34,17 @@ void ejecutarConsola(){
 	  while(1) {
 	    linea = readline(">");
 
-	    if (!linea || !strncmp(linea, "exit", 4)) {
+//	    ABORTO CONSOLA
+	    if (!linea || string_starts_with(linea, "exit")) {
 	      break;
 	    }
-
-	    if(!strncmp(linea, "format", 6)){
+//	    RECONOZCO COMANDOS
+	    if(string_starts_with(linea, "format")){
 	    	fs_format();
-	    }else if(!strncmp(linea, "rm", 2)){
+	    }else if(string_starts_with(linea, "rm")){
 	    	fs_rm(string_substring(linea, 3, strlen(linea)));
-	    }else if(!strncmp(linea, "rm -d", 5)){
-	    	fs_rmd(string_substring(linea, 6, strlen(linea)));
-	    	//ACA TENGO UN PROBLEMA POR QUE RECONOCE PRIMERO EL RM Y SE METE EN EL IF DE ARRIBA
-	    	//QUIZA LA SOLUCION EN SPLITEAR LOS ARGUMENTOS QUE VIENEN Y RECONOCERLOS DENTRO DE LA FUNCION RM
+	    }else if(string_starts_with(linea,"rename")){
+	    	fs_rename(string_substring(linea, 7, strlen(linea)));
 	    }
 
 	    free(linea);
@@ -79,18 +79,31 @@ void fs_format(){
 }
 
 void fs_rm(char * arg){
-	printf("Remover Archivo con el siguiente argumento '%s' \n",arg);
+	// recordar que C maneja los string como array de char, por lo tanto array de string es char **
+	char ** argumentos;
+	int i;
+	argumentos = string_split(arg, " ");
+
+	for(i=0;i<str_array_size(argumentos);i++){
+		string_trim(&argumentos[i]);
+	}
+	str_array_print(argumentos);
 }
 
-void fs_rmd(char * arg){
-	printf("Remover Archivo con parametro -d y con el siguiente argumento '%s' \n",arg);
+void fs_rename(char * arg){
+	printf("Renombrar el archivo '%s'\n",arg);
+
 }
 
-//FUNCION DE HASH
-int hash(const char *str)
-{
-    int h = 0;
-    while (*str)
-       h = h << 1 ^ *str++;
-    return h;
+int str_array_size(char ** array){
+	    size_t count = 0;
+	    while (array[count] != NULL) count++;
+	    return count;
+}
+
+void str_array_print(char ** array){
+	int i;
+		for (i=0;i<str_array_size(array);i++){
+			printf("El argumento de la posicion %d es '%s'\n",i,array[i]);
+		}
 }

@@ -10,13 +10,19 @@
 #include <stdint.h>
 #include <commons/string.h>
 #include <readline/history.h>
+#include <pthread.h>
+#include <lib.h>
 
 void fs_format();
 
 void fs_rm(char * arg);
 
-void fs_rmd(char * arg);
+void fs_rename(char * arg);
 
 void ejecutarConsola();
+
+int str_array_size(char** array);
+
+void str_array_print(char ** array);
 
 #endif /* FILESYSTEM_H_ */
