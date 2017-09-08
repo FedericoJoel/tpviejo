@@ -13,6 +13,7 @@
 #include <commons/log.h>
 
 int main(void) {
+	//lista de nodos que posee
 	t_log* logger;
 	t_log_level level=LOG_LEVEL_INFO;
 

@@ -1,0 +1,6 @@
+IP_YAMA=
+PUERTO_YAMA=
+TRANSFORM=/home/utnso/Escritorio/Proyecto/worker/map.sh
+REDUCE=/home/utnso/Escritorio/Proyecto/worker/reduce.sh
+ARCHIVOS=[/home/utnso/Escritorio/Proyecto/worker/Temp/uno.txt]
+RESULTADO=/home/utnso/Escritorio/Proyecto/result.txt

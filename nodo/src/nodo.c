@@ -1,4 +1,4 @@
-#include "worker.h"  /* Include the header (not strictly necessary here) */
+#include "nodo.h"  /* Include the header (not strictly necessary here) */
 
 
 char FILE_LOG[1024] = "/home/utnso/Escritorio/Proyecto/logWorker.txt";
@@ -6,6 +6,10 @@ char FILE_LOG[1024] = "/home/utnso/Escritorio/Proyecto/logWorker.txt";
 int main(void) {
 	t_log* loggerWork;
 	loggerWork = log_create(FILE_LOG, "Worker", true, LOG_LEVEL_TRACE);
+	log_trace(loggerWork, "starting...");
+	//evantar socket para escuchar pedidos
+
+	/*
 	pid_t id = crearFork();
 //	getpid(); ID Padre
 		if (ejecutarRutina() == 0)
@@ -17,7 +21,7 @@ int main(void) {
 		{
 			char* proceso = forkEjecutador(id);
 			log_trace(loggerWork, "FIN %s", proceso, "incorrecto");
-		}
+		}*/
 	log_destroy(loggerWork);
 	return EXIT_SUCCESS;
 }
