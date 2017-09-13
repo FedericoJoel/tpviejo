@@ -9,6 +9,7 @@
  */
 
 #include "fileSystem.h"
+
 int main(void) {
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
@@ -20,7 +21,7 @@ int main(void) {
 
 	return EXIT_SUCCESS;
 
-//	PRUEBA YAMALIB
+////	PRUEBA YAMALIB
 //	saludar();
 //	return EXIT_SUCCESS;
 
