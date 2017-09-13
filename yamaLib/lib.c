@@ -14,7 +14,3 @@ int ejecutarRutina()
 	puts("Se ejecuto la rutina \n");
 	return 0;
 }
-
-int crearFork(){
-	return fork();
-}
