@@ -1,0 +1,112 @@
+-------handshakes------------
+filesystem
+  espera conexiones de dataNodes hasta estar estable
+  una vez estable permite conexion de YAMA(de intentarlo antes, debe rechazarlo)
+
+filesystem(ejecucion con --clean)
+  espera conexion de al menos un nodo
+  acepta conexion de YAMA
+
+dataNode
+  abrir data.bin y conectarse a filesystem
+
+worker
+  comienza su ejecucion y espera conexiones de procesos master(por cada master conectado hace un fork)
+
+YAMA
+  se conecta al filesystem y espera conexiones de masters
+
+
+-------comenzar job------------
+
+master -> YAMA
+  le envia ruta de archivo sobre el que quiere realizar job
+
+YAMA -> filesystem
+  ruta de archivo
+
+filesystem -> YAMA
+  lista de bloques que lo componen, el espacio que ocupan y en que nodos estan
+
+
+
+YAMA -> master
+  nodos con que conectarse(IP y PUERTO)
+  bloque sobre el que debe actuar cada worker
+  tamaño de bytes qeu tiene que leer en el bloque
+  nombre de archivo temporal donde tiene que guardar la operacion sobre el bloque
+
+
+
+-------Transformacion------------
+
+master -> worker(generar un hilo por cada worker)
+  programa de transformacion
+  bloque/s necesario
+  tamaño a leer en cada bloque
+  ruta de archivo temporal a crear
+
+worker -> master
+  finalizacion de transformacion en nodo
+
+master -> YAMA
+  avisa cada vez que termina una transformacion en un nodo
+
+-------Reduccion local------------
+
+YAMA -> master(una vez que terminan todas las transformaciones)
+  nodos con que conectarse(IP y PUERTO)
+  ruta archivos a reducir
+  ruta de archivo reducido
+
+master -> worker(generar un hilo por cada worker)
+  programa de reduccion
+  lista de archivos temporales a reducir
+  nombre de archivo reducido
+
+worker -> master
+  finalizacion de reduccion local
+
+master -> YAMA
+  finalizacion de todas las reducciones locales
+
+-------reduccion global------------
+
+YAMA -> master
+  nodos con que conectarse(IP y PUERTO)
+  nombre del archivo temporal generado por la RL en cada nodo
+  ruta de reduccion global
+  IMPORTANTE: la ruta de reduccion global se envia a un solo nodo que es el encargado de la tarea
+
+master -> worker encargado
+  rutina de reduccion
+  lista de nodos necesarios(IP y PUERTO)
+  nombre de archivos temporales necesarios
+
+worker encargado -> otros worker
+  ruta de archivo temporal necesario
+
+otros worker -> worker encargado
+  ruta archivo temporal
+  contenido de archivo
+
+worker encargado -> master
+  finalizacion de reduccion global
+
+master -> YAMA
+  finalizacion de reduccion global
+
+-------almacenado final------------
+
+YAMA -> master
+  nodo designado
+  ruta archivo temporal con reduccion global
+
+master -> worker designado
+  nombre de archivo temporal
+  ruta de archivo final en yamafs
+
+worker -> filesystem
+  nombre del archivo a guardar
+
+
