@@ -1,16 +1,15 @@
-/*
- ============================================================================
- Name        : fileSystem.c
- Author      : Bool Basaur
- Version     :
- Copyright   : 
- Description : Hello World in C, Ansi-style
- ============================================================================
- */
-
 #include "fileSystem.h"
 
 int main(void) {
+
+	//levanta config
+	t_config config = config_create(ruta_config);
+	int puerto_server = config_get_int_value(config,"PUERTO_SERVER");
+
+	//crear server que escucha nuevos dataNodes
+	int fd_server = crear_servidor(puerto_server);
+
+
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
 	pthread_t t_consola;

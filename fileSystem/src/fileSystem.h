@@ -5,13 +5,22 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 #include <commons/temporal.h>
+#include <commons/string.h>
+#include <commons/config.h>
 #include <lib.h>
 #include <stdint.h>
-#include <commons/string.h>
-#include <readline/history.h>
 #include <pthread.h>
-#include <sockets/sockets.h>
+#include "sockets.h"
+
+char ruta_config="./config.txt";
+
+typedef struct{
+	int id;
+	char* ip;
+	int puerto;
+}t_nodo;
 
 void fs_format();
 
