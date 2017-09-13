@@ -11,7 +11,7 @@
 #include <commons/string.h>
 #include <readline/history.h>
 #include <pthread.h>
-#include <lib.h>
+#include <sockets/sockets.h>
 
 void fs_format();
 

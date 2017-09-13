@@ -10,6 +10,8 @@
 
 void saludar();
 
-void checkStatus ();
+int ejecutarRutina();
+
+int crearFork();
 
 #endif /* LIB_H_ */
