@@ -1,0 +1,28 @@
+[INFO] 17:42:37:955 MASTER/(3424:3424): starting...
+[INFO] 17:42:37:955 MASTER/(3424:3424): argumento 0: ./a.out 
+
+[INFO] 17:43:03:864 MASTER/(3429:3429): starting...
+[INFO] 17:43:03:865 MASTER/(3429:3429): argumento 0: ./a.out 
+
+[INFO] 17:43:03:865 MASTER/(3429:3429): argumento 1: argumento1 
+
+[INFO] 17:43:03:865 MASTER/(3429:3429): argumento 2: ./prueba.txt 
+
+[INFO] 18:02:13:641 MASTER/(3639:3639): starting...
+[INFO] 18:02:13:641 MASTER/(3639:3639): argumento 0: ./a.out 
+
+[INFO] 18:02:13:641 MASTER/(3639:3639): argumento 1: ./prueba.txt 
+
+[INFO] 18:02:13:641 MASTER/(3639:3639): ruta file: ./prueba.txt
+[INFO] 18:12:53:351 MASTER/(3861:3861): starting...
+[INFO] 18:12:53:351 MASTER/(3861:3861): argumento 0: ./a.out 
+
+[INFO] 18:12:53:351 MASTER/(3861:3861): argumento 1: ./prueba.txt 
+
+[INFO] 18:12:53:351 MASTER/(3861:3861): ruta file: ./prueba.txt
+[INFO] 18:14:15:257 MASTER/(3902:3902): starting...
+[INFO] 18:14:15:257 MASTER/(3902:3902): argumento 0: ./a.out 
+
+[INFO] 18:14:15:257 MASTER/(3902:3902): argumento 1: ./prueba.txt 
+
+[INFO] 18:14:15:257 MASTER/(3902:3902): ruta file: ./prueba.txt
