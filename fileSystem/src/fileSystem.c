@@ -116,9 +116,14 @@ void fs_rm(char * arg){
 		string_trim(&argumentos[i]);
 	}
 
-	if( (string_equals_ignore_case(*argumentos, "-d")) && (string_starts_with(argumentos[1], "/")))
-	{
-			printf("Se eliminó el directorio '%s'\n",argumentos[str_array_size(*argumentos) - 1]);
+	if (string_equals_ignore_case(*argumentos, "-d")){
+		if (string_starts_with(argumentos[1], "/")){
+		printf("Se eliminó el directorio '%s'\n",argumentos[str_array_size(*argumentos) - 1]);
+		}
+		else
+		{
+		printf("No se puede eliminar el directorio \n");
+		}
 	}
 	else if(string_equals_ignore_case(*argumentos, "-b"))
 	{
