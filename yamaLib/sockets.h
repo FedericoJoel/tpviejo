@@ -17,9 +17,16 @@
 #include <commons/log.h>
 
 int tienePermiso(char* autentificacion);
+
+//manda como header el int que ponemos como protocolo.
 void enviarProtocolo(int socket, int protocolo);
+//recibimos un header y error si n lo mandan correctamente.
+int recibirProtocolo(int conexion);
+// BLOQUEANTE devuelve un socket conectado a puerto,ip
 int conectar(int puerto,char* ip);
+//envia el handshake
 int autentificar(int conexion, char* autor);
+//
 int esperarConfirmacion(int conexion);
 int crearServidor(int puerto);
 void enviarMensaje(int conexion, char* mensaje);
@@ -27,7 +34,6 @@ int esperarConexion(int servidor, char* autentificacion);
 char* esperarMensaje(int conexion);
 int aceptar(int servidor);
 char* header(int numero);	
-int recibirProtocolo(int conexion);
 void enviarMensajeConProtocolo(int conexion, char* mensaje, int protocolo);
 int sendIntTo(int socket, int number);
 

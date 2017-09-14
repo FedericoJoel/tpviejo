@@ -10,5 +10,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sockets.h>
+#include <pthread.h>
+#include <commons/string.h>
+#include <string.h>
 
 #endif /* DATANODE_H_ */

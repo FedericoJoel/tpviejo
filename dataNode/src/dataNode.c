@@ -10,8 +10,14 @@
 
 #include "dataNode.h"
 
-int main(void) {
+int PUERTO=3491;
 
-	puts("!!!Hello World!!!"); /* prints !!!Hello World!!! */
+
+int main(void) {
+	char * IP = string_new();
+	string_append(&IP, "127.0.0.1");
+	printf("Intento conectarme a Filesystem\n");
+	int s_filesystem = conectar(PUERTO,IP);
+	printf("Conectado a fs con socket %d \n",s_filesystem);
 	return EXIT_SUCCESS;
 }

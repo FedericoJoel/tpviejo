@@ -10,8 +10,14 @@
 
 #include "fileSystem.h"
 
-int main(void) {
 
+int PUERTO_DN = 3490;
+
+int main(void) {
+	char * AUTH = string_new();
+	string_append(&AUTH, "hola");
+	int s_servidor = crearServidor(PUERTO_DN);
+	esperarConexion(s_servidor, AUTH);
 	//GENERAMOS UN THREAD PARA LA CONSOLA
 	pthread_t t_consola;
 	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
