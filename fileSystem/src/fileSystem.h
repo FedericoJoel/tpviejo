@@ -9,6 +9,7 @@
 #include <lib.h>
 #include <stdint.h>
 #include <commons/string.h>
+#include <commons/collections/list.h>
 #include <readline/history.h>
 #include <pthread.h>
 #include <sockets.h>
@@ -24,5 +25,9 @@ void ejecutarConsola();
 int str_array_size(char** array);
 
 void str_array_print(char ** array);
+
+void esperar_data_nodes();
+void iniciar_servidor();
+void atender_dn();
 
 #endif /* FILESYSTEM_H_ */

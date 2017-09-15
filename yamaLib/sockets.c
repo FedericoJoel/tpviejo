@@ -78,6 +78,7 @@ int crearServidor(int puerto){
 
 
 int esperarConexion(int servidor, char* autentificacion){
+	printf("Estoy a la espera de una conexion\n");
 	int cliente = aceptar(servidor);
 	printf("Acepte!\n");
 	if (cliente <= 0){
