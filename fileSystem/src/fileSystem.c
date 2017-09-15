@@ -20,7 +20,7 @@ int main(void) {
 
 	return EXIT_SUCCESS;
 
-//	PRUEBA YAMALIB
+////	PRUEBA YAMALIB
 //	saludar();
 //	return EXIT_SUCCESS;
 
