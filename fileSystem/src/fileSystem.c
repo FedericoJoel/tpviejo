@@ -12,6 +12,7 @@
 
 
 
+
 int PUERTO_FS= 3490;
 int s_servidor;
 t_list *t_dataNodes;
