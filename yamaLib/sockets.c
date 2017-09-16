@@ -1,6 +1,7 @@
 #include "sockets.h"
 
 int conectar(int puerto,char* ip){
+
 	struct sockaddr_in direccServ;
 	direccServ.sin_family = AF_INET;
 	direccServ.sin_addr.s_addr = inet_addr(ip);
@@ -77,6 +78,7 @@ int crearServidor(int puerto){
 
 
 int esperarConexion(int servidor, char* autentificacion){
+	printf("Estoy a la espera de una conexion\n");
 	int cliente = aceptar(servidor);
 	printf("Acepte!\n");
 	if (cliente <= 0){
