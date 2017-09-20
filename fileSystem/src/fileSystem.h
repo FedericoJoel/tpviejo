@@ -20,6 +20,24 @@ void fs_rm(char * arg);
 
 void fs_rename(char * arg);
 
+void fs_mv(char * arg);
+
+void fs_cat(char * arg);
+
+void fs_mkdir(char * arg);
+
+void fs_cpfrom(char * arg);
+
+void fs_cpto(char * arg);
+
+void fs_cpblok(char * arg);
+
+void fs_md5(char * arg);
+
+void fs_ls(char * arg);
+
+void fs_info(char * arg);
+
 void ejecutarConsola();
 
 int str_array_size(char** array);
