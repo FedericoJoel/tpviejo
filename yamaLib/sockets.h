@@ -16,25 +16,56 @@
 #include <unistd.h>
 #include <commons/log.h>
 
-int tienePermiso(char* autentificacion);
+/////////////
+//PROTOCOLO//
+/////////////
+///FS - DN///
+#define DN_SETBLOQUE 1
+#define DN_SETBLOQUEANSW 2
+#define DN_GETBLOQUE 3
+#define DN_GETBLOQUEANSW 4
+//FS - YAMA//
+#define FS_READ 5
+#define FS_STORE 6
+#define YM_READANSW 7
+#define YM_STOREANSW 8
 
-//manda como header el int que ponemos como protocolo.
-void enviarProtocolo(int socket, int protocolo);
-//recibimos un header y error si n lo mandan correctamente.
-int recibirProtocolo(int conexion);
-// BLOQUEANTE devuelve un socket conectado a puerto,ip
+
+///////////
+//CLIENTE//
+///////////
 int conectar(int puerto,char* ip);
-//envia el handshake
-int autentificar(int conexion, char* autor);
-//
-int esperarConfirmacion(int conexion);
+
+////////////
+//SERVIDOR//
+////////////
 int crearServidor(int puerto);
-void enviarMensaje(int conexion, char* mensaje);
 int esperarConexion(int servidor, char* autentificacion);
-char* esperarMensaje(int conexion);
-int aceptar(int servidor);
-char* header(int numero);	
+
+/////////////////////
+//ENVIO DE MENSAJES//
+/////////////////////
 void enviarMensajeConProtocolo(int conexion, char* mensaje, int protocolo);
+void enviarProtocolo(int socket, int protocolo);
 int sendIntTo(int socket, int number);
+
+/////////////////////////
+//RECEPCION DE MENSAJES//
+/////////////////////////
+char* esperarMensaje(int conexion);
+int recibirProtocolo(int conexion);
+void enviarMensaje(int conexion, char* mensaje);
+
+
+//////////////
+//AUXILIARES//
+//////////////
+int autentificar(int conexion, char* autor);
+int esperarConfirmacion(int conexion);
+int aceptar(int servidor);
+char* header(int numero);
+
+
+
 
 #endif
