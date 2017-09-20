@@ -14,10 +14,23 @@
 #include <pthread.h>
 #include <sockets.h>
 
+
+/////////////
+//PROTOCOLO//
+/////////////
+///FS - DN///
+#define DN_SETBLOQUE 0001
+#define DN_SETBLOQUEANSW 2
+#define DN_GETBLOQUE 3
+#define DN_GETBLOQUEANSW 4
+//FS - YAMA//
+#define FS_READ 5
+#define FS_STORE 6
+#define YM_READANSW 7
+#define YM_STOREANSW 8
+
 void fs_format();
-
 void fs_rm(char * arg);
-
 void fs_rename(char * arg);
 
 void fs_mv(char * arg);
@@ -39,13 +52,11 @@ void fs_ls(char * arg);
 void fs_info(char * arg);
 
 void ejecutarConsola();
-
 int str_array_size(char** array);
-
 void str_array_print(char ** array);
-
 void esperar_data_nodes();
 void iniciar_servidor();
 void atender_dn();
+void set_bloque(int *s_nodo,char* datos);
 
 #endif /* FILESYSTEM_H_ */

@@ -12,6 +12,7 @@
 
 
 
+
 int PUERTO_FS= 3490;
 int s_servidor;
 t_list *t_dataNodes;
@@ -20,7 +21,9 @@ pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
 
 int main(void) {
+	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.
 	iniciar_servidor();
+
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
 	pthread_t t_consola;
@@ -37,8 +40,6 @@ int main(void) {
 //	return EXIT_SUCCESS;
 
 }
-
-
 
 void ejecutarConsola(){
 
@@ -80,28 +81,6 @@ void ejecutarConsola(){
 	    free(linea);
 	  }
 
-//ESTE SERIA EL SWICH QUE PUEDO USAR CON LA HASH FUNCTION
-//	while(1) {
-//	char * linea = readline(">");
-//	printf("%s\n", linea);
-//	int hash_key = hash(linea);
-//		switch(hash_key) {
-//			case LS:
-//				printf("Running ls...\n");
-//				break;
-//			case CD:
-//				printf("Running cd...\n");
-//				break;
-//			case MKDIR:
-//				printf("Running mkdir...\n");
-//				break;
-//			case PWD:
-//				printf("Running pwd...\n");
-//				break;
-//			default:
-//				printf("[ERROR] '%d' is not a valid command.\n", hash_key);
-//	    }
-//	}
 }
 
 void fs_format(){
@@ -285,18 +264,22 @@ void esperar_data_nodes(){
 
 
 	while(1){
+
 		//BLOQUEANTE espero una conexion de un DN
 		int socket = esperarConexion(s_servidor, AUTH);
+		printf("la autorizacion es %s \n",AUTH);
 
 		//Lo agrego a la lista de datanodes's sockets
-		int posicion = list_add(s_dataNodes, (void *) socket);
+		int posicion = list_add(s_dataNodes, (void *) &socket);
 		printf("Escuchamos una nueva coneccion,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
 
-		//Creo un thread que atienda el socket
-
-		int tam = sizeof(t_atiende_dn)/sizeof(*t_atiende_dn);
-		pthread_create(&t_atiende_dn + tam,NULL,(void*)&atender_dn, &socket);
-		printf("el tamaño de t_espera_data_nodes ahora es de %d \n",tam);
+		//LE MANDO UN MENSAJE PARA QUE ESCRIBA UN BLOQUE
+		void* respuesta = list_get(s_dataNodes, 0);
+		int * s_nodo = (int*) respuesta;
+		set_bloque(s_nodo,"datosdatos");
+//		int tam = sizeof(t_atiende_dn)/sizeof(*t_atiende_dn);
+//		pthread_create(&t_atiende_dn + tam,NULL,(void*)&atender_dn, &socket);
+//		printf("el tamaño de t_espera_data_nodes ahora es de %d \n",tam);
 	}
 }
 
@@ -304,8 +287,19 @@ void iniciar_servidor(){
 	pthread_create(&t_espera_data_nodes,NULL,(void*)&esperar_data_nodes, NULL);
 }
 
-void atender_dn(void* argv){
-	int *socket = (int *) argv;
-	printf("a atender le llego el socket %d",*socket);
+//void atender_dn(void* soc){
+//	int *socket = (int *) soc;
+//	printf("voy a ejecutar una escritura \n",*socket);
+//	enviarMensajeConProtocolo(*socket, "DATOSDATOSDATOS", DN_SETBLOQUE);
+//}
 
+void set_bloque(int *s_nodo,char* datos){
+	printf("grabo un bloque en el nodo sockeft %d \n",*s_nodo);
+	enviarMensajeConProtocolo(*s_nodo, "DATOSDATOSDATOS", DN_SETBLOQUE);
+	// TODO VERIFICAR SI SALE OK
+	// TODO que me conviene hacer con en que bloque lo guarda? lo meto en el protocolo? mando 2 mensajes juntos?
+	//	pthread_t t_atiende_escritura;
+	//	pthread_create(&t_atiende_escritura,NULL,(void*)&atender_escritura, &s_nodo);
+	//	TODO COMO HAGO PARA RETORNAR SI LA ESCRITURA FUE BUENA O MALA CON EL THREAD y mandarle varios parametros
+	//	pthread_join(t_atiende_escritura);
 }
