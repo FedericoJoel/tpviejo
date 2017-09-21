@@ -1,14 +1,44 @@
 #include "master.h"
 
+int PUERTO_YAMA=3600;
+//IP INVENTADA
+char* IP_YAMA="172.0.0.3";
+int s_yama;
+
+
 int main(int argc, char **argv) {
 
 	//arrancar logger
 	logger = start_logger();
 	log_info(logger, "starting...");
-
 	abrir_file_args(argc, argv);
 
+	//conectar con YAMA
+	conectarse_yama();
+
 	return EXIT_SUCCESS;
+}
+
+void conectarse_yama(){
+	char * IP = string_new();
+	string_append(&IP, "127.0.0.2");
+	log_trace(logger, "Intento conectarme a YAMA\n");
+	s_yama = conectar(PUERTO_YAMA,IP);
+
+	if(s_yama){
+			log_trace(logger, "No se pudo conectar con yama. YAMA: %s:%d\n", IP_YAMA, PUERTO_YAMA);
+		}
+		log_trace(logger, "Conectado con YAMA OK");
+
+		char* mensaje = esperarMensaje(s_yama);
+
+		//envio el mensaje
+		enviarMensaje(s_yama, "Hola");
+		//prueba para comprobar el comunicacion
+		if(mensaje == '\0'){
+			log_trace(logger, "no se pudo enviar mensaje a YAMA");
+		}
+		printf("Conectado a fs con socket %d \n",s_yama);
 }
 
 t_log* start_logger() {
