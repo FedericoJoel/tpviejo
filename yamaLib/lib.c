@@ -1,16 +1,8 @@
-#include "lib.h"  /* Include the header (not strictly necessary here) */
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <commons/log.h>
+#include "lib.h"
 
-void saludar()    /* Function definition */
-{
-    puts("hola");
-}
 
-int ejecutarRutina()
-{
-	puts("Se ejecuto la rutina \n");
-	return 0;
+//---------------logger-------------------
+
+t_log* abrir_logger(char* ruta_archivo, char* nombre_programa,t_log_level nivel){
+	return  log_create(ruta_archivo,nombre_programa,1,nivel);
 }
