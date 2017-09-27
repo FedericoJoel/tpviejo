@@ -42,12 +42,25 @@ void esperar_masters(void) {
 	int max_fds;
 	int select_status;
 
+	//el select te pide que le pases en el primer parametro cual es el filedescriptor mas alto
+	// dentro de tu array de sockets(socket_cliente), a mi siempre me puso 4 para el socket del server
+	// y 5,6,etc para los que iban llegando, de arranque el server es el unico asi que va ese.
 	max_fds = socket_server;
 
 	while(1){
+
+		// en cada iteracion hay que blanquear(FD_ZERO) el fds_masters, que es un bitarray donde queda guardado
+		// que sockets tienen cambios despues del select y tambien volver a setear(FD_SET) los filedescriptors en el fds_set.
+		//ademas de volver a calcular cual es el filedescriptor mas alto
 		construir_fds(&max_fds,socket_clientes);
+
 		log_info(logger,"esperando conexiones");
+
 		select_status = select(max_fds + 1, &fds_masters, NULL, NULL, NULL);
+		//select_status puede ser:
+		// < 0 => error
+		// == 0 => no paso nada
+		// > 0 => hubo algun cambio en los sockets o entro otro nuevo
 
 		if(select_status < 0){
 			perror("select failed");
@@ -78,12 +91,15 @@ void construir_fds(int* max_actual,int conectados[]){
 
 void leer_cambios_select(){
 	int i;
+
 	//nuevo cliente
 	if (FD_ISSET(socket_server,&fds_masters)) {
 		log_info(logger,"se recibio una nueva conexion");
 		recibir_nuevo_master();
 	}
+
 	//recibo data de uno ya conectado
+	//TODO handlear si el cliente se desconecta abruptamente(seguramente hay que usar alguna signal o algo asi)
 	for (i = 0; i < clientes_max; i++) {
 		if (FD_ISSET(socket_clientes[i],&fds_masters)) {
 			log_info(logger,"se recibio data de un master conectado");
@@ -104,7 +120,7 @@ void recibir_nuevo_master() {
 	//recorro array para encontrarle un lugar vacio al nuevo master
 	for (i = 0; (i < clientes_max) && (nuevo_cliente != -1); i ++){
 		if (socket_clientes[i] == 0) {
-			log_info(logger,"Conexion aceptada:   FD=%d; Slot=%d",nuevo_cliente,i);
+			log_info(logger,"Conexion aceptada: FD=%d posicion=%d",nuevo_cliente,i);
 			socket_clientes[i] = nuevo_cliente;
 
 			// Enviamos un mensaje con su lugar en la lista
@@ -116,6 +132,7 @@ void recibir_nuevo_master() {
 	//no queda lugar en el array de conexiones, libero ese socket
 	if (nuevo_cliente != -1) {
 		log_error(logger, "No queda lugar para nuevo master: %d, servidor muy ocupado", nuevo_cliente);
+		//todo mandar algun protocolo al cliente antes de rechazarlo
 		close(nuevo_cliente);
 	}
 }

@@ -13,6 +13,8 @@ int main(int argc, char **argv) {
 
 	desconectarse_de_yama();
 
+	log_info(logger,"Salir del programa");
+
 	return EXIT_SUCCESS;
 }
 
