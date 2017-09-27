@@ -5,6 +5,7 @@
 #ifndef SOCKETS_H_
 #define SOCKETS_H_
 
+#include "protocolos.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -15,6 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <commons/log.h>
+
 
 /////////////
 //PROTOCOLO//
@@ -29,6 +31,7 @@
 #define FS_STORE 6
 #define YM_READANSW 7
 #define YM_STOREANSW 8
+
 
 
 ///////////
