@@ -9,9 +9,9 @@
 #define YAMA_H_
 
 #include <commons/config.h>
-#include "sockets.h"
+#include <sockets.h>
 
-char ruta_config = "./config.txt";
+char* ruta_config = "./config.txt";
 
 
 #endif /* YAMA_H_ */

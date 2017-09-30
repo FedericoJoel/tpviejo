@@ -9,8 +9,9 @@ pthread_t t_espera_data_nodes;
 
 int main(void) {
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.
-	iniciar_servidor();
+//	iniciar_servidor();
 
+	mostrarNodos();
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
 	pthread_t t_consola;

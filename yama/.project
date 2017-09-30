@@ -3,6 +3,7 @@
 	<name>yama</name>
 	<comment></comment>
 	<projects>
+		<project>yamaLib</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
