@@ -3,7 +3,7 @@
 char* rutaDirectorio =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/directorio.dat";
 
-int transformarDirectorio() {
+int mostrarDirectorio() {
 	t_directory directorio[100];
 	int pos = 0;
 	FILE * archivo;

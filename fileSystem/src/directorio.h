@@ -15,7 +15,7 @@ typedef struct{
 
 int comprobarDirectorio(int nivel, t_directory directorio [], t_directory unDirectorio);
 void guardarRegistro(t_directory [], t_directory, int, int);
-int transformarDirectorio();
+int mostrarDirectorio();
 void convertirDirectorio(char *, t_directory []);
 
 #endif /* DIRECTORIO_H_ */

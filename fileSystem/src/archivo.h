@@ -30,6 +30,6 @@ typedef struct{
 
 
 
-t_archivo leerArchivo();
+void mostrarTablaArchivo();
 
 #endif /* ARCHIVO_H_ */

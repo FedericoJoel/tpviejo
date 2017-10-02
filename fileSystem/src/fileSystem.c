@@ -11,7 +11,10 @@ int main(void) {
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.
 //	iniciar_servidor();
 
-	mostrarNodos();
+	//mostrarNodos();
+	//mostrarDirectorio();
+	mostrarTablaArchivo();
+	//cargarBitmap();
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
 	pthread_t t_consola;
@@ -28,6 +31,8 @@ int main(void) {
 //	return EXIT_SUCCESS;
 
 }
+
+
 
 void ejecutarConsola(){
 
