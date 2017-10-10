@@ -123,16 +123,17 @@ void recibir_nuevo_master() {
 			log_info(logger,"Conexion aceptada: FD=%d posicion=%d",nuevo_cliente,i);
 			socket_clientes[i] = nuevo_cliente;
 
-			// Enviamos un mensaje con su lugar en la lista
+			// Enviamos un protocolo de confirmacion
 			protocolo = YM_MS_OKCONN;
-			enviarMensajeConProtocolo(nuevo_cliente, "holaa",protocolo);
+			enviarProtocolo(nuevo_cliente, protocolo);
 			nuevo_cliente = -1;
 		}
 	}
 	//no queda lugar en el array de conexiones, libero ese socket
 	if (nuevo_cliente != -1) {
 		log_error(logger, "No queda lugar para nuevo master: %d, servidor muy ocupado", nuevo_cliente);
-		//todo mandar algun protocolo al cliente antes de rechazarlo
+		//mandar protocolo al cliente antes de rechazarlo
+		enviarProtocolo(nuevo_cliente, YM_MS_ERRORCONN);
 		close(nuevo_cliente);
 	}
 }
@@ -143,12 +144,16 @@ void recibir_data_de_master(int posicion) {
 
 	proto_msg = recibirProtocolo(socket_clientes[posicion]);
 
-	if (proto_msg == MS_YM_DESCONECTAR) { //se desconecto el cliente
-		log_info(logger,"se desconecto el master %d",socket_clientes[posicion]);
-		close(socket_clientes[posicion]);
-		socket_clientes[posicion] = 0;
-	} else { //recibimos un mensaje
-		mensaje = esperarMensaje(socket_clientes[posicion]);
-		log_info(logger,"recibimos mensaje %s del master %d",mensaje,socket_clientes[posicion]);
+	switch(proto_msg) {
+		case MS_YM_DESCONECTAR:// se desconecta master
+			log_info(logger,"se desconecto el master %d",socket_clientes[posicion]);
+			close(socket_clientes[posicion]);
+			socket_clientes[posicion] = 0;
+			break;
+		case MS_YM_INICIO_JOB:// inicia un job un master
+			log_info(logger,"iniciar job de master %d",socket_clientes[posicion]);
+			mensaje = esperarMensaje(socket_clientes[posicion]);
+			log_info(logger,"ruta de archivo %s",mensaje);
+			break;
 	}
 }

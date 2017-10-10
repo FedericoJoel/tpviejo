@@ -1,15 +1,26 @@
 #include "master.h"
 
 int main(int argc, char **argv) {
+	int i;
 
 	levantar_logger();
 
+	for(i = 0; i < argc; ++i) {
+		log_info(logger, "argumento %d: %s \n", i, argv[i]);
+	}
+
 	levantar_config();
+
+	leer_variables_args(argv);
 
 	//usar cuando haya que implementar el envio de scripts a workers
 	//abrir_file_args(argc, argv);
 
-	conectar_con_yama();
+	if(conectar_con_yama() == EXIT_FAILURE){
+		return EXIT_FAILURE;
+	}
+
+	comenzar_job();
 
 	desconectarse_de_yama();
 
@@ -33,6 +44,17 @@ void levantar_logger(void) {
 	log_info(logger,"Logger iniciado");
 }
 
+void leer_variables_args(char** argv) {
+	ruta_transformador = argv[1];
+	log_info(logger,"ruta_transformador = %s",ruta_transformador);
+	ruta_reductor = argv[2];
+	log_info(logger,"ruta_reductor = %s",ruta_reductor);
+	ruta_archivo_job_inicial = argv[3];
+	log_info(logger,"ruta_archivo_job_inicial= %s",ruta_archivo_job_inicial);
+	ruta_archivo_job_resultado = argv[4];
+	log_info(logger,"ruta_archivo_job_resultado= %s",ruta_archivo_job_resultado);
+
+}
 
 
 int abrir_file_args(int argc, char** argv) {
@@ -43,13 +65,8 @@ int abrir_file_args(int argc, char** argv) {
 	ssize_t leido;
 	FILE* archivo;
 
-	//loggear argumentos
-	for(i = 0; i < argc; ++i) {
-		log_info(logger, "argumento %d: %s \n", i, argv[i]);
-	}
-
 	//abrir file y loggear lineas
-	ruta_file = string_from_format(argv[1]);
+	ruta_file = string_from_format(ruta_archivo_job_inicial);
 	log_info(logger, "ruta file: %s", ruta_file);
 
 	archivo = fopen(ruta_file, "r");
@@ -70,7 +87,7 @@ int abrir_file_args(int argc, char** argv) {
 	return EXIT_SUCCESS;
 }
 
-void conectar_con_yama(){
+int conectar_con_yama(){
 	char* msg;
 	int proto_recibido;
 
@@ -78,11 +95,19 @@ void conectar_con_yama(){
 	socket_yama = conectar(puerto_yama,ip_yama);
 
 	proto_recibido = recibirProtocolo(socket_yama);
-	log_info(logger,"protocolo recibido: %d",proto_recibido);
 
-	msg = esperarMensaje(socket_yama);
-	log_info(logger,"mensaje recibido: %s",msg);
+	if(proto_recibido == YM_MS_ERRORCONN) {
+		log_error(logger,"no se pudo conectar a yama. Reintentar mas tarde");
+		return EXIT_FAILURE;
+	}
+	else log_info(logger,"conexion establecida con YAMA");
+	return EXIT_SUCCESS;
+}
 
+void comenzar_job() {
+	log_info(logger,"enviando job a YAMA");
+	//envio protocolo y mensaje con la ruta del archivo en el yamafs
+	enviarMensajeConProtocolo(socket_yama,ruta_archivo_job_inicial,MS_YM_INICIO_JOB);
 }
 
 void desconectarse_de_yama(){

@@ -3,7 +3,9 @@
 
 typedef enum {
 	YM_MS_OKCONN,
-	MS_YM_DESCONECTAR
+	MS_YM_DESCONECTAR,
+	YM_MS_ERRORCONN,
+	MS_YM_INICIO_JOB
 }t_proto;
 
 
