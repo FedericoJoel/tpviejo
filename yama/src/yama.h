@@ -14,6 +14,7 @@
 #define nombre_programa "YAMA"
 #define clientes_max 10
 
+
 //-------config------------
 
 char* ruta_config = "/home/utnso/workspace/tp-2017-2c-LaYamaQueLlama/yama/resources/config.cfg";
@@ -45,5 +46,6 @@ void levantar_config(void);
 void levantar_logger(void);
 void esperar_master(void);
 void esperar_masters(void);
+void enviar_transformacion(int master, t_list* lista_bloques);
 
 #endif /* YAMA_H_ */
