@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
@@ -10,10 +11,11 @@
 //ARCHIVO//
 
 typedef struct{
-	char* nombre;
-	int bloque;
-	char* nombreCopia;
-	int bloqueCopia;
+	char* bloqueCopia;
+	char* nodoBloque;
+	char* bloqueCopia1;
+	char* nodoBloque1;
+	char* nombreTamanioBloque;
 	int tamanioBloque;
 }estructuraBloque;
 
@@ -25,19 +27,31 @@ typedef struct{
 typedef struct{
 	int tamanio;
 	char* tipo;
-	listaBloqueArchivo bloques;
+	t_list* bloques;
 }t_archivo;
 
-void mostrarTablaArchivo();
-char* generarBloqueCopia(int bloqueNumero, int copiaNumero, char* bloqueClave, char* copiaClave);
-char* generarBloqueBytes(int bloqueNumero, char* bloqueClave, char* bytes);
-void sacarDatos(char* linea, char* bloqueCopia, char* bloqueCopia1, char* bloqueBytes, int* posActual);
-void dameTamanio(char* linea, int* tamanio, int* pos);
-void dameTipo(char* linea, char* tipo, int* pos);
+void cargarTablaArchivo();
+void cargarDatos(char* lineaDatos,char* lineaElem, t_archivo* nuevoArchivo, int cantidadCampos);
+
+//devuelve el tamanio total del archivo
+int dameTamanio(char* linea, int elemento);
+
+//devuelve el tipo del archivo
+char* dameTipo(char* linea, int elemento);
+
+//cuenta caracteres separados por coma
 int contarCaracteres(char* linea, int pos);
-void dameInfoBloqueNodo(char* linea, char* bloqueCopia, char* bloqueCopia1, int* pos, char* nodoCopia, char* nodoCopia1);
-void separarNodoCopia(char* linea, char* bloqueCopia, int* pos, char* nodoCopia);
-void dameInfoBloqueBytes(char* linea, char* bloqueBytes, int* bytes, int* pos);
+
+//toma la palabra separada entre comas
 char* tomarPalabra(char* linea, int* pos);
+
+//cuenta la cantidad de columnas de la tabla
+int contarCampos(char* linea);
+
+//devuelve la lista de bloques que tiene ese archivo
+char* dameBloque (char* linea, int elemento);
+
+//retorna la posicion de un elemento
+int dameElemento(char* linea, int elemento);
 
 #endif /* ARCHIVO_H_ */

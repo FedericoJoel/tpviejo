@@ -7,7 +7,8 @@ char* rutaBitMap =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/nodo2.dat";
 
 void mostrarNodos() {
-	char* nodo;
+	char* nodo = string_new();
+	char* nodos = string_new();
 	int pos = 0;
 	t_config* config = config_create(rutaNodo);
 	int tamanioFs = config_get_int_value(config, "TAMANIO");
@@ -16,7 +17,7 @@ void mostrarNodos() {
 	printf("TAMANIO = %d \n", tamanioFs);
 	int espacioLibreFs = config_get_int_value(config, "LIBRE");
 	printf("LIBRE = %d \n", espacioLibreFs);
-	char* nodos = config_get_string_value(config, "NODOS");
+	nodos = config_get_string_value(config, "NODOS");
 	char** listaNodos = string_split(nodos, ",");
 	printf("NODOS = %s \n", nodos);
 	while ((nodo = listaNodos[pos]) != NULL) {
@@ -44,6 +45,8 @@ void mostrarNodos() {
 		pos++;
 
 	}
+	free(nodo);
+	free(nodos);
 }
 
 char* sacar(char* palabra, char* caracter) {

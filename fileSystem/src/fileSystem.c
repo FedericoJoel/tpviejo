@@ -11,18 +11,21 @@ int main(void) {
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.
 //	iniciar_servidor();
 
-	//mostrarNodos();
-	//mostrarDirectorio();
-	mostrarTablaArchivo();
-	//cargarBitmap();
+//	mostrarNodos();
+//	printf("--------------------------------------------------------------------------------------------------- \n");
+//	mostrarDirectorio();
+	printf("--------------------------------------------------------------------------------------------------- \n");
+	cargarTablaArchivo();
+	printf("--------------------------------------------------------------------------------------------------- \n");
+//	cargarBitmap();
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
-	pthread_t t_consola;
-	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
+//	pthread_t t_consola;
+//	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
 
 	//ESPERAMOS A QUE TERMINEN TODOS LOS THREAD
-	pthread_join(t_espera_data_nodes,NULL);
-	pthread_join(t_consola,NULL);
+//	pthread_join(t_espera_data_nodes,NULL);
+//	pthread_join(t_consola,NULL);
 
 	return EXIT_SUCCESS;
 
