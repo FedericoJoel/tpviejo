@@ -14,21 +14,15 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <sockets.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <protocolos.h>
+#include <string.h>
 
 
-/////////////
-//PROTOCOLO//
-/////////////
-///FS - DN///
-#define DN_SETBLOQUE 0001
-#define DN_SETBLOQUEANSW 2
-#define DN_GETBLOQUE 3
-#define DN_GETBLOQUEANSW 4
-//FS - YAMA//
-#define FS_READ 5
-#define FS_STORE 6
-#define YM_READANSW 7
-#define YM_STOREANSW 8
+//CANTIDAD MAXIMA DE CLIENTES CONCURRENTES
+#define clientes_max 10
+
 
 void fs_format();
 void fs_rm(char * arg);
@@ -55,9 +49,13 @@ void fs_info(char * arg);
 void ejecutarConsola();
 int str_array_size(char** array);
 void str_array_print(char ** array);
-void esperar_data_nodes();
+void esperar_conexiones();
 void iniciar_servidor();
 void atender_dn();
-void set_bloque(int *s_nodo,char* datos);
+
+void set_bloque(int s_nodo,char* datos,int bloque);
+char* get_bloque(int s_nodo, int bloque);
+
+int leer_cliente(int s_nodo, char * buffer);
 
 #endif /* FILESYSTEM_H_ */

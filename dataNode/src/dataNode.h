@@ -14,24 +14,17 @@
 #include <pthread.h>
 #include <commons/string.h>
 #include <string.h>
-
-
-/////////////
-//PROTOCOLO//
-/////////////
-///FS - DN///
-#define DN_SETBLOQUE 0001
-#define DN_SETBLOQUEANSW 2
-#define DN_GETBLOQUE 3
-#define DN_GETBLOQUEANSW 4
-//FS - YAMA//
-#define FS_READ 5
-#define FS_STORE 6
-#define YM_READANSW 7
-#define YM_STOREANSW 8
+#include <protocolos.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h> /* mmap() is defined in this header */
+#include <fcntl.h>
 
 void escuchar_fs();
 void set_bloque();
+void get_bloque();
+void error_protocolo();
 void conectarse_fs();
+int escribir(char* mensaje, int offset);
 
 #endif /* DATANODE_H_ */

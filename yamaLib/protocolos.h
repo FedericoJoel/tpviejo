@@ -1,0 +1,19 @@
+#ifndef PROTOCOLOS_H_
+#define PROTOCOLOS_H_
+
+typedef enum {
+	YM_MS_OKCONN,
+	MS_YM_DESCONECTAR,
+	DN_OKCONN,
+	DN_SETBLOQUE,
+	DN_GETBLOQUE,
+	DN_GETBLOQUEANSW
+}t_proto;
+
+typedef enum { //DISTINTOS CLIENTES QUE PUEDEN LLEGAR A UN FILESYSTEM
+	DATANODE,
+	WORKER,
+	YAMA
+}t_clientes_fs;
+
+#endif
