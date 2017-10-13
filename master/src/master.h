@@ -16,6 +16,7 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
+#include <sockets.h>
 
 #define nombre_programa "MASTER"
 
@@ -44,8 +45,10 @@ void levantar_config(void);
 void levantar_logger(void);
 t_log* start_logger();
 int abrir_file_args(int argc, char** argv);
+
 void conectar_con_yama();
 void desconectarse_de_yama();
+
 
 
 #endif /* MASTER_H_ */

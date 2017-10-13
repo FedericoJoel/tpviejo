@@ -10,9 +10,42 @@
 
 #include <lib.h>
 #include <sockets.h>
+#include <commons/collections/list.h>
+#include <commons/string.h>
+
 
 #define nombre_programa "YAMA"
 #define clientes_max 10
+
+
+// estos struct vienen en el archivo que manda el fileSystem
+struct Copia {
+	int nodo;
+	int bloque;
+	char* ip;
+}Copia;
+struct Bloque {
+	int bloque;
+	struct Copia Copia0;
+	struct Copia Copia1;
+	int bytes;
+}Bloque;
+
+
+// struct de la lista de estados
+struct Estado {
+	int job;
+	int master;
+	int nodo;
+	int bloque;
+	int etapa;
+	char* temporal;
+	int estado;
+}Estado;
+
+
+t_list * archivoPrueba2();
+
 
 //-------config------------
 
@@ -24,6 +57,7 @@ t_config* config;
 char* ruta_log = "/home/utnso/workspace/tp-2017-2c-LaYamaQueLlama/yama/resources/logger.log";
 t_log_level level=LOG_LEVEL_INFO;
 t_log* logger;
+
 
 //--------server------------
 int socket_server;
