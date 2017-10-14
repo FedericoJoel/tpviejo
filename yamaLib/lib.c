@@ -16,7 +16,7 @@ char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
 	char* char_ruta_temporal = bloque->ruta_temporal;
 	char* char_copia0 = copia_to_string(bloque->copia0);
 	char* char_copia1 = copia_to_string(bloque->copia1);
-	char* char_elegida = copia_to_string(bloque->elegida);
+	char* char_elegida = int_to_string(bloque->elegida);
 
 	string_append(&char_bloque, char_bloque_archivo);
 	string_append(&char_bloque, char_bytes);
@@ -32,9 +32,6 @@ char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
 	string_append(&char_bloque, tamanio);
 	free(tamanio);
 	string_append(&char_bloque, char_copia1);
-	tamanio = int_to_string(strlen(char_elegida));
-	string_append(&char_bloque, tamanio);
-	free(tamanio);
 	string_append(&char_bloque, char_elegida);
 
 	free(char_bloque_archivo);
@@ -48,6 +45,7 @@ char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
 
 t_bloque_archivo* bloque_archivo_from_string(char* char_bloque) {
 	t_bloque_archivo* bloque = malloc(sizeof(t_bloque_archivo));
+	int puntero;
 	puntero = 0;
 
 	char* char_bloque_archivo = extraer_string(char_bloque, puntero, puntero + 3);
@@ -58,32 +56,36 @@ t_bloque_archivo* bloque_archivo_from_string(char* char_bloque) {
 	bloque->bytes = atoi(char_bytes);
 	puntero += 4;
 
-	char* char_tamanio_temporal = extraer_string(char_bloque, 8, 11);
+
+	char* char_tamanio_temporal = extraer_string(char_bloque, puntero, puntero + 3);
 	int tamanio_temporal = atoi(char_tamanio_temporal);
-	char* char_archivo_temporal = extraer_string(char_bloque, 11,(10 + tamanio_temporal));
-	bloque->ruta_temporal = char_archivo_temporal;
-	puntero = 11 + tamanio_temporal;
+	puntero += 4;
+
+	char* char_archivo_temporal = extraer_string(char_bloque, puntero, puntero + tamanio_temporal -1);
+	bloque->ruta_temporal = string_from_format(char_archivo_temporal);
+	puntero += tamanio_temporal;
+
 
 	char* char_tamanio_copia0 = extraer_string(char_bloque, puntero, puntero + 3);
-	puntero += 4;
 	int tamanio_copia0 = atoi(char_tamanio_copia0);
-	char* char_copia0 = extraer_string(char_bloque, puntero, puntero + tamanio_copia0);
+	puntero += 4;
+
+	char* char_copia0 = extraer_string(char_bloque, puntero, puntero + tamanio_copia0 - 1);
 	bloque->copia0 = copia_from_string(char_copia0);
-	puntero += tamanio_copia0 + 1;
+	puntero += tamanio_copia0;
+
 
 	char* char_tamanio_copia1 = extraer_string(char_bloque, puntero, puntero + 3);
-	puntero += 4;
 	int tamanio_copia1 = atoi(char_tamanio_copia1);
-	char* char_copia1 = extraer_string(char_bloque, puntero, puntero + tamanio_copia1);
-	bloque->copia1 = copia_from_string(char_copia1);
-	puntero += tamanio_copia1 + 1;
-
-	char* char_tamanio_elegida = extraer_string(char_bloque, puntero, puntero + 3);
 	puntero += 4;
-	int tamanio_elegida = atoi(char_tamanio_elegida);
-	char* char_elegida = extraer_string(char_bloque, puntero, puntero + tamanio_elegida);
-	bloque->elegida = copia_from_string(char_elegida);
-	puntero += tamanio_elegida + 1;
+
+	char* char_copia1 = extraer_string(char_bloque, puntero, puntero + tamanio_copia1 - 1);
+	bloque->copia1 = copia_from_string(char_copia1);
+	puntero += tamanio_copia1;
+
+
+	char* char_elegida = extraer_string(char_bloque, puntero, puntero + 3);
+		bloque->elegida = atoi(char_elegida);
 
 	return bloque;
 }
@@ -91,6 +93,7 @@ t_bloque_archivo* bloque_archivo_from_string(char* char_bloque) {
 
 t_copia* copia_from_string(char* char_copia) {
 	t_copia* nueva_copia = malloc(sizeof(t_copia));
+	int puntero;
 	puntero = 0;
 
 	char* char_nodo = extraer_string(char_copia, puntero, puntero + 3);

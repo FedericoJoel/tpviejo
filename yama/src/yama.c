@@ -161,12 +161,12 @@ void recibir_data_de_master(int posicion) {
 		copia_0_bloque_0.nodo = 0;
 		copia_0_bloque_0.bloque_nodo = 0;
 		copia_0_bloque_0.ip = string_from_format("127.0.0.1");
-/*
+
 		copia_1_bloque_0.nodo = 1;
 		copia_1_bloque_0.bloque_nodo = 2;
 		copia_1_bloque_0.ip = string_from_format("127.0.0.1");
 
-		copia_0_bloque_1.nodo = 0;
+/*		copia_0_bloque_1.nodo = 0;
 		copia_0_bloque_1.bloque_nodo = 2;
 		copia_0_bloque_1.ip = string_from_format("127.0.0.1");
 
@@ -196,7 +196,7 @@ void recibir_data_de_master(int posicion) {
 		bloque_mock_2.bloque_archivo = 2;
 		bloque_mock_2.copia0 = &copia_0_bloque_2;
 		bloque_mock_2.copia1 = &copia_1_bloque_2;
-		bloque_mock_0.bytes = 65;
+		bloque_mock_2.bytes = 65;
 */
 		//lista de bloques que me llegan
 		list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_0);
@@ -224,11 +224,11 @@ void recibir_data_de_master(int posicion) {
 
 			//todo aplicar algoritmo sobre lo que recibo de filesystem
 			//mockeo las copias que se eligen
-			bloque_mock_0.elegida = &copia_0_bloque_0;
+			bloque_mock_0.elegida = 0;
 			bloque_mock_0.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
-		/*	bloque_mock_1.elegida = &copia_1_bloque_1;
+		/*	bloque_mock_1.elegida = 1;
 			bloque_mock_1.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,1);
-			bloque_mock_2.elegida = &copia_0_bloque_2;
+			bloque_mock_2.elegida = 0;
 			bloque_mock_2.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,2);
 */
 			list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_0);
@@ -245,7 +245,7 @@ void recibir_data_de_master(int posicion) {
 void enviar_transformacion(int master, t_list* lista_bloques){
 
 	void _iterate_bloques(t_bloque_archivo* bloque){
-		char* copia_string = copia_to_string(bloque->copia0);
+		char* copia_string = bloque_archivo_to_string(bloque);
 		enviarMensaje(master,copia_string);
 	}
 

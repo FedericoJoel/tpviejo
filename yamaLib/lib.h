@@ -32,7 +32,7 @@ typedef struct bloque_archivo{
 	char* ruta_temporal;
 	t_copia* copia0;
 	t_copia* copia1;
-	t_copia* elegida;
+	int elegida;
 }t_bloque_archivo;
 
 
@@ -41,7 +41,6 @@ t_log* abrir_logger(char* ruta_archivo, char* nombre_programa,t_log_level nivel)
 
 
 //------parseos-------------
-int puntero;
 char* int_to_string(int numero);
 char* extraer_string(char* string, int inicio, int fin);
 t_copia* copia_from_string(char* copia);

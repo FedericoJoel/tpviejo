@@ -116,7 +116,7 @@ void transformacion() {
 	int cantidad_bloques;
 	t_list list_bloques;
 	char* char_bloque_recibido;
-	t_copia* bloque_recibido;
+	t_bloque_archivo* bloque_recibido;
 	proto_recibido = recibirProtocolo(socket_yama);
 
 	//me fijo si es el de transformacion que esperaba
@@ -126,8 +126,9 @@ void transformacion() {
 		for(i=0; i < cantidad_bloques; i++) {
 			char_bloque_recibido = esperarMensaje(socket_yama);
 			printf("bloque: %s \n", char_bloque_recibido);
-			bloque_recibido = copia_from_string(char_bloque_recibido);
-			printf("bloque ip: %s\n",bloque_recibido->ip);
+			bloque_recibido = bloque_archivo_from_string(char_bloque_recibido);
+			printf("bloque ip: %s\n",bloque_recibido->copia0->ip);
+			list_add(&list_bloques, (void*) bloque_recibido);
 		}
 		break;
 	}
