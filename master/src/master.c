@@ -22,6 +22,8 @@ int main(int argc, char **argv) {
 
 	comenzar_job();
 
+	transformacion();
+
 	desconectarse_de_yama();
 
 	log_info(logger,"Salir del programa");
@@ -58,7 +60,6 @@ void leer_variables_args(char** argv) {
 
 
 int abrir_file_args(int argc, char** argv) {
-	int i;
 	char* ruta_file;
 	char* linea = NULL;
 	size_t len= 0;
@@ -88,7 +89,6 @@ int abrir_file_args(int argc, char** argv) {
 }
 
 int conectar_con_yama(){
-	char* msg;
 	int proto_recibido;
 
 	log_info(logger,"conectando con proceso YAMA");
@@ -108,6 +108,29 @@ void comenzar_job() {
 	log_info(logger,"enviando job a YAMA");
 	//envio protocolo y mensaje con la ruta del archivo en el yamafs
 	enviarMensajeConProtocolo(socket_yama,ruta_archivo_job_inicial,MS_YM_INICIO_JOB);
+}
+
+void transformacion() {
+	int i;
+	int proto_recibido;
+	int cantidad_bloques;
+	t_list list_bloques;
+	char* char_bloque_recibido;
+	t_copia* bloque_recibido;
+	proto_recibido = recibirProtocolo(socket_yama);
+
+	//me fijo si es el de transformacion que esperaba
+	switch(proto_recibido) {
+	case YM_MS_TRANSFORMACION:
+		cantidad_bloques = atoi(esperarMensaje(socket_yama));
+		for(i=0; i < cantidad_bloques; i++) {
+			char_bloque_recibido = esperarMensaje(socket_yama);
+			printf("bloque: %s \n", char_bloque_recibido);
+			bloque_recibido = copia_from_string(char_bloque_recibido);
+			printf("bloque ip: %s\n",bloque_recibido->ip);
+		}
+		break;
+	}
 }
 
 void desconectarse_de_yama(){

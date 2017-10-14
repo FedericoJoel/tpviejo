@@ -41,11 +41,13 @@ t_log* abrir_logger(char* ruta_archivo, char* nombre_programa,t_log_level nivel)
 
 
 //------parseos-------------
+int puntero;
 char* int_to_string(int numero);
 char* extraer_string(char* string, int inicio, int fin);
+t_copia* copia_from_string(char* copia);
 char* copia_to_string(t_copia* copia);
-char* bloque_archivo_to_string(t_bloque_archivo* bloque);
 t_bloque_archivo* bloque_archivo_from_string(char* char_bloque);
+char* bloque_archivo_to_string(t_bloque_archivo* bloque);
 
 
 #endif /* LIB_H_ */

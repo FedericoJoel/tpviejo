@@ -1,5 +1,20 @@
 #include "yama.h"
 
+//nodos hardcodeados -------------------------------
+	t_list lista_de_nodos_recibidos; //lista de nodos que nos llega de filesystem
+	t_list lista_de_nodos_respuesta; //nodos que vamos a enviar a master
+
+	t_bloque_archivo bloque_mock_0;
+	t_bloque_archivo bloque_mock_1;
+	t_bloque_archivo bloque_mock_2;
+
+	t_copia copia_0_bloque_0;
+	t_copia copia_1_bloque_0;
+	t_copia copia_0_bloque_1;
+	t_copia copia_1_bloque_1;
+	t_copia copia_0_bloque_2;
+	t_copia copia_1_bloque_2;
+
 int main(void) {
 
 	levantar_logger();
@@ -142,79 +157,54 @@ void recibir_data_de_master(int posicion) {
 	int proto_msg;
 	char* mensaje;
 
-	//nodos hardcodeados -------------------------------
-	t_list* lista_de_nodos_recibidos; //lista de nodos que nos llega de filesystem
-	t_list* lista_de_nodos_respuesta; //nodos que vamos a enviar a master
-	t_ym_ms_transformacion* respuesta_trans;
-
-	t_bloque_archivo* bloque_mock_0;
-	t_bloque_archivo* bloque_mock_1;
-	t_bloque_archivo* bloque_mock_2;
-
-	t_copia* copia_0_bloque_0;
-	t_copia* copia_1_bloque_0;
-	t_copia* copia_0_bloque_1;
-	t_copia* copia_1_bloque_1;
-	t_copia* copia_0_bloque_2;
-	t_copia* copia_1_bloque_2;
-
 	//defino todas las copias de 3 bloques de archivo que estan desparramadas en 3 nodos
-	copia_0_bloque_0 = malloc(sizeof(t_bloque_archivo));
-	copia_0_bloque_0->nodo = 0;
-	copia_0_bloque_0->bloque_nodo = 0;
-	copia_0_bloque_0->ip = string_from_format("127.0.0.1");
+		copia_0_bloque_0.nodo = 0;
+		copia_0_bloque_0.bloque_nodo = 0;
+		copia_0_bloque_0.ip = string_from_format("127.0.0.1");
+/*
+		copia_1_bloque_0.nodo = 1;
+		copia_1_bloque_0.bloque_nodo = 2;
+		copia_1_bloque_0.ip = string_from_format("127.0.0.1");
 
-	copia_1_bloque_0 = malloc(sizeof(t_bloque_archivo));
-	copia_1_bloque_0->nodo = 1;
-	copia_1_bloque_0->bloque_nodo = 2;
-	copia_1_bloque_0->ip = string_from_format("127.0.0.1");
+		copia_0_bloque_1.nodo = 0;
+		copia_0_bloque_1.bloque_nodo = 2;
+		copia_0_bloque_1.ip = string_from_format("127.0.0.1");
 
-	copia_0_bloque_1 = malloc(sizeof(t_bloque_archivo));
-	copia_0_bloque_1->nodo = 0;
-	copia_0_bloque_1->bloque_nodo = 2;
-	copia_0_bloque_1->ip = string_from_format("127.0.0.1");
+		copia_1_bloque_1.nodo = 2;
+		copia_1_bloque_1.bloque_nodo = 1;
+		copia_1_bloque_1.ip = string_from_format("127.0.0.1");
 
-	copia_1_bloque_1 = malloc(sizeof(t_bloque_archivo));
-	copia_1_bloque_1->nodo = 2;
-	copia_1_bloque_1->bloque_nodo = 1;
-	copia_1_bloque_1->ip = string_from_format("127.0.0.1");
+		copia_0_bloque_2.nodo = 1;
+		copia_0_bloque_2.bloque_nodo = 0;
+		copia_0_bloque_2.ip = string_from_format("127.0.0.1");
 
-	copia_0_bloque_2 = malloc(sizeof(t_bloque_archivo));
-	copia_0_bloque_2->nodo = 1;
-	copia_0_bloque_2->bloque_nodo = 0;
-	copia_0_bloque_2->ip = string_from_format("127.0.0.1");
+		copia_1_bloque_2.nodo = 2;
+		copia_1_bloque_2.bloque_nodo = 3;
+		copia_1_bloque_2.ip = string_from_format("127.0.0.1");
+*/
+		//defino los bloques del archivo que tienen las copias
+		bloque_mock_0.bloque_archivo = 0;
+		bloque_mock_0.copia0 = &copia_0_bloque_0;
+		bloque_mock_0.copia1 = &copia_1_bloque_0;
+		bloque_mock_0.bytes = 12;
+/*
+		bloque_mock_1.bloque_archivo = 1;
+		bloque_mock_1.copia0 = &copia_0_bloque_1;
+		bloque_mock_1.copia1 = &copia_1_bloque_1;
+		bloque_mock_1.bytes = 25;
 
-	copia_1_bloque_2 = malloc(sizeof(t_bloque_archivo));
-	copia_1_bloque_2->nodo = 2;
-	copia_1_bloque_2->bloque_nodo = 3;
-	copia_1_bloque_2->ip = string_from_format("127.0.0.1");
+		bloque_mock_2.bloque_archivo = 2;
+		bloque_mock_2.copia0 = &copia_0_bloque_2;
+		bloque_mock_2.copia1 = &copia_1_bloque_2;
+		bloque_mock_0.bytes = 65;
+*/
+		//lista de bloques que me llegan
+		list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_0);
+	//	list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_1);
+	//	list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_2);
 
-	//defino los bloques del archivo que tienen las copias
-	bloque_mock_0 = malloc(sizeof(t_copia));
-	bloque_mock_0->bloque_archivo = 0;
-	bloque_mock_0->copia0 = copia_0_bloque_0;
-	bloque_mock_0->copia1 = copia_1_bloque_0;
-	bloque_mock_0->bytes = 12;
+		//---------------------------------------------------
 
-	bloque_mock_1 = malloc(sizeof(t_copia));
-	bloque_mock_1->bloque_archivo = 1;
-	bloque_mock_1->copia0 = copia_0_bloque_1;
-	bloque_mock_1->copia1 = copia_1_bloque_1;
-	bloque_mock_1->bytes = 25;
-
-	bloque_mock_2 = malloc(sizeof(t_copia));
-	bloque_mock_2->bloque_archivo = 2;
-	bloque_mock_2->copia0 = copia_0_bloque_2;
-	bloque_mock_2->copia1 = copia_1_bloque_2;
-	bloque_mock_0->bytes = 65;
-
-	//lista de bloques que me llegan
-	lista_de_nodos_recibidos = list_create();
-	list_add(lista_de_nodos_recibidos,(void*) bloque_mock_0);
-	list_add(lista_de_nodos_recibidos,(void*) bloque_mock_1);
-	list_add(lista_de_nodos_recibidos,(void*) bloque_mock_2);
-
-	//---------------------------------------------------
 
 	proto_msg = recibirProtocolo(socket_clientes[posicion]);
 
@@ -234,19 +224,18 @@ void recibir_data_de_master(int posicion) {
 
 			//todo aplicar algoritmo sobre lo que recibo de filesystem
 			//mockeo las copias que se eligen
-			bloque_mock_0->elegida = copia_0_bloque_0;
-			bloque_mock_0->ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
-			bloque_mock_1->elegida = copia_1_bloque_1;
-			bloque_mock_1->ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,1);
-			bloque_mock_2->elegida = copia_0_bloque_2;
-			bloque_mock_2->ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,2);
-
-			lista_de_nodos_respuesta = list_create();
-			list_add(lista_de_nodos_respuesta,(void*) bloque_mock_0);
-			list_add(lista_de_nodos_respuesta,(void*) bloque_mock_1);
-			list_add(lista_de_nodos_respuesta,(void*) bloque_mock_2);
+			bloque_mock_0.elegida = &copia_0_bloque_0;
+			bloque_mock_0.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
+		/*	bloque_mock_1.elegida = &copia_1_bloque_1;
+			bloque_mock_1.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,1);
+			bloque_mock_2.elegida = &copia_0_bloque_2;
+			bloque_mock_2.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,2);
+*/
+			list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_0);
+	//		list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_1);
+	//		list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_2);
 			// se manda la lista de bloques ya modificados a master
-			enviar_transformacion(socket_clientes[posicion], lista_de_nodos_respuesta);
+			enviar_transformacion(socket_clientes[posicion], &lista_de_nodos_respuesta);
 
 			break;
 	}
@@ -254,6 +243,44 @@ void recibir_data_de_master(int posicion) {
 
 
 void enviar_transformacion(int master, t_list* lista_bloques){
+
+	void _iterate_bloques(t_bloque_archivo* bloque){
+		char* copia_string = copia_to_string(bloque->copia0);
+		enviarMensaje(master,copia_string);
+	}
+
+	//envio protocolo de transformacion
 	enviarProtocolo(master,YM_MS_TRANSFORMACION);
+	//envio cantidad de bloques que voy a mandar
+	enviarMensaje(master,int_to_string(list_size(lista_bloques)));
+	//itero bloques y los mando serializados
+	list_iterate(lista_bloques,(void*) _iterate_bloques);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

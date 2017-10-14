@@ -13,7 +13,7 @@ char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
 	char* char_bloque_archivo;
 	char_bloque_archivo = int_to_string(bloque->bloque_archivo);
 	char *char_bytes = int_to_string(bloque->bytes);
-	char* char_ruta_temporal = string_new(bloque->ruta_temporal);
+	char* char_ruta_temporal = bloque->ruta_temporal;
 	char* char_copia0 = copia_to_string(bloque->copia0);
 	char* char_copia1 = copia_to_string(bloque->copia1);
 	char* char_elegida = copia_to_string(bloque->elegida);
@@ -47,13 +47,16 @@ char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
 }
 
 t_bloque_archivo* bloque_archivo_from_string(char* char_bloque) {
-	int puntero = 0;
 	t_bloque_archivo* bloque = malloc(sizeof(t_bloque_archivo));
+	puntero = 0;
 
-	char* char_bloque_archivo = extraer_string(char_bloque, 0, 3);
+	char* char_bloque_archivo = extraer_string(char_bloque, puntero, puntero + 3);
 	bloque->bloque_archivo = atoi(char_bloque_archivo);
-	char* char_bytes = extraer_string(char_bloque, 4, 7);
+	puntero += 4;
+
+	char* char_bytes = extraer_string(char_bloque, puntero, puntero + 3);
 	bloque->bytes = atoi(char_bytes);
+	puntero += 4;
 
 	char* char_tamanio_temporal = extraer_string(char_bloque, 8, 11);
 	int tamanio_temporal = atoi(char_tamanio_temporal);
@@ -62,57 +65,76 @@ t_bloque_archivo* bloque_archivo_from_string(char* char_bloque) {
 	puntero = 11 + tamanio_temporal;
 
 	char* char_tamanio_copia0 = extraer_string(char_bloque, puntero, puntero + 3);
+	puntero += 4;
 	int tamanio_copia0 = atoi(char_tamanio_copia0);
-	char* char_copia0 = extraer_string(char_bloque, puntero, puntero + 3);
+	char* char_copia0 = extraer_string(char_bloque, puntero, puntero + tamanio_copia0);
 	bloque->copia0 = copia_from_string(char_copia0);
-	puntero += tamanio_copia0;
+	puntero += tamanio_copia0 + 1;
 
 	char* char_tamanio_copia1 = extraer_string(char_bloque, puntero, puntero + 3);
+	puntero += 4;
 	int tamanio_copia1 = atoi(char_tamanio_copia1);
-	char* char_copia1 = extraer_string(char_bloque, puntero, puntero + 3);
-	puntero += tamanio_copia1;
+	char* char_copia1 = extraer_string(char_bloque, puntero, puntero + tamanio_copia1);
+	bloque->copia1 = copia_from_string(char_copia1);
+	puntero += tamanio_copia1 + 1;
 
 	char* char_tamanio_elegida = extraer_string(char_bloque, puntero, puntero + 3);
+	puntero += 4;
 	int tamanio_elegida = atoi(char_tamanio_elegida);
-	char* char_elegida = extraer_string(char_bloque, puntero, puntero + 3);
-	puntero += tamanio_elegida;
+	char* char_elegida = extraer_string(char_bloque, puntero, puntero + tamanio_elegida);
+	bloque->elegida = copia_from_string(char_elegida);
+	puntero += tamanio_elegida + 1;
 
-
-
-	int tamanioMeta = atoi(char_tam_meta);
-	char* char_indices = toSubString(char_pcb, 8, (7 + tamanioMeta));
-	pcb->indices = fromStringMetadata(char_indices);
-	int puntero = 8 + tamanioMeta;
-	char* char_pags = toSubString(char_pcb, puntero, puntero + 3);
-	pcb->paginas_codigo = atoi(char_pags);
-	puntero = puntero + 4;
-	char* char_pc = toSubString(char_pcb, puntero, puntero + 3);
-	pcb->pc = atoi(char_pc);
-	puntero = puntero + 4;
-	char *subString = string_substring_from(char_pcb, puntero);
-	pcb->stack = fromStringListStack(subString);
-	free(char_id);
-	free(char_tam_meta);
-	free(char_indices);
-	free(char_pags);
-	free(char_pc);
-	free(subString);
-	return pcb;
+	return bloque;
 }
+
+
+t_copia* copia_from_string(char* char_copia) {
+	t_copia* nueva_copia = malloc(sizeof(t_copia));
+	puntero = 0;
+
+	char* char_nodo = extraer_string(char_copia, puntero, puntero + 3);
+	nueva_copia->nodo = atoi(char_nodo);
+	puntero += 4;
+
+	char* char_bloque_nodo = extraer_string(char_copia, puntero, puntero + 3);
+	nueva_copia->bloque_nodo = atoi(char_bloque_nodo);
+	puntero += 4;
+
+	char* char_tamanio_ip = extraer_string(char_copia, puntero, puntero + 3);
+	puntero += 4;
+	int tamanio_ip = atoi(char_tamanio_ip);
+	char* char_ip = extraer_string(char_copia, puntero, puntero + tamanio_ip);
+	nueva_copia->ip = string_from_format(char_ip);
+
+	free(char_nodo);
+	free(char_bloque_nodo);
+	free(char_tamanio_ip);
+	free(char_ip);
+
+	return nueva_copia;
+}
+
 
 char* copia_to_string(t_copia* copia) {
 	char* char_copia = string_new();
-	char* char_nodo = int_to_string(copia.nodo);
-	char* char_bloque = int_to_string(copia.bloque_nodo);
-	char* ip = copia.ip;
+	char* char_nodo = int_to_string(copia->nodo);
+	char* char_bloque = int_to_string(copia->bloque_nodo);
+	char* ip = copia->ip;
+	int ip_len = strlen(ip);
+
 	string_append(&char_copia, char_nodo);
 	string_append(&char_copia, char_bloque);
+	string_append(&char_copia, int_to_string(ip_len));
 	string_append(&char_copia, ip);
+
 	free(char_nodo);
 	free(char_bloque);
 	free(ip);
+
 	return char_copia;
 }
+
 
 char* int_to_string(int numero) {
 	char* longitud = string_new();

@@ -53,6 +53,7 @@ t_log* start_logger();
 int abrir_file_args(int argc, char** argv);
 int conectar_con_yama();
 void comenzar_job();
+void transformacion();
 void desconectarse_de_yama();
 
 
