@@ -24,6 +24,12 @@ int main(int argc, char **argv) {
 
 	transformacion();
 
+	//TODO se envia informacion de transformacion a master
+
+	//avisa cada vez que termina una transformacion a YAMA
+	avisar_fin_tranformacion();
+
+
 	desconectarse_de_yama();
 
 	log_info(logger,"Salir del programa");
@@ -113,8 +119,6 @@ void comenzar_job() {
 void transformacion() {
 	int i;
 	int proto_recibido;
-	int cantidad_bloques;
-	t_list list_bloques;
 	char* char_bloque_recibido;
 	t_bloque_archivo* bloque_recibido;
 	proto_recibido = recibirProtocolo(socket_yama);
@@ -130,12 +134,39 @@ void transformacion() {
 			printf("bloque ip: %s\n",bloque_recibido->copia0->ip);
 			list_add(&list_bloques, (void*) bloque_recibido);
 		}
+
+		//TODO enviar lista a master
 		break;
 	}
 }
+
+void avisar_fin_tranformacion() {
+	int i;
+
+	for(i=0;i < cantidad_bloques; i++) {
+		//TODO esperar que terminen todas las transformaciones en workers, por ahora se mockea los fin de transformacion
+	}
+
+	void _iterate_bloques(t_bloque_archivo* bloque){
+		char* char_bloque =int_to_string(bloque->bloque_archivo);
+		enviarMensajeConProtocolo(socket_yama,char_bloque,FIN_TRANSF_NODO);
+	}
+
+	list_iterate(&list_bloques,(void*) _iterate_bloques);
+
+	//aviso que terminaro todos
+	enviarProtocolo(socket_yama,FIN_TRANSFORMACION);
+}
+
 
 void desconectarse_de_yama(){
 	log_info(logger,"desconectandose de proceso YAMA");
 
 	enviarProtocolo(socket_yama,MS_YM_DESCONECTAR);
 }
+
+
+
+
+
+

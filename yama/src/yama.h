@@ -39,6 +39,13 @@ void leer_cambios_select();
 void recibir_nuevo_master();
 void recibir_data_de_master(int posicion);
 
+void atender_inicio_job(int posicion);
+void atender_fin_transf_nodo(int posicion);
+void atender_fin_transformacion(int posicion);
+
+void enviar_transformacion(int master, t_list* lista_bloques);
+void enviar_reduccion_local(int posicion);
+
 //----------otros---------------------
 char* AUTH;
 
@@ -46,6 +53,5 @@ void levantar_config(void);
 void levantar_logger(void);
 void esperar_master(void);
 void esperar_masters(void);
-void enviar_transformacion(int master, t_list* lista_bloques);
 
 #endif /* YAMA_H_ */

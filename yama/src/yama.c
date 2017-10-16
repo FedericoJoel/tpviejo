@@ -155,7 +155,6 @@ void recibir_nuevo_master() {
 
 void recibir_data_de_master(int posicion) {
 	int proto_msg;
-	char* mensaje;
 
 	//defino todas las copias de 3 bloques de archivo que estan desparramadas en 3 nodos
 		copia_0_bloque_0.nodo = 0;
@@ -166,7 +165,7 @@ void recibir_data_de_master(int posicion) {
 		copia_1_bloque_0.bloque_nodo = 2;
 		copia_1_bloque_0.ip = string_from_format("127.0.0.1");
 
-/*		copia_0_bloque_1.nodo = 0;
+		copia_0_bloque_1.nodo = 0;
 		copia_0_bloque_1.bloque_nodo = 2;
 		copia_0_bloque_1.ip = string_from_format("127.0.0.1");
 
@@ -181,13 +180,13 @@ void recibir_data_de_master(int posicion) {
 		copia_1_bloque_2.nodo = 2;
 		copia_1_bloque_2.bloque_nodo = 3;
 		copia_1_bloque_2.ip = string_from_format("127.0.0.1");
-*/
+
 		//defino los bloques del archivo que tienen las copias
 		bloque_mock_0.bloque_archivo = 0;
 		bloque_mock_0.copia0 = &copia_0_bloque_0;
 		bloque_mock_0.copia1 = &copia_1_bloque_0;
 		bloque_mock_0.bytes = 12;
-/*
+
 		bloque_mock_1.bloque_archivo = 1;
 		bloque_mock_1.copia0 = &copia_0_bloque_1;
 		bloque_mock_1.copia1 = &copia_1_bloque_1;
@@ -197,11 +196,11 @@ void recibir_data_de_master(int posicion) {
 		bloque_mock_2.copia0 = &copia_0_bloque_2;
 		bloque_mock_2.copia1 = &copia_1_bloque_2;
 		bloque_mock_2.bytes = 65;
-*/
+
 		//lista de bloques que me llegan
 		list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_0);
-	//	list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_1);
-	//	list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_2);
+		list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_1);
+		list_add(&lista_de_nodos_recibidos,(void*) &bloque_mock_2);
 
 		//---------------------------------------------------
 
@@ -215,29 +214,13 @@ void recibir_data_de_master(int posicion) {
 			socket_clientes[posicion] = 0;
 			break;
 		case MS_YM_INICIO_JOB:// inicia un job un master
-			log_info(logger,"iniciar job de master %d",socket_clientes[posicion]);
-			mensaje = esperarMensaje(socket_clientes[posicion]);
-			log_info(logger,"ruta de archivo %s",mensaje);
-			//todo enviar ruta a filesystem
-			//esperar que envie struct de nodos
-			//por ahora hardcodeamos la estructura que recibe
-
-			//todo aplicar algoritmo sobre lo que recibo de filesystem
-			//mockeo las copias que se eligen
-			bloque_mock_0.elegida = 0;
-			bloque_mock_0.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
-		/*	bloque_mock_1.elegida = 1;
-			bloque_mock_1.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,1);
-			bloque_mock_2.elegida = 0;
-			bloque_mock_2.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,2);
-*/
-			list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_0);
-	//		list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_1);
-	//		list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_2);
-			// se manda la lista de bloques ya modificados a master
-			enviar_transformacion(socket_clientes[posicion], &lista_de_nodos_respuesta);
-
+			atender_inicio_job(posicion);
 			break;
+		case FIN_TRANSF_NODO:
+			atender_fin_transf_nodo(posicion);
+			break;
+		case FIN_TRANSFORMACION:
+			atender_fin_transformacion(posicion);
 	}
 }
 
@@ -257,9 +240,48 @@ void enviar_transformacion(int master, t_list* lista_bloques){
 	list_iterate(lista_bloques,(void*) _iterate_bloques);
 }
 
+void atender_inicio_job(int posicion) {
+	char* mensaje;
 
+	log_info(logger,"iniciar job de master %d",socket_clientes[posicion]);
+	mensaje = esperarMensaje(socket_clientes[posicion]);
+	log_info(logger,"ruta de archivo %s",mensaje);
+	//todo enviar ruta a filesystem
+	//esperar que envie struct de nodos
+	//por ahora hardcodeamos la estructura que recibe
 
+	//todo aplicar algoritmo sobre lo que recibo de filesystem
+	//mockeo las copias que se eligen
+	bloque_mock_0.elegida = 0;
+	bloque_mock_0.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
+	bloque_mock_1.elegida = 1;
+	bloque_mock_1.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,1);
+	bloque_mock_2.elegida = 0;
+	bloque_mock_2.ruta_temporal = string_from_format("/tmp/master%d-temp%d",0,2);
 
+	list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_0);
+	list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_1);
+	list_add(&lista_de_nodos_respuesta,(void*) &bloque_mock_2);
+	// se manda la lista de bloques ya modificados a master
+	enviar_transformacion(socket_clientes[posicion], &lista_de_nodos_respuesta);
+}
+
+void atender_fin_transf_nodo(int posicion) {
+	char* char_bloque = esperarMensaje(socket_clientes[posicion]);
+	int bloque = atoi(char_bloque);
+	log_info(logger,"finalizo la transformacion del bloque %d del master %d",bloque,socket_clientes[posicion]);
+	//TODO marcar en tabla de estados que termino la transformacion del bloque, si no hay ninguna otra transformacion en curso en ese nodo del worker,arranco reduccion
+}
+
+void atender_fin_transformacion(int posicion) {
+	//TODO marcar en tabla de estados la etapa en que se encuentra??
+	log_info(logger,"finalizaron las transformaciones de master %d",socket_clientes[posicion]);
+	//enviar_reduccion_local(posicion);
+}
+
+void enviar_reduccion_local(int posicion) {
+
+}
 
 
 
