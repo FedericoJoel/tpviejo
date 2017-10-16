@@ -10,9 +10,16 @@
 
 #include <lib.h>
 #include <sockets.h>
+#include <commons/collections/list.h>
+#include <commons/string.h>
+
 
 #define nombre_programa "YAMA"
 #define clientes_max 10
+
+
+
+t_list * archivoPrueba2();
 
 
 //-------config------------
@@ -25,6 +32,7 @@ t_config* config;
 char* ruta_log = "/home/utnso/workspace/tp-2017-2c-LaYamaQueLlama/yama/resources/logger.log";
 t_log_level level=LOG_LEVEL_INFO;
 t_log* logger;
+
 
 //--------server------------
 int socket_server;

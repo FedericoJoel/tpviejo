@@ -16,6 +16,7 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
+#include <sockets.h>
 
 #define nombre_programa "MASTER"
 
@@ -59,6 +60,7 @@ void transformacion();
 void avisar_fin_tranformacion();
 void reduccion_local();
 void desconectarse_de_yama();
+
 
 
 #endif /* MASTER_H_ */

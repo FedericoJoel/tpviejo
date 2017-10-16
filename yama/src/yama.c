@@ -15,8 +15,18 @@
 	t_copia copia_0_bloque_2;
 	t_copia copia_1_bloque_2;
 
+int puerto = 2323;
+int protocoloInicio = 0010;
+int servidor;
+t_list *archivo;
+t_list *estados;
+t_list *planif;
+int BASE = 2;
+
+
 int main(void) {
 
+	prueba();
 	levantar_logger();
 
 	levantar_config();
@@ -29,6 +39,511 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
+
+int PWL(int worker){
+		//
+		int wlmax = 0; //la mayor carga de trabajo entre todos los worker. Se debera recorrer la tabla de estados para ver cual es la mayor carga de trabajo
+		int wl = 0; //la carga de trabajo actual del worker. Se obtiene de la tabla de estados
+
+		return wlmax - wl ;
+	}
+
+
+bool nodoYaAsignado(t_list *planif, int nodo){
+
+	int i;
+	for(i=0; i<list_size(planif); i++)
+	{
+		t_reg_planificacion *reg = list_get(planif, i);
+		if(reg->worker == nodo){
+			return true;
+		}else {
+				continue;
+			}
+		}
+	return false;
+}
+
+void agregarBloque( void* registro, int bloque){
+
+	t_reg_planificacion* reg = registro;
+	list_add(reg->bloques, bloque);
+}
+
+
+t_list * archivoPrueba() {
+
+	char* ip1 = string_new();
+	ip1 = "127.0.0.1";
+	char* ip2 = string_new();
+	ip2 = "127.0.0.1";
+	char* ip3 = string_new();
+	ip3 = "127.0.0.1";
+
+	archivo = list_create();
+	t_bloque_archivo* bloque = malloc (sizeof (t_bloque_archivo));
+	(*bloque).copia0->nodo = 1;
+	(*bloque).copia0->bloque_nodo = 8;
+	(*bloque).copia0->ip = ip1;
+
+	(*bloque).copia1->nodo = 2;
+	(*bloque).copia1->bloque_nodo = 11;
+	(*bloque).copia1->ip = ip1;
+
+	(*bloque).bloque_archivo = 0;
+	(*bloque).bytes = 10180;
+
+	t_bloque_archivo* bloque1 = malloc (sizeof (t_bloque_archivo));
+
+	(*bloque1).copia0->nodo = 2;
+	(*bloque1).copia0->bloque_nodo = 12;
+	(*bloque1).copia0->ip = ip2;
+	(*bloque1).copia1->nodo = 3;
+	(*bloque1).copia1->bloque_nodo = 2;
+	(*bloque1).copia1->ip = ip2;
+
+	(*bloque1).bloque_archivo = 1;
+	(*bloque1).bytes = 10201;
+
+	t_bloque_archivo* bloque2 = malloc (sizeof (t_bloque_archivo));
+
+	(*bloque2).copia0->nodo = 1;
+	(*bloque2).copia0->bloque_nodo = 7;
+	(*bloque2).copia0->ip = ip3;
+	(*bloque2).copia1->nodo = 2;
+	(*bloque2).copia1->bloque_nodo = 9;
+	(*bloque2).copia1->ip = ip3;
+	(*bloque2).bloque_archivo = 2;
+	(*bloque2).bytes = 10109;
+
+
+	list_add(archivo, (void*) bloque);
+	list_add(archivo, (void*) bloque1);
+	list_add(archivo, (void*) bloque2);
+
+	return archivo;
+
+}
+
+void* buscarRegEnLista(t_list *planif, int nodo)
+{
+	int i;
+	for(i=0; i<list_size(planif); i++)
+	{
+		t_reg_planificacion* reg = list_get(planif, i);
+		if(reg->worker == nodo)
+		{
+			return (void*) reg;
+		}
+	}
+}
+
+void tablaPlanif()
+{
+	t_list *arch = archivoPrueba2();
+
+	planif = list_create();
+
+	int i;
+	for(i=0; i<list_size(arch); i++)
+	{
+		t_bloque_archivo *bloque = list_get(arch, i);
+		int nBloque = bloque->bloque_archivo;
+		int nodocopia0 = bloque->copia0->nodo;
+		int nodocopia1 = bloque->copia1->nodo;
+
+		if(!nodoYaAsignado(planif, nodocopia0))
+		{
+			t_reg_planificacion* reg = malloc (sizeof (t_reg_planificacion));
+			reg->availability = 2;
+			reg->worker = nodocopia0;
+			reg->bloquesAsignados = list_create();
+			reg->bloques = list_create();
+			agregarBloque(reg, nBloque);
+			list_add(planif, (void*) reg);
+
+		} else {
+
+			t_reg_planificacion* reg = buscarRegEnLista(planif, nodocopia0);
+			agregarBloque(reg, nBloque);
+		}
+
+		if(!nodoYaAsignado(planif, nodocopia1))
+		{
+			t_reg_planificacion* reg1 = malloc (sizeof (t_reg_planificacion));
+			reg1->availability = 2;
+			reg1->worker = nodocopia0;
+			reg1->bloquesAsignados = list_create();
+			reg1->bloques = list_create();
+			agregarBloque(reg1, nBloque);
+			list_add(planif, (void*) reg1);
+		} else {
+			t_reg_planificacion* reg1 = buscarRegEnLista(planif, nodocopia1);
+			agregarBloque(reg1, nBloque);
+		}
+	}
+
+
+
+}
+
+
+
+
+
+/*int prueba ()
+{
+
+	planif *clock = tablaPlanif();
+
+	archivo *arch = archivoPrueba();
+
+
+	struct tablaPlanificacion *clock = tabla; //Se apunta clock a la primera posicion del array. Se deberia apuntar a la posicion del worker con mayor disponibilidad
+
+		for(i=0 ; i<list_size(arch) ; i++){ //Este for hace un bucle por cada bloque que se quiera encontrar
+
+			planif *auxclock = clock;
+			struct tablaPlanificacion * auxclock = clock; //Se apunta al auxclock a la posicion  apuntada por clock
+
+			if((auxclock->).worker <3){ auxclock += 1;}else{auxclock= tabla;}; //Se le suma a auxclock una posicion
+
+			int encontrado =0;
+
+			while(!encontrado){ //Se entra en un bucle del cual se va a salir cuando se le asigne un bloque al worker apuntado por clock
+
+				if((*clock).availability > 0){
+
+					for(i=0; i<5; i++){ //Busco si el worker en el que esta parado el clock contiene al bloque. Debe hacerse por cada elemento de la lista de bloques que contiene el worker
+
+									if(bloqueABuscar == (*clock).bloques[i]){
+										(*clock).bloquesAsignados += 1;
+										(*clock).availability -= 1;
+										encontrado = 1;//Si lo encuentro se pasara el clock al siguiente worker
+										break;
+									}
+								}
+
+								if(!encontrado){ //Si no se encuentra el bloque en el worker apuntado por clock se manda al auxclock a asignarlo
+
+									int encontradoAux =0;
+
+									while(!encontradoAux){
+
+										if(auxclock != clock){// Se dio una vuelta entera si son iguales
+											for(i=0; i<5; i++){ //Busco si el nodo en el que esta parado el auxclock contiene al bloque
+													if(bloqueABuscar == (*auxclock).bloques[i]){
+															(*auxclock).bloquesAsignados += 1;
+															(*auxclock).availability -= 1;
+															encontradoAux = 1;
+															break;
+													}
+											}
+											if((* auxclock).worker <3){ auxclock += 1;}else{auxclock= tabla;}
+										}
+										else{
+											for(i=0 ; i<3 ; i++){
+												clock[i].availability += BASE;
+											}
+										}
+								}
+								}
+
+								bloqueABuscar += 1;
+
+				}
+				else{
+					(*clock).availability = BASE;
+					break;
+				}
+			}
+
+			if((* clock).worker <3){clock += 1;}else{clock= tabla;}
+
+		}
+
+
+		return 1;
+}*/
+
+void buscarBloqueEnWorker(void * clock, void * bloqueABuscar1, int* encontrado)
+{
+	int i;
+	t_reg_planificacion* reg = clock;
+	t_bloque_archivo* bloqueABuscar = bloqueABuscar1;
+	int size = list_size(reg->bloques);
+	for(i=0; i<size; i++){ //Busco si el worker en el que esta parado el clock contiene al bloque. Debe hacerse por cada elemento de la lista de bloques que contiene el worker
+		int *bloqueClock = list_get(reg->bloques, i);
+		if(bloqueABuscar->bloque_archivo == (int)bloqueClock){
+			list_add(reg->bloquesAsignados, bloqueClock);
+			reg->availability -= 1;
+			*encontrado = 1;//Si lo encuentro se pasara el clock al siguiente worker
+			break;
+		}
+	}
+}
+
+
+t_list * archivoPrueba2(){
+	char* ip1 = string_new();
+	ip1 = "127.0.1.1";
+	char* ip2 = string_new();
+	ip2 = "127.0.1.1";
+	char* ip3 = string_new();
+	ip3 = "127.0.1.1";
+
+	archivo = list_create();
+	t_bloque_archivo* bloque = malloc (sizeof (t_bloque_archivo));
+	(*bloque).copia0->nodo = 1;
+	(*bloque).copia0->bloque_nodo = 1;
+	(*bloque).copia0->ip = ip1;
+
+	(*bloque).copia1->nodo = 2;
+	(*bloque).copia1->bloque_nodo = 1;
+	(*bloque).copia1->ip = ip2;
+
+	(*bloque).bloque_archivo= 0;
+	(*bloque).bytes = 1024;
+
+	t_bloque_archivo* bloque1 = malloc (sizeof (t_bloque_archivo));
+		(*bloque1).copia0->nodo = 1;
+		(*bloque1).copia0->bloque_nodo = 1;
+		(*bloque1).copia0->ip = ip1;
+
+		(*bloque1).copia1->nodo = 3;
+		(*bloque1).copia1->bloque_nodo = 1;
+		(*bloque1).copia1->ip = ip3;
+
+		(*bloque1).bloque_archivo= 1;
+		(*bloque1).bytes = 1024;
+
+		t_bloque_archivo* bloque2 = malloc (sizeof (t_bloque_archivo));
+		(*bloque2).copia0->nodo = 2;
+		(*bloque2).copia0->bloque_nodo = 1;
+		(*bloque2).copia0->ip = ip2;
+
+		(*bloque2).copia1->nodo = 3;
+		(*bloque2).copia1->bloque_nodo = 1;
+		(*bloque2).copia1->ip = ip3;
+
+		(*bloque2).bloque_archivo= 2;
+		(*bloque2).bytes = 1024;
+
+		t_bloque_archivo* bloque3 = malloc (sizeof (t_bloque_archivo));
+		(*bloque3).copia0->nodo = 1;
+		(*bloque3).copia0->bloque_nodo = 1;
+		(*bloque3).copia0->ip = ip1;
+
+		(*bloque3).copia1->nodo = 2;
+		(*bloque3).copia1->bloque_nodo = 1;
+		(*bloque3).copia1->ip = ip2;
+
+		(*bloque3).bloque_archivo= 3;
+		(*bloque3).bytes = 1024;
+
+		t_bloque_archivo* bloque4 = malloc (sizeof (t_bloque_archivo));
+		(*bloque4).copia0->nodo = 1;
+		(*bloque4).copia0->bloque_nodo = 1;
+		(*bloque4).copia0->ip = ip1;
+
+		(*bloque4).copia1->nodo = 3;
+		(*bloque4).copia1->bloque_nodo = 1;
+		(*bloque4).copia1->ip = ip3;
+
+		(*bloque4).bloque_archivo= 4;
+		(*bloque4).bytes = 1024;
+
+		t_bloque_archivo* bloque5 = malloc (sizeof (t_bloque_archivo));
+		(*bloque5).copia0->nodo = 3;
+		(*bloque5).copia0->bloque_nodo = 3;
+		(*bloque5).copia0->ip = ip3;
+
+		(*bloque5).copia1->nodo = 2;
+		(*bloque5).copia1->bloque_nodo = 1;
+		(*bloque5).copia1->ip = ip2;
+
+		(*bloque5).bloque_archivo= 5;
+		(*bloque5).bytes = 1024;
+
+		t_bloque_archivo* bloque6 = malloc (sizeof (t_bloque_archivo));
+		(*bloque6).copia0->nodo = 1;
+		(*bloque6).copia0->bloque_nodo = 1;
+		(*bloque6).copia0->ip = ip1;
+
+		(*bloque6).copia1->nodo = 2;
+		(*bloque6).copia1->bloque_nodo = 1;
+		(*bloque6).copia1->ip = ip2;
+
+		(*bloque6).bloque_archivo= 6;
+		(*bloque6).bytes = 1024;
+		list_add(archivo, (void*) bloque1);
+		list_add(archivo, (void*) bloque2);
+		list_add(archivo, (void*) bloque3);
+		list_add(archivo, (void*) bloque4);
+		list_add(archivo, (void*) bloque5);
+		list_add(archivo, (void*) bloque6);
+
+
+			return archivo;
+}
+
+int prueba()
+{
+	tablaPlanif();
+
+	/*int h;
+	for(h=0; h< list_size(planif); h++)
+	{
+		struct regPlanificacion *r = list_get(planif, h);
+		int i;
+		for (i=0; i<list_size(r->bloques); i++)
+		{
+			int *bloque = list_get(r->bloques, i);
+			int j = 5;
+		}
+	}*/
+
+
+	t_list *arch = archivoPrueba2();
+	t_link_element *clock = planif->head;
+	t_link_element *auxclock = planif->head;
+	t_link_element *head = planif->head;
+
+	t_reg_planificacion* ultimoReg = list_get(planif, list_size(planif)-1);
+	int i,bloqueNumero = 0;
+
+	t_bloque_archivo* bloqueABuscar = list_get(arch, bloqueNumero);
+	for(i=0 ; i<list_size(arch); i++){ //Este for hace un bucle por cada bloque que se quiera encontrar
+
+
+		auxclock = clock;
+		t_reg_planificacion* reg = auxclock->data;
+		auxclock = reg->worker != ultimoReg->worker ? auxclock->next : head; //Se le suma a auxclock una posicion
+		//todo hay que solucionar esto
+
+		int encontrado =0;
+		t_reg_planificacion* regClock = clock->data;
+
+		while(!encontrado){ //Se entra en un bucle del cual se va a salir cuando se le asigne un bloque al worker apuntado por clock
+
+			if(regClock->availability > 0){
+
+				buscarBloqueEnWorker((void *)regClock, (void *) bloqueABuscar, &encontrado);
+
+				//Si no se encuentra el bloque en el worker apuntado por clock se manda al auxclock a asignarlo
+				if(!encontrado)
+				{
+					int encontradoAux =0;
+					while(!encontradoAux)
+					{
+						// Se dio una vuelta entera si son iguales
+						if(auxclock != planif)
+						{
+							t_reg_planificacion* regAuxClock = auxclock->data;
+
+							buscarBloqueEnWorker((void*) regAuxClock, (void *) bloqueABuscar, &encontradoAux);
+
+							auxclock = reg->worker != ultimoReg->worker ? auxclock->next : head;
+						}
+						else{
+							for(i=0 ; i<list_size(planif) ; i++)
+							{
+								t_reg_planificacion* regP = list_get(planif, i);
+								regP->availability += BASE;
+							}
+						}
+					}
+				}
+
+				bloqueNumero++;
+				bloqueABuscar = list_get(arch, bloqueNumero);
+
+
+
+						}
+						else{
+							regClock->availability = BASE;
+							break;
+						}
+					}
+
+					clock = regClock->worker != ultimoReg->worker ? clock->next : head;
+
+				}
+
+
+				return 1;
+
+}
+
+
+
+t_list * tablaestadosPrueba(){
+	estados = list_create();
+
+	t_estado* estado0 = malloc (sizeof (t_estado));
+	estado0->job= 1;
+	estado0->master = 1;
+	estado0->nodo = 1;
+	estado0->bloque = 8;
+	estado0->etapa = 0;
+	estado0->temporal = "/tmp/j1n1b8";
+	estado0->estado = 0;
+
+	t_estado *estado1 = malloc (sizeof (t_estado));
+	estado1->job = 1;
+	estado1->master = 1;
+	estado1->nodo = 3;
+	estado1->bloque = 2;
+	estado1->etapa = 0;
+	estado1->temporal = "/tmp/j1n1b8";
+	estado1->estado = 0;
+
+	t_estado *estado2 = malloc (sizeof (t_estado));
+	estado2->job = 1;
+	estado2->master = 1;
+	estado2->nodo = 2;
+	estado2->bloque = 9;
+	estado2->etapa = 0;
+	estado2->temporal = "/tmp/j1n1b8";
+	estado2->estado = 0;
+
+	list_add(estados, estado0);
+	list_add(estados, estado1);
+	list_add(estados, estado2);
+
+	return estados;
+}
+
+void roundRobin(){
+
+}
+
+int atenderMaster(){
+	servidor = crearServidor(puerto);
+	char* aux = "";
+	int master = esperarConexion(servidor, aux);
+	int protocolo = recibirProtocolo(master);
+	chequearProtocolo(protocolo);
+	char* mensaje = esperarMensaje(master);
+	return 1;
+}
+
+void chequearProtocolo(int protocolo){
+	if(protocolo == protocoloInicio){
+
+		char* scriptReductor = esperarMensaje(servidor);
+		char* rutaArchivo = esperarMensaje(servidor);
+		char* rutaAlmacenamiento = esperarMensaje(servidor);
+		printf("esto anda\n");
+
+	} else {
+
+		perror("no entra al if del chequeo de protocolos");
+
+	}
+
+}
 
 void levantar_config(void) {
 	log_info(logger,"Levantando configuracion");

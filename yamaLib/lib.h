@@ -35,6 +35,22 @@ typedef struct bloque_archivo{
 	int elegida;
 }t_bloque_archivo;
 
+typedef struct estado {
+	int job;
+	int master;
+	int nodo;
+	int bloque;
+	int etapa;
+	char* temporal;
+	int estado;
+}t_estado;
+
+typedef struct reg_planificacion{
+	int availability;
+	int worker;
+	t_list *bloques;
+	t_list *bloquesAsignados;
+}t_reg_planificacion;
 
 //---------logger----------
 t_log* abrir_logger(char* ruta_archivo, char* nombre_programa,t_log_level nivel);
