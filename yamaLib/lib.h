@@ -50,7 +50,9 @@ typedef struct reg_planificacion{
 	int worker;
 	t_list *bloques;
 	t_list *bloquesAsignados;
+	int job;
 }t_reg_planificacion;
+
 
 //---------logger----------
 t_log* abrir_logger(char* ruta_archivo, char* nombre_programa,t_log_level nivel);

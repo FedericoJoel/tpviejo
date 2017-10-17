@@ -22,11 +22,15 @@ t_list *archivo;
 t_list *estados;
 t_list *planif;
 int BASE = 2;
+int job = 0;
 
 
 int main(void) {
-
-	prueba();
+	estados = list_create();
+	t_list * tabla = tablaPlanificacionCompleta();
+	transformarBloques(tabla);
+	modificarBloqueTablaEstados(1, 2, 3);
+	enviarAMaster(tabla);
 	levantar_logger();
 
 	levantar_config();
@@ -39,14 +43,79 @@ int main(void) {
 	return EXIT_SUCCESS;
 }
 
+void transformarBloques(t_list * tabla){
 
-int PWL(int worker){
-		//
-		int wlmax = 0; //la mayor carga de trabajo entre todos los worker. Se debera recorrer la tabla de estados para ver cual es la mayor carga de trabajo
-		int wl = 0; //la carga de trabajo actual del worker. Se obtiene de la tabla de estados
-
-		return wlmax - wl ;
+	int i;
+	t_link_element *puntTabla = tabla->head;
+	for(i=0; i<list_size(tabla); i)
+	{
+		int j;
+		t_reg_planificacion* reg = puntTabla->data;
+		t_link_element *puntBloque = reg->bloquesAsignados->head;
+		for(j=0; j<list_size(reg->bloquesAsignados); j){
+			t_estado estado = malloc (sizeof (struct Estado));
+			estado->nodo = reg->worker;
+			estado->bloque = (int) puntBloque->data;
+			estado->etapa = 0;
+			estado->estado = 0;
+			estado->job = job;
+			//TODO:: falta job, master y temporal;
+			list_add(estados, (void*) estado);
+			puntBloque = puntBloque->next;
+		}
+		puntTabla = puntTabla->next;
 	}
+}
+
+void modificarBloqueTablaEstados(int bloque, int etapa, int estadoNuevo){
+	int i;
+	t_link_element *puntTabla = estados->head;
+	for(i=0; i<list_size(estados); i){
+		t_estado* estado = puntTabla->data;
+		if(estado->bloque == bloque)
+		{
+			estado->estado = estadoNuevo;
+			estado->etapa = etapa;
+			break;
+		}
+		puntTabla = puntTabla->next;
+	}
+}
+
+
+void enviarAMaster(t_list * tabla){
+
+	transformarBloques(tabla);
+	//TODO ACA FALTA ENVIARLE A MASTER LA TABLA
+}
+
+
+int PWL(int worker, int job){
+	//
+	int wlmax = cargaTrabajoMaxima(job); //la mayor carga de trabajo entre todos los worker. Se debera recorrer la tabla de estados para ver cual es la mayor carga de trabajo
+	int wl = cargaTrabajoWorker(worker, job); //la carga de trabajo actual del worker. Se obtiene de la tabla de estados
+
+	return wlmax - wl ;
+}
+
+int cargaTrabajoWorker(int worker, int job){
+	int i;
+	t_link_element *puntTabla = estados->head;
+	int carga = 0;
+	for(i=0; i<list_size(estados); i++){
+		t_estado *estado = puntTabla->data;
+		if(estado->nodo == worker && estado->estado == estado_en_proceso && estado->job == job)
+		{
+			carga++;
+		}
+	}
+	return carga;
+}
+
+//TODO HAY QUE TERMINAR ESTA FUNCION
+int cargaTrabajoMaxima(int job){
+return 1;
+}
 
 
 bool nodoYaAsignado(t_list *planif, int nodo){
@@ -138,11 +207,10 @@ void* buscarRegEnLista(t_list *planif, int nodo)
 	}
 }
 
-void tablaPlanif()
+t_list* tablaPlanif()
 {
-	t_list *arch = archivoPrueba2();
-
-	planif = list_create();
+	t_list* arch = archivoPrueba2();
+	t_list* planificacion= list_create();
 
 	int i;
 	for(i=0; i<list_size(arch); i++)
@@ -152,119 +220,43 @@ void tablaPlanif()
 		int nodocopia0 = bloque->copia0->nodo;
 		int nodocopia1 = bloque->copia1->nodo;
 
-		if(!nodoYaAsignado(planif, nodocopia0))
+		if(!nodoYaAsignado(planificacion, nodocopia0))
 		{
 			t_reg_planificacion* reg = malloc (sizeof (t_reg_planificacion));
 			reg->availability = 2;
 			reg->worker = nodocopia0;
 			reg->bloquesAsignados = list_create();
 			reg->bloques = list_create();
+			reg->job = job;
 			agregarBloque(reg, nBloque);
-			list_add(planif, (void*) reg);
+			list_add(planificacion, (void*) reg);
 
 		} else {
 
-			t_reg_planificacion* reg = buscarRegEnLista(planif, nodocopia0);
+			t_reg_planificacion* reg = buscarRegEnLista(planificacion, nodocopia0);
 			agregarBloque(reg, nBloque);
 		}
 
-		if(!nodoYaAsignado(planif, nodocopia1))
+		if(!nodoYaAsignado(planificacion, nodocopia1))
 		{
 			t_reg_planificacion* reg1 = malloc (sizeof (t_reg_planificacion));
 			reg1->availability = 2;
 			reg1->worker = nodocopia0;
 			reg1->bloquesAsignados = list_create();
 			reg1->bloques = list_create();
+			reg1->job = job;
 			agregarBloque(reg1, nBloque);
-			list_add(planif, (void*) reg1);
+			list_add(planificacion, (void*) reg1);
 		} else {
-			t_reg_planificacion* reg1 = buscarRegEnLista(planif, nodocopia1);
+			t_reg_planificacion* reg1 = buscarRegEnLista(planificacion, nodocopia1);
 			agregarBloque(reg1, nBloque);
 		}
 	}
 
-
+	return planificacion;
 
 }
 
-
-
-
-
-/*int prueba ()
-{
-
-	planif *clock = tablaPlanif();
-
-	archivo *arch = archivoPrueba();
-
-
-	struct tablaPlanificacion *clock = tabla; //Se apunta clock a la primera posicion del array. Se deberia apuntar a la posicion del worker con mayor disponibilidad
-
-		for(i=0 ; i<list_size(arch) ; i++){ //Este for hace un bucle por cada bloque que se quiera encontrar
-
-			planif *auxclock = clock;
-			struct tablaPlanificacion * auxclock = clock; //Se apunta al auxclock a la posicion  apuntada por clock
-
-			if((auxclock->).worker <3){ auxclock += 1;}else{auxclock= tabla;}; //Se le suma a auxclock una posicion
-
-			int encontrado =0;
-
-			while(!encontrado){ //Se entra en un bucle del cual se va a salir cuando se le asigne un bloque al worker apuntado por clock
-
-				if((*clock).availability > 0){
-
-					for(i=0; i<5; i++){ //Busco si el worker en el que esta parado el clock contiene al bloque. Debe hacerse por cada elemento de la lista de bloques que contiene el worker
-
-									if(bloqueABuscar == (*clock).bloques[i]){
-										(*clock).bloquesAsignados += 1;
-										(*clock).availability -= 1;
-										encontrado = 1;//Si lo encuentro se pasara el clock al siguiente worker
-										break;
-									}
-								}
-
-								if(!encontrado){ //Si no se encuentra el bloque en el worker apuntado por clock se manda al auxclock a asignarlo
-
-									int encontradoAux =0;
-
-									while(!encontradoAux){
-
-										if(auxclock != clock){// Se dio una vuelta entera si son iguales
-											for(i=0; i<5; i++){ //Busco si el nodo en el que esta parado el auxclock contiene al bloque
-													if(bloqueABuscar == (*auxclock).bloques[i]){
-															(*auxclock).bloquesAsignados += 1;
-															(*auxclock).availability -= 1;
-															encontradoAux = 1;
-															break;
-													}
-											}
-											if((* auxclock).worker <3){ auxclock += 1;}else{auxclock= tabla;}
-										}
-										else{
-											for(i=0 ; i<3 ; i++){
-												clock[i].availability += BASE;
-											}
-										}
-								}
-								}
-
-								bloqueABuscar += 1;
-
-				}
-				else{
-					(*clock).availability = BASE;
-					break;
-				}
-			}
-
-			if((* clock).worker <3){clock += 1;}else{clock= tabla;}
-
-		}
-
-
-		return 1;
-}*/
 
 void buscarBloqueEnWorker(void * clock, void * bloqueABuscar1, int* encontrado)
 {
@@ -387,29 +379,18 @@ t_list * archivoPrueba2(){
 			return archivo;
 }
 
-int prueba()
-{
+t_list * tablaPlanificacionCompleta() {
 	tablaPlanif();
 
-	/*int h;
-	for(h=0; h< list_size(planif); h++)
-	{
-		struct regPlanificacion *r = list_get(planif, h);
-		int i;
-		for (i=0; i<list_size(r->bloques); i++)
-		{
-			int *bloque = list_get(r->bloques, i);
-			int j = 5;
-		}
-	}*/
+	t_list * planificacion = tablaPlanif();
 
 
 	t_list *arch = archivoPrueba2();
-	t_link_element *clock = planif->head;
-	t_link_element *auxclock = planif->head;
-	t_link_element *head = planif->head;
+	t_link_element *clock = planificacion->head;
+	t_link_element *auxclock = planificacion->head;
+	t_link_element *head = planificacion->head;
 
-	t_reg_planificacion* ultimoReg = list_get(planif, list_size(planif)-1);
+	t_reg_planificacion* ultimoReg = list_get(planificacion, list_size(planificacion)-1);
 	int i,bloqueNumero = 0;
 
 	t_bloque_archivo* bloqueABuscar = list_get(arch, bloqueNumero);
@@ -437,7 +418,7 @@ int prueba()
 					while(!encontradoAux)
 					{
 						// Se dio una vuelta entera si son iguales
-						if(auxclock != planif)
+						if(auxclock != planificacion)
 						{
 							t_reg_planificacion* regAuxClock = auxclock->data;
 
@@ -446,9 +427,9 @@ int prueba()
 							auxclock = reg->worker != ultimoReg->worker ? auxclock->next : head;
 						}
 						else{
-							for(i=0 ; i<list_size(planif) ; i++)
+							for(i=0 ; i<list_size(planificacion) ; i++)
 							{
-								t_reg_planificacion* regP = list_get(planif, i);
+								t_reg_planificacion* regP = list_get(planificacion, i);
 								regP->availability += BASE;
 							}
 						}
@@ -472,7 +453,7 @@ int prueba()
 				}
 
 
-				return 1;
+				return planificacion;
 
 }
 
