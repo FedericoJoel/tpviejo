@@ -25,7 +25,9 @@ int BASE = 2;
 int job = 0;
 
 int main(void) {
-	estados = list_create();
+	/*estados = list_create();*/
+
+
 	t_list * tabla = tablaPlanificacionCompleta();
 	transformarBloques(tabla);
 	modificarBloqueTablaEstados(1, 2, 3);
@@ -86,34 +88,81 @@ void enviarAMaster(t_list * tabla) {
 	//TODO ACA FALTA ENVIARLE A MASTER LA TABLA
 }
 
-int PWL(int worker, int job) {
-	//
-	int wlmax = cargaTrabajoMaxima(job); //la mayor carga de trabajo entre todos los worker. Se debera recorrer la tabla de estados para ver cual es la mayor carga de trabajo
-	int wl = cargaTrabajoWorker(worker, job); //la carga de trabajo actual del worker. Se obtiene de la tabla de estados
+
+int PWL(int worker, int job){
+		//
+
+		int wlmax = cargaTrabajoMaxima(job); //la mayor carga de trabajo entre todos los worker. Se debera recorrer la tabla de estados para ver cual es la mayor carga de trabajo
+		int wl = cargaTrabajoWorker(worker); //la carga de trabajo actual del worker. Se obtiene de la tabla de estados
+
 
 	return wlmax - wl;
 }
 
-int cargaTrabajoWorker(int worker, int job) {
+
+int cargaTrabajoWorker(int worker){
+
 	int i;
-	t_link_element *puntTabla = estados->head;
+	//t_link_element *puntTabla = estados->head;
 	int carga = 0;
-	for (i = 0; i < list_size(estados); i++) {
-		t_estado *estado = puntTabla->data;
-		if (estado->nodo == worker && estado->estado == estado_en_proceso
-				&& estado->job == job) {
+
+	for(i=0; i<list_size(estados); i++){
+		//t_estado *estado = puntTabla->data;
+		t_estado *estado = list_get(estados, i);
+		if(estado->nodo == worker && estado->estado == estado_en_proceso)
+		{
+
 			carga++;
 		}
 	}
 	return carga;
 }
 
-//TODO HAY QUE TERMINAR ESTA FUNCION
-int cargaTrabajoMaxima(int job) {
-	return 1;
+
+bool repetido(int nodo, t_list * nodosDelJob){
+	int i;
+		for(i=0; i<list_size(nodosDelJob); i++)
+		{
+			int nodoYaGuardado = list_get(nodosDelJob, i);
+			if(nodo == nodoYaGuardado){
+				return true;
+			}else {
+					continue;
+				}
+			}
+		return false;
 }
 
-bool nodoYaAsignado(t_list *planif, int nodo) {
+int cargaTrabajoMaxima(int job){
+
+	int i;
+
+	t_list * nodosDelJob;
+	nodosDelJob = list_create();
+
+	for(i=0; i<list_size(estados); i++){
+		t_estado *estado = list_get(estados, i);
+		if(estado->job == job && !repetido(estado->nodo, nodosDelJob)){
+			int nodo = estado->nodo;
+			list_add(nodosDelJob, (void*) nodo);
+		}
+	}
+
+	int maximaCarga = cargaTrabajoWorker((int *)list_get(nodosDelJob, 0));
+	for(i=1; i<list_size(nodosDelJob); i++){
+		int nodoActual = list_get(nodosDelJob, i);
+		int cargaActual = cargaTrabajoWorker(nodoActual);
+		if(cargaActual > maximaCarga){
+			maximaCarga = cargaActual;
+		}
+	}
+	return maximaCarga;
+}
+
+
+
+bool nodoYaAsignado(t_list *planif, int nodo){
+
 
 	int i;
 	for (i = 0; i < list_size(planif); i++) {
@@ -201,6 +250,7 @@ t_list* tablaPlanif() {
 	t_list* planificacion = list_create();
 
 	int i;
+
 	for (i = 0; i < list_size(arch); i++) {
 		t_bloque_archivo *bloque = list_get(arch, i);
 		int nBloque = bloque->bloque_archivo;
@@ -209,10 +259,11 @@ t_list* tablaPlanif() {
 
 		if (!nodoYaAsignado(planificacion, nodocopia0)) {
 			t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
-			reg->availability = 2;
+			reg->availability = BASE+ PWL(reg->worker, job);
 			reg->worker = nodocopia0;
 			reg->bloquesAsignados = list_create();
 			reg->bloques = list_create();
+
 			reg->job = job;
 			agregarBloque(reg, nBloque);
 			list_add(planificacion, (void*) reg);
@@ -224,10 +275,12 @@ t_list* tablaPlanif() {
 			agregarBloque(reg, nBloque);
 		}
 
+
 		if (!nodoYaAsignado(planificacion, nodocopia1)) {
 			t_reg_planificacion* reg1 = malloc(sizeof(t_reg_planificacion));
-			reg1->availability = 2;
+			reg1->availability = BASE+ PWL(reg1->worker, job);
 			reg1->worker = nodocopia0;
+
 			reg1->bloquesAsignados = list_create();
 			reg1->bloques = list_create();
 			reg1->job = job;
@@ -376,15 +429,34 @@ t_list * archivoPrueba2() {
 	return archivo;
 }
 
-t_list * tablaPlanificacionCompleta() {
-	tablaPlanif();
+
+t_link_element * buscarWorkerMayorAvailability(t_list * planificacion){
+	int i;
+	t_link_element * mayor = planificacion->head;
+	t_link_element * actual = planificacion->head->next;
+
+	for(i=1; i<list_size(planificacion); i++){
+		t_reg_planificacion * regActual = actual->data;
+		t_reg_planificacion * regMayor = mayor->data;
+		if(regActual->availability > regMayor->availability){
+			mayor= actual;
+		}
+		actual = actual->next;
+	}
+
+	return mayor;
+}
+
+t_list * tablaPlanificacionCompleta()
+{
 
 	t_list * planificacion = tablaPlanif();
 
 	t_list *arch = archivoPrueba2();
-	t_link_element *clock = planificacion->head;
-	t_link_element *auxclock = planificacion->head;
-	t_link_element *head = planificacion->head;
+	t_link_element *nodoMayorAvailability = buscarWorkerMayorAvailability(planificacion); // Se empieza apuntando al worker de mayor availability TODO: desampatar por el historial
+	t_link_element *clock = nodoMayorAvailability;
+	t_link_element *auxclock = nodoMayorAvailability;
+	t_link_element *head = nodoMayorAvailability;
 
 	t_reg_planificacion* ultimoReg = list_get(planificacion,
 			list_size(planificacion) - 1);
@@ -452,6 +524,7 @@ t_list * tablaPlanificacionCompleta() {
 
 t_list * tablaestadosPrueba() {
 	estados = list_create();
+
 
 	t_estado* estado0 = malloc(sizeof(t_estado));
 	estado0->job = 1;

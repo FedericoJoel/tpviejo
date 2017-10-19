@@ -24,6 +24,9 @@
 t_list * archivoPrueba2();
 
 
+
+
+
 //-------config------------
 
 char* ruta_config = "/home/utnso/workspace/tp-2017-2c-LaYamaQueLlama/yama/resources/config.cfg";
@@ -61,7 +64,7 @@ t_list * tablaPlanif();
 void transformarBloques(t_list * tabla);
 void modificarBloqueTablaEstados(int bloque, int etapa, int estado);
 int cargaTrabajoMaxima(int job);
-int cargaTrabajoWorker(int worker, int job);
+int cargaTrabajoWorker(int worker);
 void enviarAMaster(t_list * tabla);
 
 //----------otros---------------------
