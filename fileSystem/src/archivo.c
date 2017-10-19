@@ -19,31 +19,39 @@ void cargarTablaArchivo() {
 		}
 	}
 	fclose(archivo);
+	free(lineaDatos);
+	free(lineaElem);
 }
 
 void cargarDatos(char* lineaDatos, char* lineaElem, t_archivo* nuevoArchivo, int cantidadCampos){
 	int pos = 0;
 	int elemento = 0;
-	char* palabra;
+	estructuraBloque* nuevoBloque = malloc(sizeof nuevoBloque);
+	(*nuevoArchivo).bloques = list_create();
 
 	while(cantidadCampos > 0){
+		char* palabra = string_new();
 		palabra = tomarPalabra(lineaElem, &pos);
 		if (string_equals_ignore_case(palabra, "TAMANIO")){
 			int tamanio = dameTamanio(lineaDatos, elemento);
 			nuevoArchivo->tamanio = tamanio;
 			cantidadCampos--;
+			free(palabra);
 		}else{
 			if (string_equals_ignore_case(palabra, "TIPO")){
 				char* tipo = dameTipo(lineaDatos, elemento);
 				nuevoArchivo->tipo = tipo;
 				cantidadCampos--;
 				free(tipo);
+				free(palabra);
 			}else{
 				char* nodoBloque;
-				estructuraBloque* nuevoBloque = malloc(sizeof nuevoBloque);
+
+				(*nuevoBloque).bloqueCopia = string_new();
+				(*nuevoBloque).bloqueCopia = string_duplicate(palabra);
 				nodoBloque = dameBloque(lineaDatos, elemento);
-				(*nuevoBloque).bloqueCopia = palabra;
-				(*nuevoBloque).nodoBloque = nodoBloque;
+				(*nuevoBloque).nodoBloque = string_new();
+				(*nuevoBloque).nodoBloque = string_duplicate(nodoBloque);
 				cantidadCampos--;
 
 				elemento++; //avanza a la copia
@@ -51,8 +59,11 @@ void cargarDatos(char* lineaDatos, char* lineaElem, t_archivo* nuevoArchivo, int
 
 				palabra = tomarPalabra(lineaElem, &pos);
 				nodoBloque = dameBloque(lineaDatos, elemento);
-				(*nuevoBloque).bloqueCopia1 = palabra;
-				(*nuevoBloque).nodoBloque1 = nodoBloque;
+				(*nuevoBloque).bloqueCopia = string_new();
+				(*nuevoBloque).bloqueCopia = string_duplicate(palabra);
+				nodoBloque = dameBloque(lineaDatos, elemento);
+				(*nuevoBloque).nodoBloque = string_new();
+				(*nuevoBloque).nodoBloque = string_duplicate(nodoBloque);
 				cantidadCampos--;
 
 				elemento++; //avanza a el tamaño del bloque
@@ -60,19 +71,20 @@ void cargarDatos(char* lineaDatos, char* lineaElem, t_archivo* nuevoArchivo, int
 
 				palabra = tomarPalabra(lineaElem, &pos);
 				int tamanioBloque = dameTamanio(lineaDatos, elemento);
-				(*nuevoBloque).nombreTamanioBloque = palabra;
+				(*nuevoBloque).nombreTamanioBloque = string_new();
+				(*nuevoBloque).nombreTamanioBloque = string_duplicate(palabra);
 				(*nuevoBloque).tamanioBloque = tamanioBloque;
 				cantidadCampos--;
 
 				list_add((*nuevoArchivo).bloques, (void*) nuevoBloque);
-
+				free(palabra);
 				free(nodoBloque);
 			}
 		}
 		elemento++;
 		pos++; //esquiva la ,
 	}
-//	free(palabra);
+
 }
 
 char* dameBloque (char* linea, int elemento){
@@ -84,8 +96,8 @@ char* dameBloque (char* linea, int elemento){
 int contarCampos(char* linea){
 	int largo = 0;
 	int cantidad = 0;
-	int a = string_length(linea);
-	for(;a - largo > 0;){
+	int caracteres = string_length(linea);
+	for(;caracteres - largo > 0;){
 		largo = largo + contarCaracteres(linea, largo);
 		largo++; //pasa la posicion de la ,
 		cantidad++;
@@ -96,11 +108,11 @@ int contarCampos(char* linea){
 
 int dameTamanio(char* linea, int elemento) {
 
-	int tamanio;
+	int tamanio = -1;
 	int pos = dameElemento(linea, elemento);
 	char* palabra = tomarPalabra(linea, &pos);
 	tamanio = atoi(palabra);
-//	free(palabra);
+	free(palabra);
 	return tamanio;
 }
 
@@ -156,14 +168,14 @@ char* tomarPalabra(char* linea, int* pos) {
 	int numero = *pos;
 	int caracteresTamanio;
 	int posAux = 0;
-	char* palabra = string_new();
+
 
 	if ((caracteresTamanio = contarCaracteres(linea, numero)) != -1) {
+		char* palabra = string_repeat('\0', caracteresTamanio);
 		for (; caracteresTamanio != 0 && linea[numero] != '='; numero++, posAux++, caracteresTamanio--) {
 			palabra[posAux] = linea[numero];
 		}
-		palabra[posAux] = '\0';
-		if (linea[numero] == ','){
+		if (linea[numero] == ',' || linea[numero] == '\n' || linea[numero] == '\0'){
 			*pos = numero;
 			return palabra;
 		}else{

@@ -20,11 +20,6 @@ typedef struct{
 }estructuraBloque;
 
 typedef struct{
-	estructuraBloque bloqueCompuesto;
-	struct listaBloqueArchivo * sig;
-}listaBloqueArchivo;
-
-typedef struct{
 	int tamanio;
 	char* tipo;
 	t_list* bloques;

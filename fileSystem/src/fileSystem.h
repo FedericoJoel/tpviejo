@@ -31,7 +31,13 @@
 #define YM_READANSW 7
 #define YM_STOREANSW 8
 
+typedef struct{
+	int tamanioTotalFs;
+	int tamanioLibreFs;
+	t_list* nodos;
+}estructuraFs;
 
+void cargarNodos();
 void fs_format();
 void fs_rm(char * arg);
 void fs_rename(char * arg);
@@ -45,11 +51,11 @@ void fs_md5(char * arg);
 void fs_ls(char * arg);
 void fs_info(char * arg);
 void ejecutarConsola();
-int str_array_size(char** array);
 void str_array_print(char ** array);
 void esperar_data_nodes();
 void iniciar_servidor();
 void atender_dn();
 void set_bloque(int *s_nodo,char* datos);
+
 
 #endif /* FILESYSTEM_H_ */

@@ -6,21 +6,47 @@ char* rutaNodo =
 char* rutaBitMap =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/nodo2.dat";
 
-void mostrarNodos() {
-	char* nodo = string_new();
-	char* nodos = string_new();
-	int pos = 0;
+int tamanioTotalFs(){
 	t_config* config = config_create(rutaNodo);
 	int tamanioFs = config_get_int_value(config, "TAMANIO");
-	int tamanioTotalNodo;
-	int tamanioLibreNodo;
-	printf("TAMANIO = %d \n", tamanioFs);
+	config_destroy(config);
+	return tamanioFs;
+}
+
+int tamanioLibreFs(){
+	t_config* config = config_create(rutaNodo);
 	int espacioLibreFs = config_get_int_value(config, "LIBRE");
-	printf("LIBRE = %d \n", espacioLibreFs);
+	config_destroy(config);
+	return espacioLibreFs;
+}
+
+int cantidadNodos(){
+	t_config* config = config_create(rutaNodo);
+	char* nodos = config_get_string_value(config, "NODOS");
+	config_destroy(config);
+	char** listaNodos = string_split(nodos, ",");
+	int cantidad = cantidadElementos(listaNodos);
+	free(listaNodos);
+	return cantidad;
+}
+
+int cantidadElementos(char ** array){
+	    size_t count = 0;
+	    while (array[count] != NULL) count++;
+	    return count;
+}
+
+estructuraNodo levantarNodo(int posicion) {
+	char* nodo = string_new();
+	char* nodos = string_new();
+//	int pos = 0;
+	estructuraNodo nodoNuevo;
+
+	t_config* config = config_create(rutaNodo);
+
 	nodos = config_get_string_value(config, "NODOS");
 	char** listaNodos = string_split(nodos, ",");
-	printf("NODOS = %s \n", nodos);
-	while ((nodo = listaNodos[pos]) != NULL) {
+	if ((nodo = listaNodos[posicion]) != NULL) {
 		char *nodoTotal = string_new();
 		char *nodoLibre = string_new();
 
@@ -32,21 +58,30 @@ void mostrarNodos() {
 		} else {
 			nodo = sacar(nodo, "[");
 		}
+
 		string_append(&nodoTotal, nodo);
 		string_append(&nodoTotal, "Total");
 		string_append(&nodoLibre, nodo);
 		string_append(&nodoLibre, "Libre");
-		tamanioTotalNodo = config_get_int_value(config, nodoTotal);
-		tamanioLibreNodo = config_get_int_value(config, nodoLibre);
+		int tamanioTotalNodo = config_get_int_value(config, nodoTotal);
+		int tamanioLibreNodo = config_get_int_value(config, nodoLibre);
+
+		nodoNuevo.nombreNodo = nodo;
+		nodoNuevo.tamanioTotalNodo = tamanioTotalNodo;
+		nodoNuevo.tamanioLibreNodo = tamanioLibreNodo;
+
 		printf("%s = %d \n", nodoTotal, tamanioTotalNodo);
 		printf("%s = %d \n", nodoLibre, tamanioLibreNodo);
+
 		free(nodoLibre);
 		free(nodoTotal);
-		pos++;
-
+		free(listaNodos);
+		free(nodos);
+		return nodoNuevo;
+	}else{
+		nodoNuevo.nombreNodo = "Vacio";
+		return nodoNuevo;
 	}
-	free(nodo);
-	free(nodos);
 }
 
 char* sacar(char* palabra, char* caracter) {
@@ -56,25 +91,23 @@ char* sacar(char* palabra, char* caracter) {
 }
 
 void cargarBitmap(){
-	FILE * archivo;
 	size_t len = 0;
-	t_bitarray* bitArray;
-	int pos;
-	archivo = fopen(rutaBitMap, "r");
+	int pos = 0;
+	FILE * archivo = fopen(rutaBitMap, "r");
 	char * linea = NULL;
 	if ((getline(&linea, &len, archivo)) != EOF){
 		size_t largo = string_length(linea);
-		bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
+		t_bitarray* bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
 		for (pos = 0; pos < largo; pos++){
-			cargarLinea(largo, linea, &bitArray);
-			imprimirEstado(&bitArray, pos);
+			cargarLinea(largo, linea, bitArray);
+			imprimirEstado(bitArray, pos);
 		}
 		bitarray_destroy(bitArray);
 	}
 }
 
 void cargarLinea(int largo, char* linea, t_bitarray* bitArray){
-	int pos;
+	int pos = 0;
 	for (pos = 0; pos < largo; pos++){
 		if (linea[pos] == '1'){
 			bitarray_set_bit(bitArray, pos);

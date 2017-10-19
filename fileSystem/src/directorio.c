@@ -6,11 +6,10 @@ char* rutaDirectorio =
 int mostrarDirectorio() {
 	t_directory directorio[100];
 	int pos = 0;
-	FILE * archivo;
-	char * linea = NULL;
+	char * linea = string_new();
 	size_t len = 0;
 
-	archivo = fopen(rutaDirectorio, "r");
+	FILE * archivo = fopen(rutaDirectorio, "r");
 	printf("index \t | \t nombre \t | \t padre \n");
 	printf("----------------------------------------------------\n");
 	while (((getline(&linea, &len, archivo)) != EOF) && pos <= 99) {
@@ -26,21 +25,20 @@ int mostrarDirectorio() {
 			free(linea);
 		return EXIT_SUCCESS;
 	} else {
+			free(linea);
 		return EXIT_FAILURE;
 	}
 }
 
 void convertirDirectorio(char * linea, t_directory directorio[]) {
 	t_directory unDirectorio;
-	int reg;
 	int pos0;
 	int pos;
-	int lugar;
-	int termino;
+	int termino = 0;
 	int aux = 0;
 	int nivel = -1;
-	int largoNombre;
-	int limpiar;
+	int largoNombre = 0;
+	int limpiar = 0;
 	int largo = string_length(linea);
 
 	for (pos = 0; pos < largo; pos++) {
@@ -54,6 +52,7 @@ void convertirDirectorio(char * linea, t_directory directorio[]) {
 			} else {
 				if (pos != 0 && linea[pos] == '/') {
 					limpiar = string_length(unDirectorio.nombre);
+					int lugar;
 					for (lugar = 0; lugar <= limpiar; lugar++){
 						unDirectorio.nombre[lugar] = '\0';
 					}
@@ -91,7 +90,7 @@ void convertirDirectorio(char * linea, t_directory directorio[]) {
 		}
 	}
 	if (termino == 0) {
-		reg = comprobarDirectorio(nivel, directorio, unDirectorio);
+		int reg = comprobarDirectorio(nivel, directorio, unDirectorio);
 		guardarRegistro(directorio, unDirectorio, reg, largoNombre);
 	} else {
 		//loguear error
@@ -104,7 +103,7 @@ void convertirDirectorio(char * linea, t_directory directorio[]) {
 
 int comprobarDirectorio(int nivel, t_directory directorio[],
 		t_directory unDirectorio) {
-	int reg;
+	int reg = 0;
 	for (reg = 0; reg <= 99; reg++) {
 		if ((string_equals_ignore_case(unDirectorio.nombre,
 				directorio[reg].nombre)
@@ -121,7 +120,7 @@ int comprobarDirectorio(int nivel, t_directory directorio[],
 		}
 	}
 	//RETURN PARA IGNORAR EL WARNING
-	return 9;
+	return -1;
 }
 
 void guardarRegistro(t_directory directorio[], t_directory unDirectorio,
