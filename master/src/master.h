@@ -16,11 +16,20 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
+#include <sockets.h>
 
 #define nombre_programa "MASTER"
 
-int puerto_yama,socket_yama;
+int puerto_yama,
+	socket_yama,
+	cantidad_bloques;
+
 char* ip_yama;
+char* ruta_transformador;
+char* ruta_reductor;
+char* ruta_archivo_job_inicial;
+char* ruta_archivo_job_resultado;
+t_list list_bloques;
 
 
 
@@ -42,10 +51,16 @@ char* AUTH;
 
 void levantar_config(void);
 void levantar_logger(void);
+void leer_variables_args(char** argv);
 t_log* start_logger();
 int abrir_file_args(int argc, char** argv);
-void conectar_con_yama();
+int conectar_con_yama();
+void comenzar_job();
+void transformacion();
+void avisar_fin_tranformacion();
+void reduccion_local();
 void desconectarse_de_yama();
+
 
 
 #endif /* MASTER_H_ */
