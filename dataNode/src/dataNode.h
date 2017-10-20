@@ -20,11 +20,13 @@
 #include <sys/mman.h> /* mmap() is defined in this header */
 #include <fcntl.h>
 
+
 void escuchar_fs();
 void set_bloque();
 void get_bloque();
 void error_protocolo();
 void conectarse_fs();
 int escribir(char* mensaje, int offset);
+int map_data();
 
 #endif /* DATANODE_H_ */
