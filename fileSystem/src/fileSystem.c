@@ -1,31 +1,28 @@
 #include "fileSystem.h"
 
-int PUERTO_FS= 3490;
-int s_servidor;
-t_list *t_dataNodes;
-t_list *s_dataNodes;
-pthread_t* t_atiende_dn;
-pthread_t t_espera_data_nodes;
 
 int main(void) {
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.
 //	iniciar_servidor();
 
-	cargarNodos();
-	printf("--------------------------------------------------------------------------------------------------- \n");
-	mostrarDirectorio();
-	printf("--------------------------------------------------------------------------------------------------- \n");
-	cargarTablaArchivo();
-	printf("--------------------------------------------------------------------------------------------------- \n");
-	cargarBitmap();
-
+	if(existenArchivosDeConfiguracion()){
+		cargarNodos(&fs.estructuraNodos);
+		printf("--------------------------------------------------------------------------------------------------- \n");
+		mostrarDirectorio(fs.directorio);
+//		printf("--------------------------------------------------------------------------------------------------- \n");
+//		cargarTablaArchivo(&fs.tablaArchivo);
+//		printf("--------------------------------------------------------------------------------------------------- \n");
+//		cargarBitmap(&fs.bitArray);
+	}else{
+		fs_format();
+	}
 	//GENERAMOS UN THREAD PARA LA CONSOLA
-//	pthread_t t_consola;
-//	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
+	pthread_t t_consola;
+	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
 
 	//ESPERAMOS A QUE TERMINEN TODOS LOS THREAD
-//	pthread_join(t_espera_data_nodes,NULL);
-//	pthread_join(t_consola,NULL);
+	pthread_join(t_espera_data_nodes,NULL);
+	pthread_join(t_consola,NULL);
 
 	return EXIT_SUCCESS;
 
@@ -35,26 +32,33 @@ int main(void) {
 
 }
 
-void cargarNodos(){
-	estructuraFs fileSystem;
+int existenArchivosDeConfiguracion(){
+	if(existeDirectorio() && existenNodos()){
+		return EXIT_SUCCESS;
+	}else{
+		return EXIT_FAILURE;
+	}
+}
+
+void cargarNodos(estructuraFs* nuevoFs){
 	estructuraNodo* nuevoNodo = malloc(sizeof nuevoNodo);
 	int tamanioFs = tamanioTotalFs();
 	int espacioLibreFs = tamanioLibreFs();
 	int contador = 0;
 
-	fileSystem.nodos = list_create();
+	nuevoFs->nodos = list_create();
 
-	fileSystem.tamanioTotalFs = tamanioFs;
+	nuevoFs->tamanioTotalFs = tamanioFs;
 	printf("TAMANIO = %d \n", tamanioFs);
-	fileSystem.tamanioLibreFs = espacioLibreFs;
+	nuevoFs->tamanioLibreFs = espacioLibreFs;
 	printf("LIBRE = %d \n", espacioLibreFs);
 
 	int cantidadDeNodos = cantidadNodos();
 	for(contador = 0; contador < cantidadDeNodos; contador++){
 		*nuevoNodo = levantarNodo(contador);
-		list_add(fileSystem.nodos, (void*) nuevoNodo);
-		free(nuevoNodo);
+		list_add(nuevoFs->nodos, (void*) nuevoNodo);
 	}
+	free(nuevoNodo);
 }
 
 void ejecutarConsola(){
@@ -101,6 +105,8 @@ void ejecutarConsola(){
 
 void fs_format(){
 	printf("Formateo de disco \n");
+	eliminarArchivosDeDirectorio(fs.directorio);
+//	eliminarNodos(&fs.estructuraNodos);
 }
 
 void fs_rm(char * arg){

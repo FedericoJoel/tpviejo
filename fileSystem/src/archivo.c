@@ -3,19 +3,18 @@
 char* rutaArchivo =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/ejemplo.txt";
 
-void cargarTablaArchivo() {
+void cargarTablaArchivo(t_archivo* nuevoArchivo) {
 	FILE * archivo = fopen(rutaArchivo, "r");
 	char * lineaElem = string_new();
 	char * lineaDatos = string_new();
 	size_t len = 0;
-	t_archivo nuevoArchivo;
-	nuevoArchivo.bloques = list_create();
+	nuevoArchivo->bloques = list_create();
 	int cantidad = 0;
 
 	if (getline(&lineaElem, &len, archivo) != EOF){
 		cantidad = contarCampos(lineaElem);
 		if (getline(&lineaDatos, &len, archivo) != EOF){
-			cargarDatos(lineaDatos, lineaElem, &nuevoArchivo, cantidad);
+			cargarDatos(lineaDatos, lineaElem, nuevoArchivo, cantidad);
 		}
 	}
 	fclose(archivo);
@@ -39,19 +38,20 @@ void cargarDatos(char* lineaDatos, char* lineaElem, t_archivo* nuevoArchivo, int
 			free(palabra);
 		}else{
 			if (string_equals_ignore_case(palabra, "TIPO")){
-				char* tipo = dameTipo(lineaDatos, elemento);
+				char* tipo = string_new();
+				tipo = dameTipo(lineaDatos, elemento);
 				nuevoArchivo->tipo = tipo;
 				cantidadCampos--;
 				free(tipo);
 				free(palabra);
 			}else{
-				char* nodoBloque;
+				char* nodoBloque = string_new();
 
-				(*nuevoBloque).bloqueCopia = string_new();
-				(*nuevoBloque).bloqueCopia = string_duplicate(palabra);
+				nuevoBloque->bloqueCopia = string_new();
+				nuevoBloque->bloqueCopia = string_duplicate(palabra);
 				nodoBloque = dameBloque(lineaDatos, elemento);
-				(*nuevoBloque).nodoBloque = string_new();
-				(*nuevoBloque).nodoBloque = string_duplicate(nodoBloque);
+				nuevoBloque->nodoBloque = string_new();
+				nuevoBloque->nodoBloque = string_duplicate(nodoBloque);
 				cantidadCampos--;
 
 				elemento++; //avanza a la copia
@@ -59,11 +59,11 @@ void cargarDatos(char* lineaDatos, char* lineaElem, t_archivo* nuevoArchivo, int
 
 				palabra = tomarPalabra(lineaElem, &pos);
 				nodoBloque = dameBloque(lineaDatos, elemento);
-				(*nuevoBloque).bloqueCopia = string_new();
-				(*nuevoBloque).bloqueCopia = string_duplicate(palabra);
+				nuevoBloque->bloqueCopia1 = string_new();
+				nuevoBloque->bloqueCopia1 = string_duplicate(palabra);
 				nodoBloque = dameBloque(lineaDatos, elemento);
-				(*nuevoBloque).nodoBloque = string_new();
-				(*nuevoBloque).nodoBloque = string_duplicate(nodoBloque);
+				nuevoBloque->nodoBloque1 = string_new();
+				nuevoBloque->nodoBloque1 = string_duplicate(nodoBloque);
 				cantidadCampos--;
 
 				elemento++; //avanza a el tamaño del bloque
@@ -71,12 +71,12 @@ void cargarDatos(char* lineaDatos, char* lineaElem, t_archivo* nuevoArchivo, int
 
 				palabra = tomarPalabra(lineaElem, &pos);
 				int tamanioBloque = dameTamanio(lineaDatos, elemento);
-				(*nuevoBloque).nombreTamanioBloque = string_new();
-				(*nuevoBloque).nombreTamanioBloque = string_duplicate(palabra);
-				(*nuevoBloque).tamanioBloque = tamanioBloque;
+				nuevoBloque->nombreTamanioBloque = string_new();
+				nuevoBloque->nombreTamanioBloque = string_duplicate(palabra);
+				nuevoBloque->tamanioBloque = tamanioBloque;
 				cantidadCampos--;
 
-				list_add((*nuevoArchivo).bloques, (void*) nuevoBloque);
+				list_add(nuevoArchivo->bloques, (void*) nuevoBloque);
 				free(palabra);
 				free(nodoBloque);
 			}

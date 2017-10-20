@@ -25,7 +25,7 @@ typedef struct{
 	t_list* bloques;
 }t_archivo;
 
-void cargarTablaArchivo();
+void cargarTablaArchivo(t_archivo* nuevoArchivo);
 void cargarDatos(char* lineaDatos,char* lineaElem, t_archivo* nuevoArchivo, int cantidadCampos);
 
 //devuelve el tamanio total del archivo

@@ -17,25 +17,26 @@
 #include "archivo.h"
 #include "nodo.h"
 
-/////////////
-//PROTOCOLO//
-/////////////
-///FS - DN///
-#define DN_SETBLOQUE 0001
-#define DN_SETBLOQUEANSW 2
-#define DN_GETBLOQUE 3
-#define DN_GETBLOQUEANSW 4
-//FS - YAMA//
-#define FS_READ 5
-#define FS_STORE 6
-#define YM_READANSW 7
-#define YM_STOREANSW 8
-
 typedef struct{
 	int tamanioTotalFs;
 	int tamanioLibreFs;
 	t_list* nodos;
 }estructuraFs;
+
+typedef struct{
+	estructuraFs estructuraNodos;
+	t_directory directorio[99];
+	t_archivo tablaArchivo;
+	t_bitarray* bitArray;
+}t_fileSystem;
+
+t_fileSystem fs;
+int PUERTO_FS= 3490;
+int s_servidor;
+t_list *t_dataNodes;
+t_list *s_dataNodes;
+pthread_t* t_atiende_dn;
+pthread_t t_espera_data_nodes;
 
 void cargarNodos();
 void fs_format();
@@ -56,6 +57,6 @@ void esperar_data_nodes();
 void iniciar_servidor();
 void atender_dn();
 void set_bloque(int *s_nodo,char* datos);
-
+int existenArchivosDeConfiguracion();
 
 #endif /* FILESYSTEM_H_ */

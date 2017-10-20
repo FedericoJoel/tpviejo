@@ -3,12 +3,12 @@
 char* rutaDirectorio =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/directorio.dat";
 
-int mostrarDirectorio() {
-	t_directory directorio[100];
+
+
+void mostrarDirectorio(t_directory* directorio) {
 	int pos = 0;
 	char * linea = string_new();
 	size_t len = 0;
-
 	FILE * archivo = fopen(rutaDirectorio, "r");
 	printf("index \t | \t nombre \t | \t padre \n");
 	printf("----------------------------------------------------\n");
@@ -23,9 +23,20 @@ int mostrarDirectorio() {
 	if (pos == 99 || linea == NULL) {
 		if (linea)
 			free(linea);
-		return EXIT_SUCCESS;
 	} else {
 			free(linea);
+	}
+}
+
+int existeDirectorio(){
+	char * linea = string_new();
+	size_t len = 0;
+	FILE * archivo = fopen(rutaDirectorio, "r");
+	if ((getline(&linea, &len, archivo)) != EOF) {
+		free(linea);
+		fclose(archivo);
+		return EXIT_SUCCESS;
+	}else{
 		return EXIT_FAILURE;
 	}
 }
@@ -114,13 +125,58 @@ int comprobarDirectorio(int nivel, t_directory directorio[],
 	}
 //	printf("No existe directorio, el mismo se creara \n");
 	for (reg = 0; reg <= 99; reg++) {
-		if (directorio[reg].nombre[0] == '\0') {
+		if (directorio[reg].nombre[0] == '\0' && unDirectorio.nombre[0] != '\0') {
+			char* mkdir = string_new();
+			char* path = string_new();
 			directorio[reg].index = reg;
+			string_append(&mkdir, "mkdir ");
+			string_append(&mkdir, "/root");
+			path = agregarPadreARuta(unDirectorio.padre, directorio);
+			string_append(&mkdir, path);
+			string_append(&mkdir, unDirectorio.nombre);
+			system(mkdir);
+			free(path);
+			free(mkdir);
+			printf("se creó el directorio en: %s \n", unDirectorio.nombre);
 			return reg;
 		}
 	}
 	//RETURN PARA IGNORAR EL WARNING
-	return -1;
+	return EXIT_FAILURE;
+}
+
+char* agregarPadreARuta(int padre, t_directory directorio[]){
+	int pos = 0;
+	char* path = string_new();
+	char* pathAnterior = string_new();
+	while (pos <= 99 && padre != 0){
+		if (directorio[pos].index == padre){
+			string_append(&path, directorio[pos].nombre);
+			while (directorio[pos].padre != 0){
+				pathAnterior = agregarPadreARuta(directorio[pos].padre, directorio);
+				pos = damePosicionDeElemento(pathAnterior, directorio);
+				string_append(&pathAnterior, path);
+			}
+
+			break;
+		}
+		pos++;
+	}
+	if (string_ends_with(pathAnterior, path)){
+		return pathAnterior;
+	}
+	return path;
+}
+
+int damePosicionDeElemento(char* nombre, t_directory directorio[]){
+	int pos = 0;
+	while (pos <= 99){
+		if (string_equals_ignore_case(directorio[pos].nombre, nombre)){
+			break;
+		}
+		pos++;
+	}
+	return directorio[pos].index;
 }
 
 void guardarRegistro(t_directory directorio[], t_directory unDirectorio,
@@ -131,4 +187,37 @@ void guardarRegistro(t_directory directorio[], t_directory unDirectorio,
 	}
 	directorio[reg].padre = unDirectorio.padre;
 
+}
+
+int eliminarArchivosDeDirectorio(t_directory* directorio){
+	int pos = 0;
+
+	while (pos <= 99){
+		if (directorio[pos].padre == 0 && directorio[pos].nombre[0] != '\0') {
+			char* rmdir = string_new();
+			char* rmContenido = string_new();
+			//BORRAS EL CONTENIDO DE LA CARPETA
+			string_append(&rmContenido, "rm -r ");
+			string_append(&rmContenido, "/root");
+			string_append(&rmContenido, directorio[pos].nombre);
+			string_append(&rmContenido, "/*");
+			system(rmContenido);
+			//BORRAS LA CARPETA
+			string_append(&rmdir, "rmdir ");
+			string_append(&rmdir, "/root");
+			string_append(&rmdir, directorio[pos].nombre);
+			system(rmdir);
+			printf("comando: %s \n", rmContenido);
+			printf("comando: %s \n", rmdir);
+			free(rmdir);
+			free(rmContenido);
+			printf("se borro el directorio: %s \n", directorio[pos].nombre);
+		}
+		pos++;
+	}
+	if(pos == 99){
+		return EXIT_SUCCESS;
+	}else{
+		return EXIT_FAILURE;
+	}
 }

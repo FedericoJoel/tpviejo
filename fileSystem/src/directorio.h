@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <commons/config.h>
 #include <commons/string.h>
+#include <unistd.h>
 
 //DIRECTORIO//
 typedef struct{
@@ -14,8 +15,10 @@ typedef struct{
 }t_directory;
 
 int comprobarDirectorio(int nivel, t_directory directorio [], t_directory unDirectorio);
+char* agregarPadreARuta(int, t_directory[]);
+int damePosicionDeElemento(char*, t_directory[]);
 void guardarRegistro(t_directory [], t_directory, int, int);
-int mostrarDirectorio();
+void mostrarDirectorio(t_directory []);
 void convertirDirectorio(char *, t_directory []);
 
 #endif /* DIRECTORIO_H_ */

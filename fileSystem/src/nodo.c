@@ -13,6 +13,14 @@ int tamanioTotalFs(){
 	return tamanioFs;
 }
 
+int existenNodos(){
+	if(tamanioTotalFs()){
+		return EXIT_SUCCESS;
+	}else{
+		return EXIT_FAILURE;
+	}
+}
+
 int tamanioLibreFs(){
 	t_config* config = config_create(rutaNodo);
 	int espacioLibreFs = config_get_int_value(config, "LIBRE");
@@ -39,7 +47,6 @@ int cantidadElementos(char ** array){
 estructuraNodo levantarNodo(int posicion) {
 	char* nodo = string_new();
 	char* nodos = string_new();
-//	int pos = 0;
 	estructuraNodo nodoNuevo;
 
 	t_config* config = config_create(rutaNodo);
@@ -90,19 +97,18 @@ char* sacar(char* palabra, char* caracter) {
 	return palabraN[0];
 }
 
-void cargarBitmap(){
+void cargarBitmap(t_bitarray* bitArray){
 	size_t len = 0;
 	int pos = 0;
 	FILE * archivo = fopen(rutaBitMap, "r");
 	char * linea = NULL;
 	if ((getline(&linea, &len, archivo)) != EOF){
 		size_t largo = string_length(linea);
-		t_bitarray* bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
+		bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
 		for (pos = 0; pos < largo; pos++){
 			cargarLinea(largo, linea, bitArray);
 			imprimirEstado(bitArray, pos);
 		}
-		bitarray_destroy(bitArray);
 	}
 }
 

@@ -17,12 +17,13 @@ typedef struct{
 
 estructuraNodo levantarNodo(int pos);
 char* sacar (char* palabra, char* caracter);
-void cargarBitmap();
+void cargarBitmap(t_bitarray* bitArray);
 void cargarLinea(int largo, char* linea, t_bitarray *bitArray);
 void imprimirEstado (t_bitarray *bitArray, int pos);
 int tamanioTotalFs();
 int tamanioLibreFs();
 int cantidadNodos();
 int cantidadElementos(char ** array);
+int existenNodos();
 
 #endif /* NODO_H_ */
