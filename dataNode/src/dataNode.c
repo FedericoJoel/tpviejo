@@ -12,6 +12,7 @@
 
 int PUERTO_FS=3490;
 int s_filesystem;
+int bloque_size=1;
 
 int bin;
 char* data;
@@ -21,7 +22,7 @@ const char *filepath = "info.bin";
 int main(void) {
 
 	map_data();
-	escribir("PIM",2);
+	escribir_bloque("hola",2);
 	conectarse_fs();
 	while(1){
 		escuchar_fs();
@@ -48,6 +49,8 @@ void set_bloque(){
 	char* mensaje = esperarMensaje(s_filesystem);
 	char** array = string_split(mensaje, ";");
 	printf("escribo bloque '%s' con los datos '%s' \n",array[0],array[1]);
+	int bloque = atoi(array[0]);
+	escribir_bloque(bloque,array[1]);
 }
 
 void get_bloque(){
@@ -90,9 +93,14 @@ int map_data(){
 	    exit(EXIT_FAILURE);
 	}
 }
-int escribir(char* mensaje,int offset){
-	size_t mensaje_size = strlen(mensaje); // + \0 null character
+
+void escribir(char* mensaje,int offset){
+	size_t mensaje_size = strlen(mensaje); // no escribe el \0
 	memcpy(data+offset, mensaje, mensaje_size);
+}
+
+void escribir_bloque(int bloque ,char* mensaje){
+	escribir(mensaje,bloque_size*bloque);
 }
 //
 //	//Abro el archivo
