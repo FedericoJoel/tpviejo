@@ -22,12 +22,14 @@ t_list *archivo;
 t_list *estados;
 t_list *planif;
 int BASE = 2;
-int job = 0;
+int job = 1;
+t_list *numeros_aleatorios;
 
 int main(void) {
 	/*estados = list_create();*/
 
-
+	//t_list * a = tablaestadosPrueba();
+	 srand(time(NULL));
 	t_list * tabla = tablaPlanificacionCompleta();
 	enviarAMaster(tabla);
 	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
@@ -329,6 +331,7 @@ bool terminoEtapaTransformacion(int job, int worker){
 t_list* tablaPlanif() {
 	t_list* arch = archivoPrueba2();
 	t_list* planificacion = list_create();
+	t_list * estados = tablaestadosPrueba();
 
 	int i;
 
@@ -340,8 +343,8 @@ t_list* tablaPlanif() {
 
 		if (!nodoYaAsignado(planificacion, nodocopia0)) {
 			t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
-			reg->availability = BASE+ PWL(reg->worker, job);
 			reg->worker = nodocopia0;
+			reg->availability = BASE+ PWL(reg->worker, job);
 			reg->bloquesAsignados = list_create();
 			reg->bloques = list_create();
 
@@ -359,9 +362,8 @@ t_list* tablaPlanif() {
 
 		if (!nodoYaAsignado(planificacion, nodocopia1)) {
 			t_reg_planificacion* reg1 = malloc(sizeof(t_reg_planificacion));
+			reg1->worker = nodocopia1;
 			reg1->availability = BASE+ PWL(reg1->worker, job);
-			reg1->worker = nodocopia0;
-
 			reg1->bloquesAsignados = list_create();
 			reg1->bloques = list_create();
 			reg1->job = job;
@@ -500,6 +502,8 @@ t_list * archivoPrueba2() {
 
 	bloque6->bloque_archivo = 6;
 	bloque6->bytes = 1024;
+
+	list_add(archivo, (void*) bloque);
 	list_add(archivo, (void*) bloque1);
 	list_add(archivo, (void*) bloque2);
 	list_add(archivo, (void*) bloque3);
@@ -539,8 +543,7 @@ t_list * tablaPlanificacionCompleta()
 	t_link_element *auxclock = nodoMayorAvailability;
 	t_link_element *head = nodoMayorAvailability;
 
-	t_reg_planificacion* ultimoReg = list_get(planificacion,
-			list_size(planificacion) - 1);
+	t_reg_planificacion* ultimoReg = list_get(planificacion,list_size(planificacion) - 1);
 	int i, bloqueNumero = 0;
 
 	t_bloque_archivo* bloqueABuscar = list_get(arch, bloqueNumero);
@@ -548,13 +551,13 @@ t_list * tablaPlanificacionCompleta()
 
 		auxclock = clock;
 		t_reg_planificacion* reg = auxclock->data;
-		auxclock = reg->worker != ultimoReg->worker ? auxclock->next : head; //Se le suma a auxclock una posicion
+		auxclock = reg->worker != ultimoReg->worker ? auxclock->next : planificacion->head; //Se le suma a auxclock una posicion
 		//todo hay que solucionar esto
 
 		int encontrado = 0;
 		t_reg_planificacion* regClock = clock->data;
 
-		while (!encontrado) { //Se entra en un bucle del cual se va a salir cuando se le asigne un bloque al worker apuntado por clock
+		while (!encontrado && bloqueNumero<list_size(arch)) { //Se entra en un bucle del cual se va a salir cuando se le asigne un bloque al worker apuntado por clock
 
 			if (regClock->availability > 0) {
 
@@ -573,9 +576,7 @@ t_list * tablaPlanificacionCompleta()
 							buscarBloqueEnWorker((void*) regAuxClock,
 									(void *) bloqueABuscar, &encontradoAux);
 
-							auxclock =
-									reg->worker != ultimoReg->worker ?
-											auxclock->next : head;
+							auxclock =reg->worker != ultimoReg->worker ? auxclock->next : planificacion->head;
 						} else {
 							for (i = 0; i < list_size(planificacion); i++) {
 								t_reg_planificacion* regP = list_get(
@@ -595,7 +596,7 @@ t_list * tablaPlanificacionCompleta()
 			}
 		}
 
-		clock = regClock->worker != ultimoReg->worker ? clock->next : head;
+		clock = regClock->worker != ultimoReg->worker ? clock->next : planificacion->head;
 
 	}
 
@@ -603,9 +604,29 @@ t_list * tablaPlanificacionCompleta()
 
 }
 
+
+char* generar_ruta_aleatoria(){
+
+	time_t rawtime;
+	  struct tm * timeinfo;
+	  char *str_aleatorio= string_new();
+	  char *temporal = string_new();
+
+	  time (&rawtime);
+	  timeinfo = localtime (&rawtime);
+
+	  char* random_string = string_itoa(rand()% 99);
+	  strftime (str_aleatorio,7,"%M%S",timeinfo);
+
+	  string_append(&temporal, RUTA_TEMPORAL);
+	  string_append(&temporal, str_aleatorio);
+	  string_append(&temporal, random_string);
+
+	  return temporal;
+}
+
 t_list * tablaestadosPrueba() {
 	estados = list_create();
-
 
 	t_estado* estado0 = malloc(sizeof(t_estado));
 	estado0->job = 1;
@@ -613,7 +634,7 @@ t_list * tablaestadosPrueba() {
 	estado0->nodo = 1;
 	estado0->bloque = 8;
 	estado0->etapa = 0;
-	estado0->temporal = "/tmp/j1n1b8";
+	estado0->temporal = generar_ruta_aleatoria();
 	estado0->estado = 0;
 
 	t_estado *estado1 = malloc(sizeof(t_estado));
@@ -622,7 +643,7 @@ t_list * tablaestadosPrueba() {
 	estado1->nodo = 3;
 	estado1->bloque = 2;
 	estado1->etapa = 0;
-	estado1->temporal = "/tmp/j1n1b8";
+	estado1->temporal = generar_ruta_aleatoria();
 	estado1->estado = 0;
 
 	t_estado *estado2 = malloc(sizeof(t_estado));
@@ -631,12 +652,23 @@ t_list * tablaestadosPrueba() {
 	estado2->nodo = 2;
 	estado2->bloque = 9;
 	estado2->etapa = 0;
-	estado2->temporal = "/tmp/j1n1b8";
+	estado2->temporal = generar_ruta_aleatoria();
 	estado2->estado = 0;
+
+
+	t_estado* estado3 = malloc(sizeof(t_estado));
+	estado3->job = 1;
+	estado3->master = 1;
+	estado3->nodo = 1;
+	estado3->bloque = 8;
+	estado3->etapa = 0;
+	estado3->temporal = generar_ruta_aleatoria();
+	estado3->estado = 0;
 
 	list_add(estados, estado0);
 	list_add(estados, estado1);
 	list_add(estados, estado2);
+	list_add(estados, estado3);
 
 	return estados;
 }

@@ -12,10 +12,11 @@
 #include <sockets.h>
 #include <commons/collections/list.h>
 #include <commons/string.h>
-
+#include <time.h>
 
 #define nombre_programa "YAMA"
 #define clientes_max 10
+
 #define ETAPA_TRANSFORMACION 0
 #define ETAPA_REDUCCION_LOCAL 1
 #define ETAPA_REDUCCION_GLOBAL 2
@@ -23,6 +24,8 @@
 #define ESTADO_EN_PROCESO 0
 #define ESTADO_FINALIZADO_OK 1
 #define ESTADO_ERROR 2
+
+#define RUTA_TEMPORAL "/tmp/"
 
 
 
@@ -71,7 +74,8 @@ void modificarBloqueTablaEstados(int bloque, int etapa, int estado, int worker, 
 int cargaTrabajoMaxima(int job);
 int cargaTrabajoWorker(int worker);
 void enviarAMaster(t_list * tabla);
-
+char* generar_numero_aleatorio();
+t_list * tablaestadosPrueba();
 //----------otros---------------------
 char* AUTH;
 
