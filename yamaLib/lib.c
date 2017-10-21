@@ -161,3 +161,16 @@ char* extraer_string(char* string, int inicio, int fin) {
 	return (string_substring(string, inicio, 1 + fin - inicio));
 }
 
+
+char* generar_string_separador2(char* str1, char* str2, char* separador){
+	char* string = string_new();
+	string_append(&string,str1);
+	string_append(&string,separador);
+	string_append(&string,str2);
+	return string;
+}
+
+void string_append_separador(char** original, char* string_to_add,char* separador) {
+	string_append(original,separador);
+	string_append(original,string_to_add);
+}

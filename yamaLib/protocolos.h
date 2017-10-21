@@ -8,7 +8,11 @@ typedef enum {
 	MS_YM_INICIO_JOB,
 	YM_MS_TRANSFORMACION,
 	FIN_TRANSF_NODO,
-	FIN_TRANSFORMACION
+	FIN_TRANSFORMACION,
+	DN_OKCONN,
+	DN_SETBLOQUE,
+	DN_GETBLOQUE,
+	DN_GETBLOQUEANSW
 }t_proto;
 
 typedef enum {
@@ -17,5 +21,10 @@ typedef enum {
 	REDUC_GLOBAL
 }t_etapa;
 
+typedef enum { //DISTINTOS CLIENTES QUE PUEDEN LLEGAR A UN FILESYSTEM
+	DATANODE,
+	WORKER,
+	YAMA
+}t_clientes_fs;
 
 #endif

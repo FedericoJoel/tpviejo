@@ -33,31 +33,31 @@
 #define YM_STOREANSW 8
 
 
-
 ///////////
 //CLIENTE//
 ///////////
 int conectar(int puerto,char* ip);
-
+int conectarAuth(int puerto,char* ip, int AUTH,int* p_respuesta);
 ////////////
 //SERVIDOR//
 ////////////
 int crearServidor(int puerto);
-int esperarConexion(int servidor, char* autentificacion);
-
+int esperarConexion(int servidor);
+int esperarConexionAuth(int servidor, int *AUTH);
 /////////////////////
 //ENVIO DE MENSAJES//
 /////////////////////
 void enviarMensajeConProtocolo(int conexion, char* mensaje, int protocolo);
 void enviarProtocolo(int socket, int protocolo);
 int sendIntTo(int socket, int number);
+void enviarMensaje(int conexion, char* mensaje);
 
 /////////////////////////
 //RECEPCION DE MENSAJES//
 /////////////////////////
 char* esperarMensaje(int conexion);
 int recibirProtocolo(int conexion);
-void enviarMensaje(int conexion, char* mensaje);
+
 
 
 //////////////

@@ -13,7 +13,22 @@ int conectar(int puerto,char* ip){
 	while (connect(conexion, (void*) &direccServ, sizeof(direccServ)));
 	return conexion;
 }
-
+int conectarAuth(int puerto,char* ip, int AUTH,int* p_respuesta){
+	struct sockaddr_in direccServ;
+		direccServ.sin_family = AF_INET;
+		direccServ.sin_addr.s_addr = inet_addr(ip);
+		direccServ.sin_port = htons(puerto);
+		int conexion = socket(AF_INET, SOCK_STREAM, 0);
+		while (connect(conexion, (void*) &direccServ, sizeof(direccServ)));
+		char* autenticacion = string_itoa(AUTH);
+		//envio auth
+		enviarMensaje(conexion, autenticacion);
+		//recibo respuesta
+		*p_respuesta = recibirProtocolo(conexion);
+		char *t_respuesta = esperarMensaje(conexion);
+		printf("se concluyo la coneccion y el servidor respondio '%s'\n",t_respuesta);
+		return conexion;
+}
 
 ////////////
 //SERVIDOR//
@@ -36,12 +51,29 @@ int crearServidor(int puerto){
 	listen(servidor,SOMAXCONN);
 	return servidor;
 }
+<<<<<<< HEAD
 int esperarConexion(int servidor, char* autentificacion){
+=======
+int esperarConexion(int servidor){
+	printf("Estoy a la espera de una conexion\n");
+	int cliente = aceptar(servidor);
+	printf("Acepte!\n");
+	if (cliente <= 0){
+		return -1;
+		printf("Error de conexion\n");
+	}
+	return cliente;
+}
+int esperarConexionAuth(int servidor, int *AUTH){
+	printf("Estoy a la espera de una conexion\n");
+>>>>>>> Fede
 	int cliente = aceptar(servidor);
 	if (cliente <= 0){
 		return -1;
 	}
-	//autentificacion = esperarMensaje(cliente);
+	char* autenticacion;
+	autenticacion = esperarMensaje(cliente);
+	*AUTH = atoi(autenticacion);
 	return cliente;
 }
 

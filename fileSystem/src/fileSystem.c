@@ -2,15 +2,16 @@
 
 int PUERTO_FS= 3490;
 int s_servidor;
+int s_clientes[clientes_max];
 t_list *t_dataNodes;
-t_list *s_dataNodes;
+t_list *lista_dataNodes;
 pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
 
 int main(void) {
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.
 	iniciar_servidor();
-
+	//TODO puedo hacer 2 servidores, uno para yama y uno para los dn? o tengo que armar una especie de handshake para saber quien se me conecta?
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
 	pthread_t t_consola;
@@ -241,37 +242,106 @@ void str_array_print(char ** array){
 		}
 }
 
-void esperar_data_nodes(){
+void esperar_conexiones(){
 	//Creamos un servidor
 	s_servidor = crearServidor(PUERTO_FS);
-	char * AUTH;
 
 	//Creo lista de sockets
-	s_dataNodes = list_create();
-
+	lista_dataNodes = list_create();
 
 	while(1){
-
 		//BLOQUEANTE espero una conexion de un DN
-		int socket = esperarConexion(s_servidor, AUTH);
-		printf("la autorizacion es %s \n",AUTH);
+		int autenticacion = 0;
+		int socket = esperarConexionAuth(s_servidor,&autenticacion);
+		//SI ES UN DATANODE
+		if(autenticacion == DATANODE){
+			enviarMensajeConProtocolo(socket, string_itoa(DN_OKCONN), DN_OKCONN); //CONFIRMO CONEXION Y RECIBO LA INFO
+			t_nodo* nodo = malloc(sizeof(t_nodo));
+			nodo->id = atoi(esperarMensaje(socket));
+			nodo->ip = esperarMensaje(socket);
+			nodo->socket = socket;
+			//Lo agrego a la lista de datanodes's sockets
+			int posicion = list_add(lista_dataNodes, (void *) nodo);
 
-		//Lo agrego a la lista de datanodes's sockets
-		int posicion = list_add(s_dataNodes, (void *) &socket);
-		printf("Escuchamos una nueva coneccion,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
+			printf("Se conecto un nuevo DATANODE,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
+			set_bloque(socket,"datosdatosdatosdatos",5);
+		}
+	}
+
+	//Creo FDSET SERVIDOR (puntero a descriptor server)
+//	fd_set fds;
+//
+//	//Limpio el set
+//	FD_ZERO (&fds);
+//
+//	//Agregamos el servidor
+//	FD_SET (s_servidor, &fds);
+//
+//	//Declaramos respuesta y tiramos select
+//	int rc;
+//	int n_clientes = 0;
+//	int i;
+//
+//	while(1){
+//		rc = select(sizeof(fds)*8, &fds, NULL, NULL, NULL);
+//		if (rc==-1) {
+//			 perror("select failed");
+//			 break;
+//		}
+//
+//		//CHECK DE CLIENTES
+//		for (i=0; i<n_clientes; i++)
+//		{
+//			if (FD_ISSET(s_clientes[i], &fds))
+//			{
+//				char * buffer;
+//				if ( (leer_cliente(s_clientes[i],(char *)&buffer) ) > 0 )
+//				{
+//					printf("leimos el mensaje '%s' del socket %d \n",buffer,s_clientes[i]);
+//				}
+//				else
+//				{
+//					printf("puede que el socket se halla desconectado \n");
+//					/* Hay un error en la lectura. Posiblemente el cliente ha cerrado la conexión. Hacer aquí el tratamiento. En el ejemplo, se cierra el socket y se elimina del array de socketCliente[] */
+//				}
+//			}
+//		}
+//
+//		//CHECK DEL SERVER
+//		if (FD_ISSET(s_servidor, &fds))
+//		{
+//			char* AUTH ="";
+//			// Si hay una nueva coneccion en s_servidor la acepto
+//			int socket = esperarConexion(s_servidor, AUTH);
+//			printf("la autorizacion es %s \n",AUTH);
+//			// Agrego el nuevo cliente al fds de clientes
+//			FD_SET(socket, &fds);
+//			// Lo agregamos al array de clientes
+//			//TODO me conviene usar un array? o es mejor una lista?
+//			s_clientes[n_clientes]= socket;
+//			// Enviamos un mensaje con su lugar en la lista
+//			enviarMensajeConProtocolo(socket, string_itoa(n_clientes), DN_OKCONN);
+//			// Incrementamos la cantidad de clientes conectados.
+//			n_clientes = n_clientes +1;
+//		}
+//	}
+
+	//HASTA ACA VA EL SELECT
+
+	//ESTO ES DE MULTITHREADING
 
 		//LE MANDO UN MENSAJE PARA QUE ESCRIBA UN BLOQUE
-		void* respuesta = list_get(s_dataNodes, 0);
-		int * s_nodo = (int*) respuesta;
-		set_bloque(s_nodo,"datosdatos");
+//		void* respuesta = list_get(s_dataNodes, 0);
+//		int * s_nodo = (int*) respuesta;
+//		set_bloque(s_nodo,"datosdatos");
 //		int tam = sizeof(t_atiende_dn)/sizeof(*t_atiende_dn);
 //		pthread_create(&t_atiende_dn + tam,NULL,(void*)&atender_dn, &socket);
 //		printf("el tamaño de t_espera_data_nodes ahora es de %d \n",tam);
-	}
+//	}
 }
 
 void iniciar_servidor(){
-	pthread_create(&t_espera_data_nodes,NULL,(void*)&esperar_data_nodes, NULL);
+	pthread_create(&t_espera_data_nodes,NULL,(void*)&esperar_conexiones, NULL);
 }
 
 //void atender_dn(void* soc){
@@ -280,13 +350,27 @@ void iniciar_servidor(){
 //	enviarMensajeConProtocolo(*socket, "DATOSDATOSDATOS", DN_SETBLOQUE);
 //}
 
-void set_bloque(int *s_nodo,char* datos){
-	printf("grabo un bloque en el nodo sockeft %d \n",*s_nodo);
-	enviarMensajeConProtocolo(*s_nodo, "DATOSDATOSDATOS", DN_SETBLOQUE);
-	// TODO VERIFICAR SI SALE OK
-	// TODO que me conviene hacer con en que bloque lo guarda? lo meto en el protocolo? mando 2 mensajes juntos?
-	//	pthread_t t_atiende_escritura;
-	//	pthread_create(&t_atiende_escritura,NULL,(void*)&atender_escritura, &s_nodo);
-	//	TODO COMO HAGO PARA RETORNAR SI LA ESCRITURA FUE BUENA O MALA CON EL THREAD y mandarle varios parametros
-	//	pthread_join(t_atiende_escritura);
+void set_bloque(int s_nodo,char* datos,int bloque){
+	printf("grabo un bloque en el nodo sockeft %d \n",s_nodo);
+	char* bloqueS = string_itoa(bloque);
+	char* mensaje = generar_string_separador2(bloqueS, datos, ";");
+	enviarMensajeConProtocolo(s_nodo, mensaje, DN_SETBLOQUE);
+}
+
+int leer_cliente(int s_nodo, char* buffer){
+	int protocolo = recibirProtocolo(s_nodo);
+	if(protocolo == DN_GETBLOQUEANSW){
+		char* mensaje = esperarMensaje(s_nodo);
+		printf("escribo bloque con los datos %s \n",mensaje);
+	}else if (protocolo == -1){
+		return protocolo;
+	}
+	return 1;
+}
+
+char* get_bloque(int s_nodo, int bloque){
+	char* bloqueS = string_itoa(bloque);
+	enviarMensajeConProtocolo(s_nodo,bloqueS,DN_GETBLOQUE);
+	char* respuesta = esperarMensaje(s_nodo);
+	return respuesta;
 }
