@@ -16,8 +16,13 @@
 
 #define nombre_programa "YAMA"
 #define clientes_max 10
-#define etapa_transformacion 0
-#define estado_en_proceso 0
+#define ETAPA_TRANSFORMACION 0
+#define ETAPA_REDUCCION_LOCAL 1
+#define ETAPA_REDUCCION_GLOBAL 2
+
+#define ESTADO_EN_PROCESO 0
+#define ESTADO_FINALIZADO_OK 1
+#define ESTADO_ERROR 2
 
 
 
@@ -62,7 +67,7 @@ void enviar_reduccion_local(int posicion);
 t_list * tablaPlanificacionCompleta();
 t_list * tablaPlanif();
 void transformarBloques(t_list * tabla);
-void modificarBloqueTablaEstados(int bloque, int etapa, int estado);
+void modificarBloqueTablaEstados(int bloque, int etapa, int estado, int worker, int job);
 int cargaTrabajoMaxima(int job);
 int cargaTrabajoWorker(int worker);
 void enviarAMaster(t_list * tabla);

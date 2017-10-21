@@ -29,9 +29,8 @@ int main(void) {
 
 
 	t_list * tabla = tablaPlanificacionCompleta();
-	transformarBloques(tabla);
-	modificarBloqueTablaEstados(1, 2, 3);
 	enviarAMaster(tabla);
+	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
 
 	levantar_logger();
 
@@ -54,26 +53,19 @@ void transformarBloques(t_list * tabla) {
 		t_reg_planificacion* reg = puntTabla->data;
 		t_link_element *puntBloque = reg->bloquesAsignados->head;
 		for (j = 0; j < list_size(reg->bloquesAsignados); j++) {
-			t_estado* estado = malloc(sizeof(t_estado));
-			estado->nodo = reg->worker;
-			estado->bloque = (int) puntBloque->data;
-			estado->etapa = 0;
-			estado->estado = 0;
-			estado->job = job;
-			//TODO:: falta job, master y temporal;
-			list_add(estados, (void*) estado);
+			agregarEstados((int) puntBloque->data, ETAPA_TRANSFORMACION, ESTADO_EN_PROCESO, reg->worker, reg->job,  1, "pum"); // aca el master y el temporal estan harcodeados
 			puntBloque = puntBloque->next;
 		}
 		puntTabla = puntTabla->next;
 	}
 }
 
-void modificarBloqueTablaEstados(int bloque, int etapa, int estadoNuevo) {
+void modificarBloqueTablaEstados(int bloque, int etapa, int estadoNuevo, int worker, int job) {
 	int i;
 	t_link_element *puntTabla = estados->head;
 	for (i = 0; i < list_size(estados); i++) {
 		t_estado* estado = puntTabla->data;
-		if (estado->bloque == bloque) {
+		if (estado->bloque == bloque && estado->nodo == worker && estado->job == job) {
 			estado->estado = estadoNuevo;
 			estado->etapa = etapa;
 			break;
@@ -109,15 +101,13 @@ int cargaTrabajoWorker(int worker){
 	for(i=0; i<list_size(estados); i++){
 		//t_estado *estado = puntTabla->data;
 		t_estado *estado = list_get(estados, i);
-		if(estado->nodo == worker && estado->estado == estado_en_proceso)
+		if(estado->nodo == worker && estado->estado == ESTADO_EN_PROCESO)
 		{
-
 			carga++;
 		}
 	}
 	return carga;
 }
-
 
 bool repetido(int nodo, t_list * nodosDelJob){
 	int i;
@@ -157,6 +147,33 @@ int cargaTrabajoMaxima(int job){
 		}
 	}
 	return maximaCarga;
+}
+
+int cargaTrabajoMinima(int job){
+
+	int i;
+
+	t_list * nodosDelJob;
+	nodosDelJob = list_create();
+
+	for(i=0; i<list_size(estados); i++){
+		t_estado *estado = list_get(estados, i);
+		if(estado->job == job && !repetido(estado->nodo, nodosDelJob)){
+			int nodo = estado->nodo;
+			list_add(nodosDelJob, (void*) nodo);
+		}
+	}
+	int nodoMinimo;
+	int minimaCarga = cargaTrabajoWorker((int *)list_get(nodosDelJob, 0));
+	for(i=1; i<list_size(nodosDelJob); i++){
+		int nodoActual = list_get(nodosDelJob, i);
+		int cargaActual = cargaTrabajoWorker(nodoActual);
+		if(cargaActual < minimaCarga){
+			minimaCarga = cargaActual;
+			nodoMinimo = nodoActual;
+		}
+	}
+	return nodoMinimo;
 }
 
 
@@ -243,6 +260,70 @@ void* buscarRegEnLista(t_list *planif, int nodo) {
 			return (void*) reg;
 		}
 	}
+}
+
+void agregarEstados(int bloque, int etapa, int estadoNuevo, int worker, int job, int master, char * temporal){
+	t_estado* estado = malloc(sizeof(t_estado));
+				estado->nodo = worker;
+				estado->bloque = bloque;
+				estado->etapa = etapa;
+				estado->estado = estadoNuevo;
+				estado->job = job;
+				estado->master = master;
+				estado->temporal = temporal;
+				//TODO:: falta job, master y temporal;
+				list_add(estados, (void*) estado);
+}
+
+t_list* iniciarReduccion(int worker, int job){
+
+	int i;
+	t_list *reduccion = list_create();
+	t_link_element *puntTabla = estados->head;
+	for (i = 0; i < list_size(estados); i++) {
+		t_estado* reg = puntTabla->data;
+		if(reg->job == job && reg->nodo == worker){
+			agregarEstados(reg->bloque, ETAPA_REDUCCION_LOCAL, ESTADO_EN_PROCESO, worker, job, 1, "pin"); // aca el master y el temporal estan harcodeados
+			t_reg_planificacion *regPlani = malloc(sizeof(t_reg_planificacion));
+			regPlani->worker = worker;
+			regPlani->ip = "as";//harcodeado;
+			regPlani->temporalTransformacion = reg->temporal;
+			regPlani->tempReducLocal = "asfa";//harcodeado
+
+			list_add(reduccion, (void*) regPlani);
+		}
+		puntTabla = puntTabla->next;
+	}
+	return reduccion;
+
+}
+
+void fallaEtapa(int etapa, int job){
+			int i;
+			t_link_element *puntTabla = estados->head;
+			for (i = 0; i < list_size(estados); i++) {
+				t_estado* reg = puntTabla->data;
+				if(reg->job == job){
+					modificarBloqueTablaEstados(reg->bloque, etapa, ESTADO_ERROR, reg->nodo, job);
+				}
+				puntTabla = puntTabla->next;
+			}
+}
+
+bool terminoEtapaTransformacion(int job, int worker){
+
+	int i;
+		t_link_element *puntTabla = estados->head;
+		for (i = 0; i < list_size(estados); i++) {
+			t_estado* reg = puntTabla->data;
+			if(reg->job == job && reg->nodo == worker){
+				if(reg->etapa == ETAPA_TRANSFORMACION && reg->estado == ESTADO_EN_PROCESO){
+					return false;
+				}
+			}
+			puntTabla = puntTabla->next;
+		}
+		return true;
 }
 
 t_list* tablaPlanif() {

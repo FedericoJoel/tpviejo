@@ -52,6 +52,10 @@ typedef struct reg_planificacion{
 	t_list *bloques;
 	t_list *bloquesAsignados;
 	int job;
+	char *temporalTransformacion;
+	char *tempReducLocal;
+	char *tempReudcGlobal;
+	char* ip;
 }t_reg_planificacion;
 
 
