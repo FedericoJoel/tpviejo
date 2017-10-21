@@ -12,7 +12,8 @@ typedef enum {
 	DN_OKCONN,
 	DN_SETBLOQUE,
 	DN_GETBLOQUE,
-	DN_GETBLOQUEANSW
+	DN_GETBLOQUEANSW,
+	FS_YM_ERRORCONN
 }t_proto;
 
 typedef enum {
