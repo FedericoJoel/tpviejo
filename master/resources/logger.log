@@ -1,0 +1,8 @@
+[INFO] 12:22:59:969 MASTER/(4067:4067): Logger iniciado
+[INFO] 12:22:59:969 MASTER/(4067:4067): Levantando configuracion
+[INFO] 12:22:59:969 MASTER/(4067:4067): Configuracion levantada
+[INFO] 12:22:59:969 MASTER/(4067:4067): ruta_transformador = /scripts/transformador.sh
+[INFO] 12:22:59:969 MASTER/(4067:4067): ruta_reductor = /scripts/reductor.rb
+[INFO] 12:22:59:969 MASTER/(4067:4067): ruta_archivo_job_inicial= yamafs:/datos.csv
+[INFO] 12:22:59:969 MASTER/(4067:4067): ruta_archivo_job_resultado= yamafs:/analisis/resultado.json
+[INFO] 12:22:59:970 MASTER/(4067:4067): conectando con proceso YAMA
