@@ -34,13 +34,14 @@ int esperarConexionAuth(int servidor, int *AUTH);
 void enviarMensajeConProtocolo(int conexion, char* mensaje, int protocolo);
 void enviarProtocolo(int socket, int protocolo);
 int sendIntTo(int socket, int number);
+void enviarMensaje(int conexion, char* mensaje);
 
 /////////////////////////
 //RECEPCION DE MENSAJES//
 /////////////////////////
 char* esperarMensaje(int conexion);
 int recibirProtocolo(int conexion);
-void enviarMensaje(int conexion, char* mensaje);
+
 
 
 //////////////

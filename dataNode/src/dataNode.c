@@ -13,6 +13,8 @@
 int PUERTO_FS=3490;
 int s_filesystem;
 int bloque_size=1;
+char* node_id="1";
+char* node_ip="127.0.0.1";
 
 int bin;
 char* data;
@@ -38,6 +40,8 @@ void conectarse_fs(){
 	int p_resp;
 	s_filesystem = conectarAuth(PUERTO_FS,IP,DATANODE,&p_resp);
 	if(p_resp == DN_OKCONN){
+	enviarMensaje(s_filesystem, node_id);
+	enviarMensaje(s_filesystem, node_ip);
 	printf("Conectado a fs con socket %d \n",s_filesystem);
 	} else
 	{
@@ -99,72 +103,6 @@ void escribir(char* mensaje,int offset){
 	memcpy(data+offset, mensaje, mensaje_size);
 }
 
-void escribir_bloque(int bloque ,char* mensaje){
+void escribir_bloque(char* mensaje, int bloque){
 	escribir(mensaje,bloque_size*bloque);
 }
-//
-//	//Abro el archivo
-//	 int fd = open(filepath, O_RDWR | O_CREAT, (mode_t)0600);
-//
-//	 if (fd == -1)
-//	 {
-//	    perror("Error opening file for writing");
-//	    exit(EXIT_FAILURE);
-//	 }
-//
-//	 size_t mensaje_size = strlen(mensaje) + 1; // + \0 null character
-//
-//	 //Me muevo a la ultima posicion
-//	 if (lseek(fd, size_memory, SEEK_SET) == -1)
-//	 {
-//		 close(fd);
-//	     perror("Error calling lseek() to 'stretch' the file");
-//	     exit(EXIT_FAILURE);
-//	 }
-//
-//	 //Escribo un caracter cualquiera
-//	  if (write(fd, "", 1) == -1)
-//	    {
-//	        close(fd);
-//	        perror("Error writing last byte of the file");
-//	        exit(EXIT_FAILURE);
-//	    }
-//
-//	  //Esta listo para Mapear
-//	  char *map = mmap(0, size_memory, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-//	  if (map == MAP_FAILED)
-//	  {
-//	     close(fd);
-//	     perror("Error mmapping the file");
-//	     exit(EXIT_FAILURE);
-//	  }
-//
-//	  size_t i;
-////	  for (i = offset; i < mensaje_size; i++)
-////	  {
-////	      printf("Writing character %c at %zu\n", mensaje[i], i);
-////	      map[i] = mensaje[i];
-////	  }
-//	  memcpy(map+offset, mensaje, mensaje_size);
-//
-//
-//	  // Write it now to disk
-////	  if (msync(map, size_memory, MS_SYNC) == -1)
-////	  {
-////	      perror("Could not sync the file to disk");
-////	  }
-////		 printf('%s \n',map );
-//	  // Don't forget to free the mmapped memory
-//	  if (munmap(map, size_memory) == -1)
-//	  {
-//	      close(fd);
-//	      perror("Error un-mmapping the file");
-//	      exit(EXIT_FAILURE);
-//	  }
-//
-//	  // Un-mmaping doesn't close the file, so we still need to do that.
-//	  close(fd);
-//
-//	  return 0;
-//
-//}

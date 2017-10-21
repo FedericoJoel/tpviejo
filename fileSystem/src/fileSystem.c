@@ -4,7 +4,7 @@ int PUERTO_FS= 3490;
 int s_servidor;
 int s_clientes[clientes_max];
 t_list *t_dataNodes;
-t_list *s_dataNodes;
+t_list *lista_dataNodes;
 pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
 
@@ -247,16 +247,22 @@ void esperar_conexiones(){
 	s_servidor = crearServidor(PUERTO_FS);
 
 	//Creo lista de sockets
-	s_dataNodes = list_create();
+	lista_dataNodes = list_create();
 
 	while(1){
 		//BLOQUEANTE espero una conexion de un DN
 		int autenticacion = 0;
 		int socket = esperarConexionAuth(s_servidor,&autenticacion);
+		//SI ES UN DATANODE
 		if(autenticacion == DATANODE){
+			enviarMensajeConProtocolo(socket, string_itoa(DN_OKCONN), DN_OKCONN); //CONFIRMO CONEXION Y RECIBO LA INFO
+			t_nodo* nodo = malloc(sizeof(t_nodo));
+			nodo->id = atoi(esperarMensaje(socket));
+			nodo->ip = esperarMensaje(socket);
+			nodo->socket = socket;
 			//Lo agrego a la lista de datanodes's sockets
-			int posicion = list_add(s_dataNodes, (void *) &socket);
-			enviarMensajeConProtocolo(socket, string_itoa(posicion), DN_OKCONN);
+			int posicion = list_add(lista_dataNodes, (void *) nodo);
+
 			printf("Se conecto un nuevo DATANODE,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
 			set_bloque(socket,"datosdatosdatosdatos",5);
 		}

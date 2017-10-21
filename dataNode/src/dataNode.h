@@ -28,6 +28,6 @@ void error_protocolo();
 void conectarse_fs();
 void escribir(char* mensaje, int offset);
 int map_data();
-void escribir_bloque(int bloque, char* mensaje);
+void escribir_bloque(char* mensaje, int bloque);
 
 #endif /* DATANODE_H_ */

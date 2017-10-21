@@ -19,6 +19,11 @@
 #include <protocolos.h>
 #include <string.h>
 
+typedef struct nodo{
+	int id;
+	char* ip;
+	int socket;
+}t_nodo;
 
 //CANTIDAD MAXIMA DE CLIENTES CONCURRENTES
 #define clientes_max 10
