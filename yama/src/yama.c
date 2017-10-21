@@ -312,7 +312,7 @@ void fallaEtapa(int etapa, int job){
 			}
 }
 
-bool terminoEtapaTransformacion(int job, int worker){
+int terminoEtapaTransformacion(int job, int worker){
 
 	int i;
 		t_link_element *puntTabla = estados->head;
@@ -320,12 +320,12 @@ bool terminoEtapaTransformacion(int job, int worker){
 			t_estado* reg = puntTabla->data;
 			if(reg->job == job && reg->nodo == worker){
 				if(reg->etapa == ETAPA_TRANSFORMACION && reg->estado == ESTADO_EN_PROCESO){
-					return false;
+					return 0;
 				}
 			}
 			puntTabla = puntTabla->next;
 		}
-		return true;
+		return 1;
 }
 
 t_list* tablaPlanif() {
@@ -532,12 +532,11 @@ t_link_element * buscarWorkerMayorAvailability(t_list * planificacion){
 	return mayor;
 }
 
-t_list * tablaPlanificacionCompleta()
+t_list * tablaPlanificacionCompleta(t_list* arch)
 {
 
 	t_list * planificacion = tablaPlanif();
 
-	t_list *arch = archivoPrueba2();
 	t_link_element *nodoMayorAvailability = buscarWorkerMayorAvailability(planificacion); // Se empieza apuntando al worker de mayor availability TODO: desampatar por el historial
 	t_link_element *clock = nodoMayorAvailability;
 	t_link_element *auxclock = nodoMayorAvailability;
@@ -691,6 +690,25 @@ int levantar_servidor(void) {
 		log_error(logger, "No se pudo levantar el servidor");
 		return EXIT_FAILURE;
 	}
+	return EXIT_SUCCESS;
+}
+
+int conectar_con_fs() {
+	int proto_recibido;
+
+	char* ip_fs = config_get_string_value(config,"FS_IP");
+	int puerto_fs = config_get_int_value(config,"FS_PUERTO");
+
+	log_info(logger,"conectando con proceso FILESYSTEM");
+	socket_fs = conectar(puerto_fs,ip_fs);
+
+	proto_recibido = recibirProtocolo(socket_fs);
+
+	if(proto_recibido == FS_YM_ERRORCONN) {
+		log_error(logger,"no se pudo conectar a filesystem. Reintentar mas tarde");
+		return EXIT_FAILURE;
+	}
+	else log_info(logger,"conexion establecida con FILESYTEM");
 	return EXIT_SUCCESS;
 }
 
@@ -861,7 +879,7 @@ void recibir_data_de_master(int posicion) {
 		atender_inicio_job(posicion);
 		break;
 	case FIN_TRANSF_NODO:
-		atender_fin_transf_nodo(posicion);
+		atender_fin_transf_bloque(posicion);
 		break;
 	case FIN_TRANSFORMACION:
 		atender_fin_transformacion(posicion);
@@ -889,34 +907,44 @@ void atender_inicio_job(int posicion) {
 	log_info(logger, "iniciar job de master %d", socket_clientes[posicion]);
 	mensaje = esperarMensaje(socket_clientes[posicion]);
 	log_info(logger, "ruta de archivo %s", mensaje);
-	//todo enviar ruta a filesystem
-	//esperar que envie struct de nodos
+	enviar_ruta_fs(mensaje);
+
+	char* char_archivo = esperarMensaje(socket_clientes[posicion]);
+
+	//todo mapear archivo a lista de struct
 	//por ahora hardcodeamos la estructura que recibe
 
-	//todo aplicar algoritmo sobre lo que recibo de filesystem
-	//mockeo las copias que se eligen
-	bloque_mock_0.elegida = 0;
-	bloque_mock_0.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
-			0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
-	bloque_mock_1.elegida = 1;
-	bloque_mock_1.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
-			1);
-	bloque_mock_2.elegida = 0;
-	bloque_mock_2.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
-			2);
 
-	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_0);
-	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_1);
-	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_2);
+	t_list* archivo_planificado = tablaPlanificacionCompleta(lista_de_nodos_recibidos);
+//
+//	//mockeo las copias que se eligen
+//	bloque_mock_0.elegida = 0;
+//	bloque_mock_0.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
+//			0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
+//	bloque_mock_1.elegida = 1;
+//	bloque_mock_1.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
+//			1);
+//	bloque_mock_2.elegida = 0;
+//	bloque_mock_2.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
+//			2);
+
+//	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_0);
+//	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_1);
+//	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_2);
 	// se manda la lista de bloques ya modificados a master
-	enviar_transformacion(socket_clientes[posicion], &lista_de_nodos_respuesta);
+	enviar_transformacion(socket_clientes[posicion], archivo_planificado);
+
+	transformarBloques(archivo_planificado);
 }
 
-void atender_fin_transf_nodo(int posicion) {
+void atender_fin_transf_bloque(int posicion) {
 	char* char_bloque = esperarMensaje(socket_clientes[posicion]);
 	int bloque = atoi(char_bloque);
+	modificarBloqueTablaEstados(bloque,ETAPA_TRANSFORMACION,ESTADO_FINALIZADO_OK,posicion,0);//TODO que mierda le paso en los ultimos 2
 	log_info(logger, "finalizo la transformacion del bloque %d del master %d",
 			bloque, socket_clientes[posicion]);
+	int estado = terminoEtapaTransformacion(0,posicion);
+
 	//TODO marcar en tabla de estados que termino la transformacion del bloque, si no hay ninguna otra transformacion en curso en ese nodo del worker,arranco reduccion
 }
 

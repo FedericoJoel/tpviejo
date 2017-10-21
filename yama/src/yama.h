@@ -50,6 +50,7 @@ t_log* logger;
 //--------server------------
 int socket_server;
 int socket_clientes[clientes_max];
+int socket_fs;
 int cantidad_masters_conectados = 0;
 fd_set fds_masters;
 t_proto protocolo;
@@ -61,7 +62,7 @@ void recibir_nuevo_master();
 void recibir_data_de_master(int posicion);
 
 void atender_inicio_job(int posicion);
-void atender_fin_transf_nodo(int posicion);
+void atender_fin_transf_bloque(int posicion);
 void atender_fin_transformacion(int posicion);
 
 void enviar_transformacion(int master, t_list* lista_bloques);
