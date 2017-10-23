@@ -20,5 +20,6 @@ int damePosicionDeElemento(char*, t_directory[]);
 void guardarRegistro(t_directory [], t_directory, int, int);
 void mostrarDirectorio(t_directory []);
 void convertirDirectorio(char *, t_directory []);
+int existeDirectorio();
 
 #endif /* DIRECTORIO_H_ */

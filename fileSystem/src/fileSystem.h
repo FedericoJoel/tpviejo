@@ -31,6 +31,7 @@ typedef struct{
 }t_fileSystem;
 
 t_fileSystem fs;
+
 int PUERTO_FS= 3490;
 int s_servidor;
 t_list *t_dataNodes;
@@ -39,6 +40,7 @@ pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
 
 void cargarNodos();
+void posicion(t_bitarray* array, int pos);
 void fs_format();
 void fs_rm(char * arg);
 void fs_rename(char * arg);

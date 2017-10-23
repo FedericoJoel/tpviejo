@@ -5,14 +5,14 @@ int main(void) {
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.
 //	iniciar_servidor();
 
-	if(existenArchivosDeConfiguracion()){
-		cargarNodos(&fs.estructuraNodos);
-		printf("--------------------------------------------------------------------------------------------------- \n");
-		mostrarDirectorio(fs.directorio);
+	if(existenArchivosDeConfiguracion() == 0){
+//		cargarNodos(&fs.estructuraNodos);
+//		printf("--------------------------------------------------------------------------------------------------- \n");
+//		mostrarDirectorio(fs.directorio);
 //		printf("--------------------------------------------------------------------------------------------------- \n");
 //		cargarTablaArchivo(&fs.tablaArchivo);
 //		printf("--------------------------------------------------------------------------------------------------- \n");
-//		cargarBitmap(&fs.bitArray);
+		fs.bitArray = cargarBitmapAMemoria();
 	}else{
 		fs_format();
 	}
@@ -32,8 +32,10 @@ int main(void) {
 
 }
 
+
+
 int existenArchivosDeConfiguracion(){
-	if(existeDirectorio() && existenNodos()){
+	if((existeDirectorio() == 0) && (existenNodos() == 0)){
 		return EXIT_SUCCESS;
 	}else{
 		return EXIT_FAILURE;
@@ -72,6 +74,8 @@ void ejecutarConsola(){
 	      break;
 	    }
 //	    RECONOZCO COMANDOS
+	    if(string_equals_ignore_case(linea, "posicion")){
+	    	    	posicion(fs.bitArray,3);
 	    if(string_equals_ignore_case(linea, "format")){
 	    	fs_format();
 	    }else if(string_starts_with(linea, "rm ")){
@@ -101,6 +105,11 @@ void ejecutarConsola(){
 	    free(linea);
 	  }
 
+}
+}
+
+void posicion(t_bitarray* array, int pos){
+	bitarray_test_bit(array, pos);
 }
 
 void fs_format(){

@@ -4,7 +4,12 @@ char* rutaNodo =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/nodos.bin";
 
 char* rutaBitMap =
-		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/nodo2.dat";
+		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/bitArrayNodo.dat";
+
+FILE* dameArchivo(){
+	FILE * archivo = fopen(rutaBitMap, "r");
+	return archivo;
+}
 
 int tamanioTotalFs(){
 	t_config* config = config_create(rutaNodo);
@@ -97,33 +102,33 @@ char* sacar(char* palabra, char* caracter) {
 	return palabraN[0];
 }
 
-void cargarBitmap(t_bitarray* bitArray){
+t_bitarray* cargarBitmapAMemoria(){
 	size_t len = 0;
-	int pos = 0;
+	off_t pos = 0;
+	t_bitarray* bitArray;
 	FILE * archivo = fopen(rutaBitMap, "r");
 	char * linea = NULL;
-	if ((getline(&linea, &len, archivo)) != EOF){
-		size_t largo = string_length(linea);
-		bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
-		for (pos = 0; pos < largo; pos++){
-			cargarLinea(largo, linea, bitArray);
-			imprimirEstado(bitArray, pos);
+		if ((getline(&linea, &len, archivo)) != EOF){
+			size_t largo = string_length(linea);
+			bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
+			for (pos = 0; pos < largo; pos++){
+				cargarLinea(pos, linea, bitArray);
+				imprimirEstado(bitArray, pos);
+			}
+			return bitArray;
 		}
+	return NULL;
+}
+
+void cargarLinea(int pos, char* linea, t_bitarray* bitArray){
+	if (linea[pos] == '1'){
+		bitarray_set_bit(bitArray, pos);
+	}else{
+		bitarray_clean_bit(bitArray, pos);
 	}
 }
 
-void cargarLinea(int largo, char* linea, t_bitarray* bitArray){
-	int pos = 0;
-	for (pos = 0; pos < largo; pos++){
-		if (linea[pos] == '1'){
-			bitarray_set_bit(bitArray, pos);
-		}else{
-			bitarray_clean_bit(bitArray, pos);
-		}
-	}
-}
-
-void imprimirEstado (t_bitarray *bitArray, int pos){
+void imprimirEstado (t_bitarray *bitArray, off_t pos){
 	if (bitarray_test_bit(bitArray, pos))
 		printf("Ocupado \n");
 	else{

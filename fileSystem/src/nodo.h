@@ -7,7 +7,7 @@
 #include <commons/string.h>
 #include <commons/bitarray.h>
 #include <commons/collections/list.h>
-
+#include <pthread.h>
 
 typedef struct{
 	char* nombreNodo;
@@ -17,9 +17,9 @@ typedef struct{
 
 estructuraNodo levantarNodo(int pos);
 char* sacar (char* palabra, char* caracter);
-void cargarBitmap(t_bitarray* bitArray);
+t_bitarray* cargarBitmapAMemoria();
 void cargarLinea(int largo, char* linea, t_bitarray *bitArray);
-void imprimirEstado (t_bitarray *bitArray, int pos);
+void imprimirEstado (t_bitarray *bitArray, off_t pos);
 int tamanioTotalFs();
 int tamanioLibreFs();
 int cantidadNodos();
