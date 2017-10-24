@@ -13,7 +13,9 @@ typedef enum {
 	DN_SETBLOQUE,
 	DN_GETBLOQUE,
 	DN_GETBLOQUEANSW,
-	FS_YM_ERRORCONN
+	FS_YM_ERRORCONN,
+	FS_YM_ERRORCONN,
+	YM_FS_RUTA
 }t_proto;
 
 typedef enum {
@@ -27,5 +29,6 @@ typedef enum { //DISTINTOS CLIENTES QUE PUEDEN LLEGAR A UN FILESYSTEM
 	WORKER,
 	YAMA
 }t_clientes_fs;
+
 
 #endif

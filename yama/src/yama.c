@@ -915,7 +915,7 @@ void atender_inicio_job(int posicion) {
 	//por ahora hardcodeamos la estructura que recibe
 
 
-	t_list* archivo_planificado = tablaPlanificacionCompleta(lista_de_nodos_recibidos);
+	t_list* archivo_planificado = tablaPlanificacionCompleta(&lista_de_nodos_recibidos);
 //
 //	//mockeo las copias que se eligen
 //	bloque_mock_0.elegida = 0;
@@ -943,9 +943,13 @@ void atender_fin_transf_bloque(int posicion) {
 	modificarBloqueTablaEstados(bloque,ETAPA_TRANSFORMACION,ESTADO_FINALIZADO_OK,posicion,0);//TODO que mierda le paso en los ultimos 2
 	log_info(logger, "finalizo la transformacion del bloque %d del master %d",
 			bloque, socket_clientes[posicion]);
-	int estado = terminoEtapaTransformacion(0,posicion);
+	int estado = terminoEtapaTransformacion(0,posicion);//todo aca deberia ir el worker y el job
 
-	//TODO marcar en tabla de estados que termino la transformacion del bloque, si no hay ninguna otra transformacion en curso en ese nodo del worker,arranco reduccion
+	if(estado) {
+		t_list* reg = iniciarReduccion(posicion,0);//todo lo mismo que el anteiror
+	}
+
+	//TODO marcar en tabla *de estados que termino la transformacion del bloque, si no hay ninguna otra transformacion en curso en ese nodo del worker,arranco reduccion
 }
 
 void atender_fin_transformacion(int posicion) {
@@ -953,6 +957,10 @@ void atender_fin_transformacion(int posicion) {
 	log_info(logger, "finalizaron las transformaciones de master %d",
 			socket_clientes[posicion]);
 	//enviar_reduccion_local(posicion);
+}
+
+void enviar_ruta_fs(char* mensaje) {
+	enviarMensajeConProtocolo(socket_fs,mensaje,YM_FS_RUTA);
 }
 
 void enviar_reduccion_local(int posicion) {

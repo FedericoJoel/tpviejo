@@ -75,6 +75,7 @@ void modificarBloqueTablaEstados(int bloque, int etapa, int estado, int worker, 
 int cargaTrabajoMaxima(int job);
 int cargaTrabajoWorker(int worker);
 void enviarAMaster(t_list * tabla);
+void enviar_ruta_fs(char* mensaje);
 char* generar_numero_aleatorio();
 t_list * tablaestadosPrueba();
 //----------otros---------------------

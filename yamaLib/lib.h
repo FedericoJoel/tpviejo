@@ -57,6 +57,11 @@ typedef struct reg_planificacion{
 	char* ip;
 }t_reg_planificacion;
 
+typedef struct respuesta_master{
+	int job;
+	int worker;
+	int estado;
+}t_resp_master;
 
 //---------logger----------
 t_log* abrir_logger(char* ruta_archivo, char* nombre_programa,t_log_level nivel);
