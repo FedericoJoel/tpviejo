@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <commons/temporal.h>
@@ -39,8 +38,27 @@ t_list *s_dataNodes;
 pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
 
-void cargarNodos();
+//DEVUELVE LA POSICION DE UN NODO SEGUN EL NOMBRE
+int encontrarPosicion(t_list* fs, char* nombre);
+
+//AGREGA UN NODO A LA ESTRUCTURA FS
+void agregarNodoAFs(estructuraFs* fs, int id, int bloquesLibres, int bloquesTotales);
+
+//ELIMINA UN NODO DE LA ESTRUCTURA FS
+void eliminarNodoDeFs(estructuraFs* fs, int id);
+
+//MODIFICA LOS BLOQUES LIBRE DE UN NODO QUE YA FORMA PARTE DEL FS
+void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados);
+
+//CARGA LOS NODOS EXISTENTES EN EL ARCHIO AL FS
+void cargarNodosAFs(estructuraFs* fs);
+
+//DEVUELVE EL VALOR DE UNA POSICION DETERMINADA
 void posicion(t_bitarray* array, int pos);
+
+//ELIMINA TODOS LOS NODOS DE LA ESTRUCTURA FS
+void eliminarNodos(estructuraFs* fs);
+
 void fs_format();
 void fs_rm(char * arg);
 void fs_rename(char * arg);

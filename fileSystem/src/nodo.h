@@ -15,7 +15,9 @@ typedef struct{
 	int tamanioLibreNodo;
 }estructuraNodo;
 
-estructuraNodo levantarNodo(int pos);
+int ordenarNodo(estructuraNodo* nodo1, estructuraNodo* nodo2);
+int obtenerId (char* nodo);
+estructuraNodo* levantarNodo(int pos);
 char* sacar (char* palabra, char* caracter);
 t_bitarray* cargarBitmapAMemoria();
 void cargarLinea(int largo, char* linea, t_bitarray *bitArray);
@@ -23,7 +25,7 @@ void imprimirEstado (t_bitarray *bitArray, off_t pos);
 int tamanioTotalFs();
 int tamanioLibreFs();
 int cantidadNodos();
-int cantidadElementos(char ** array);
 int existenNodos();
+void borrarNodo(int idNodo, int idBloque);
 
 #endif /* NODO_H_ */

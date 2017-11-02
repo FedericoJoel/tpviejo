@@ -7,6 +7,7 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
+#include "nodo.h"
 
 //ARCHIVO//
 
@@ -25,8 +26,13 @@ typedef struct{
 	t_list* bloques;
 }t_archivo;
 
-void cargarTablaArchivo(t_archivo* nuevoArchivo);
+void cargarTablaArchivo(t_archivo* nuevoArchivo, char* rutaArchivo);
 void cargarDatos(char* lineaDatos,char* lineaElem, t_archivo* nuevoArchivo, int cantidadCampos);
+void eliminarNodoDeArchivo(t_archivo* archivo, int id);
+void eliminarBloqueDeArchivo(t_archivo* archivo, char* numeroBloque, char* numeroCopia);
+
+estructuraBloque* crearBloque(char* copiaBloque, char* copiaBloque1, char* nodoBloque,
+		char* nodoBloque1, char* tamanioBytes, int tamanioBloque);
 
 //devuelve el tamanio total del archivo
 int dameTamanio(char* linea, int elemento);
@@ -48,5 +54,8 @@ char* dameBloque (char* linea, int elemento);
 
 //retorna la posicion de un elemento
 int dameElemento(char* linea, int elemento);
+
+//RETORNA EL NODO QUE POSSE UN [NODO, BLOQUE]
+char* dameNodo(char* nodoBloque);
 
 #endif /* ARCHIVO_H_ */

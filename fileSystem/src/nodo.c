@@ -1,14 +1,31 @@
 #include "nodo.h"
 
 char* rutaNodo =
-		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/nodos.bin";
+		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/nodos.bin";
 
 char* rutaBitMap =
-		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/fileSystem/src/bitArrayNodo.dat";
+		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/bitArrayNodo.dat";
 
 FILE* dameArchivo(){
 	FILE * archivo = fopen(rutaBitMap, "r");
 	return archivo;
+}
+
+int ordenarNodo(estructuraNodo* nodo1, estructuraNodo* nodo2){
+	int id1 = obtenerId(nodo1->nombreNodo);
+	int id2 = obtenerId(nodo2->nombreNodo);
+	return(id1<id2);
+}
+
+int obtenerId (char* nodo){
+	int id = 0;
+	int posicion = 1;
+	int nodoLargo = 3;	//Nodo = 3
+	char* palabra = string_new();
+	string_append(&palabra, string_substring_from(nodo, nodoLargo+posicion));
+	id = atoi(palabra);
+	free(palabra);
+	return id;
 }
 
 int tamanioTotalFs(){
@@ -36,29 +53,25 @@ int tamanioLibreFs(){
 int cantidadNodos(){
 	t_config* config = config_create(rutaNodo);
 	char* nodos = config_get_string_value(config, "NODOS");
-	config_destroy(config);
+//	config_destroy(config);
 	char** listaNodos = string_split(nodos, ",");
+
 	int cantidad = cantidadElementos(listaNodos);
-	free(listaNodos);
+//	free(listaNodos);
 	return cantidad;
 }
 
-int cantidadElementos(char ** array){
-	    size_t count = 0;
-	    while (array[count] != NULL) count++;
-	    return count;
-}
-
-estructuraNodo levantarNodo(int posicion) {
+estructuraNodo* levantarNodo(int posicion) {
 	char* nodo = string_new();
 	char* nodos = string_new();
-	estructuraNodo nodoNuevo;
+	estructuraNodo* nodoNuevo = malloc(sizeof (estructuraNodo));
 
 	t_config* config = config_create(rutaNodo);
 
 	nodos = config_get_string_value(config, "NODOS");
 	char** listaNodos = string_split(nodos, ",");
-	if ((nodo = listaNodos[posicion]) != NULL) {
+	string_append(&nodo, listaNodos[posicion]);
+	if ( nodo != NULL) {
 		char *nodoTotal = string_new();
 		char *nodoLibre = string_new();
 
@@ -78,9 +91,9 @@ estructuraNodo levantarNodo(int posicion) {
 		int tamanioTotalNodo = config_get_int_value(config, nodoTotal);
 		int tamanioLibreNodo = config_get_int_value(config, nodoLibre);
 
-		nodoNuevo.nombreNodo = nodo;
-		nodoNuevo.tamanioTotalNodo = tamanioTotalNodo;
-		nodoNuevo.tamanioLibreNodo = tamanioLibreNodo;
+		nodoNuevo->nombreNodo = string_duplicate(nodo);
+		nodoNuevo->tamanioTotalNodo = tamanioTotalNodo;
+		nodoNuevo->tamanioLibreNodo = tamanioLibreNodo;
 
 		printf("%s = %d \n", nodoTotal, tamanioTotalNodo);
 		printf("%s = %d \n", nodoLibre, tamanioLibreNodo);
@@ -89,43 +102,40 @@ estructuraNodo levantarNodo(int posicion) {
 		free(nodoTotal);
 		free(listaNodos);
 		free(nodos);
+		free(nodo);
 		return nodoNuevo;
 	}else{
-		nodoNuevo.nombreNodo = "Vacio";
+		nodoNuevo->nombreNodo = string_duplicate("Vacio");
 		return nodoNuevo;
 	}
-}
-
-char* sacar(char* palabra, char* caracter) {
-	char** palabraN;
-	palabraN = string_split(palabra, caracter);
-	return palabraN[0];
 }
 
 t_bitarray* cargarBitmapAMemoria(){
 	size_t len = 0;
 	off_t pos = 0;
-	t_bitarray* bitArray;
 	FILE * archivo = fopen(rutaBitMap, "r");
-	char * linea = NULL;
+	char * linea = string_new();
 		if ((getline(&linea, &len, archivo)) != EOF){
 			size_t largo = string_length(linea);
-			bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
+			t_bitarray* bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
 			for (pos = 0; pos < largo; pos++){
 				cargarLinea(pos, linea, bitArray);
 				imprimirEstado(bitArray, pos);
 			}
 			return bitArray;
 		}
-	return NULL;
+		return NULL;
 }
 
 void cargarLinea(int pos, char* linea, t_bitarray* bitArray){
-	if (linea[pos] == '1'){
+	char* copia = string_new();
+	string_append_with_format(&copia, "%s!", linea);
+	if (copia[pos] == '1'){
 		bitarray_set_bit(bitArray, pos);
 	}else{
 		bitarray_clean_bit(bitArray, pos);
 	}
+	free(copia);
 }
 
 void imprimirEstado (t_bitarray *bitArray, off_t pos){
@@ -134,4 +144,8 @@ void imprimirEstado (t_bitarray *bitArray, off_t pos){
 	else{
 		printf("Libre \n");
 	}
+}
+
+void borrarNodo(int idNodo, int idBloque){
+	printf("Bloque %d borrado, del nodo %d", idBloque, idNodo);
 }

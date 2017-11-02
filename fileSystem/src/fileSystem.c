@@ -5,17 +5,6 @@ int main(void) {
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.
 //	iniciar_servidor();
 
-	if(existenArchivosDeConfiguracion() == 0){
-//		cargarNodos(&fs.estructuraNodos);
-//		printf("--------------------------------------------------------------------------------------------------- \n");
-//		mostrarDirectorio(fs.directorio);
-//		printf("--------------------------------------------------------------------------------------------------- \n");
-//		cargarTablaArchivo(&fs.tablaArchivo);
-//		printf("--------------------------------------------------------------------------------------------------- \n");
-		fs.bitArray = cargarBitmapAMemoria();
-	}else{
-		fs_format();
-	}
 	//GENERAMOS UN THREAD PARA LA CONSOLA
 	pthread_t t_consola;
 	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
@@ -26,13 +15,56 @@ int main(void) {
 
 	return EXIT_SUCCESS;
 
-////	PRUEBA YAMALIB
-//	saludar();
-//	return EXIT_SUCCESS;
+}
+
+void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados){
+	char* nodoNumero = string_itoa(id);
+	char* nodoNombre = string_new();
+	string_append(&nodoNombre, "Nodo");
+	string_append(&nodoNombre, nodoNumero);
+	estructuraNodo* nodo = malloc(sizeof(estructuraNodo));
+
+	int posicion = encontrarPosicion(fs->nodos, nodoNombre);
+
+	nodo = list_get(fs->nodos, posicion);
+
+	nodo->tamanioLibreNodo = nodo->tamanioLibreNodo - bloquesOcupados;
+
+	list_replace(fs->nodos, posicion, (void*) nodo);
 
 }
 
+void eliminarNodoDeFs(estructuraFs* fs, int id){
 
+	char* nodoNumero = string_new();
+	nodoNumero = string_itoa(id);
+	char* nodoNombre = string_new();
+	string_append(&nodoNombre, "Nodo");
+	string_append(&nodoNombre, nodoNumero);
+
+	free(nodoNumero);
+
+	int posicion = encontrarPosicion(fs->nodos,nodoNombre);
+
+	list_remove(fs->nodos, posicion);
+}
+
+int encontrarPosicion(t_list* nodos, char* nombre){
+	int posicion = 0;
+	int largo = list_size(nodos);
+
+	while (posicion < largo){
+		estructuraNodo* nodo = malloc(sizeof (estructuraNodo));
+		nodo = list_get(nodos, posicion);
+		if(string_equals_ignore_case(nodo->nombreNodo, nombre)){
+//			free(nodo);
+			break;
+		}
+//		free(nodo);
+		posicion++;
+	}
+	return posicion;
+}
 
 int existenArchivosDeConfiguracion(){
 	if((existeDirectorio() == 0) && (existenNodos() == 0)){
@@ -42,8 +74,32 @@ int existenArchivosDeConfiguracion(){
 	}
 }
 
-void cargarNodos(estructuraFs* nuevoFs){
-	estructuraNodo* nuevoNodo = malloc(sizeof nuevoNodo);
+void agregarNodoAFs(estructuraFs* fs, int id, int bloquesLibres, int bloquesTotales){
+	fs->tamanioLibreFs = fs->tamanioLibreFs + bloquesLibres;
+	fs->tamanioTotalFs = fs->tamanioTotalFs + bloquesTotales;
+	estructuraNodo* nuevoNodo = malloc(sizeof (estructuraNodo));
+	char* nodoNumero = string_new();
+	nodoNumero = string_itoa(id);
+	char* nodoNombre = string_new();
+	string_append(&nodoNombre, "Nodo");
+	string_append_with_format(&nodoNombre, "%s", nodoNumero);
+
+	nuevoNodo->nombreNodo = string_duplicate(nodoNombre);
+
+	nuevoNodo->tamanioLibreNodo = bloquesLibres;
+	nuevoNodo->tamanioTotalNodo = bloquesTotales;
+
+	list_add(fs->nodos, (void*) nuevoNodo);
+
+	list_sort(fs->nodos, (void*) ordenarNodo);
+
+	free(nodoNombre);
+	free(nodoNumero);
+//	free(nuevoNodo);
+}
+
+void cargarNodosAFs(estructuraFs* nuevoFs){
+
 	int tamanioFs = tamanioTotalFs();
 	int espacioLibreFs = tamanioLibreFs();
 	int contador = 0;
@@ -57,10 +113,11 @@ void cargarNodos(estructuraFs* nuevoFs){
 
 	int cantidadDeNodos = cantidadNodos();
 	for(contador = 0; contador < cantidadDeNodos; contador++){
-		*nuevoNodo = levantarNodo(contador);
+		estructuraNodo* nuevoNodo = malloc(sizeof (estructuraNodo));
+		nuevoNodo = levantarNodo(contador);
 		list_add(nuevoFs->nodos, (void*) nuevoNodo);
+//		free(nuevoNodo);
 	}
-	free(nuevoNodo);
 }
 
 void ejecutarConsola(){
@@ -74,8 +131,6 @@ void ejecutarConsola(){
 	      break;
 	    }
 //	    RECONOZCO COMANDOS
-	    if(string_equals_ignore_case(linea, "posicion")){
-	    	    	posicion(fs.bitArray,3);
 	    if(string_equals_ignore_case(linea, "format")){
 	    	fs_format();
 	    }else if(string_starts_with(linea, "rm ")){
@@ -106,7 +161,6 @@ void ejecutarConsola(){
 	  }
 
 }
-}
 
 void posicion(t_bitarray* array, int pos){
 	bitarray_test_bit(array, pos);
@@ -115,7 +169,20 @@ void posicion(t_bitarray* array, int pos){
 void fs_format(){
 	printf("Formateo de disco \n");
 	eliminarArchivosDeDirectorio(fs.directorio);
-//	eliminarNodos(&fs.estructuraNodos);
+	eliminarNodos(&fs.estructuraNodos);
+}
+
+void eliminarNodos(estructuraFs* fs){
+	list_clean(fs->nodos);
+	char* touch = string_new();
+	char* rm = string_new();
+	string_append(&rm, "rm -r /home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/algo.dat");
+	string_append(&touch, "touch /home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/directorio1.dat");
+	system(rm);
+	system(touch);
+	free(rm);
+	free(touch);
+
 }
 
 void fs_rm(char * arg){
@@ -125,24 +192,43 @@ void fs_rm(char * arg){
 	int i;
 
 	argumentos = string_split(arg, " ");
-	int cantidadElementos = sizeof(argumentos)/sizeof(argumentos[0]);
-	int cantidadElementosPath = sizeof(path)/sizeof(path[0]);
+	int cantidadDeElementos = cantidadElementos(argumentos);
 
-	for(i=0;i<cantidadElementos;i++){
+	for(i=0;i<cantidadDeElementos;i++){
 		string_trim(&argumentos[i]);
 	}
 
 	if (string_equals_ignore_case(*argumentos, "-d")){
 		if (string_starts_with(argumentos[1], "/")){
-		printf("Se eliminó el directorio '%s'\n",argumentos[cantidadElementos - 1]);
+			char* rm = string_new();
+			string_append(&rm, "rm -d ");
+			string_append(&rm, argumentos[cantidadDeElementos - 1]);
+			printf("comando: %s \n", rm);
+			int finalizo = system(rm);
+			if (finalizo == 0){
+				path = string_split(arg, "/");
+				int cantidadDeElementosPath = cantidadElementos(path);
+				printf("Se eliminó el directorio %s \n",path[cantidadDeElementosPath - 1]);
+			}else if (finalizo == 256){
+
+			}
+			free(rm);
+
 		}
 		else
 		{
-		printf("No se puede eliminar el directorio \n");
+			printf("No se puede eliminar el directorio, ya que no se encuentra \n");
 		}
 	}
 	else if(string_equals_ignore_case(*argumentos, "-b"))
 	{
+		t_archivo* estructuraArchivo = malloc(sizeof(t_archivo));
+		char* pathArchivo = string_duplicate(argumentos[1]);
+		char* numeroBloque = string_duplicate(argumentos[2]);
+		char* numeroCopia = string_duplicate(argumentos[3]);
+		cargarTablaArchivo(estructuraArchivo, pathArchivo);
+		eliminarBloqueDeArchivo(estructuraArchivo, numeroBloque, numeroCopia);
+		printf("%s \n %s \n %s \n",pathArchivo, numeroBloque, numeroCopia);
 		printf("Se elimino el nodo '%s'\n",*argumentos);
 	}
 	else
@@ -150,10 +236,22 @@ void fs_rm(char * arg){
 	if(string_starts_with(*argumentos, "/"))
 		{
 		path = string_split(arg, "/");
-		printf("Archivo Eliminado '%s'\n",path[cantidadElementosPath - 1]);
+		int cantidadDeElementosPath = cantidadElementos(path);
+		char* rm = string_new();
+		string_append(&rm, "rm -d ");
+		string_append(&rm, argumentos[cantidadDeElementos - 1]);
+		printf("comando: %s \n", rm);
+		int finalizo = system(rm);
+		if (finalizo == 0){
+			path = string_split(arg, "/");
+			int cantidadDeElementosPath = cantidadElementos(path);
+			printf("Archivo Eliminado %s\n",path[cantidadDeElementosPath - 1]);
+		}else if (finalizo == 256){
+
 		}
-		else
-		{
+		free(rm);
+		}
+	else{
 		printf("Archivo Eliminado '%s'\n", *argumentos);
 		}
 	}

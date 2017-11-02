@@ -14,4 +14,8 @@ int ejecutarRutina();
 
 int crearFork();
 
+char* sacar(char* palabra, char* caracter);
+
+int cantidadElementos(char ** array);
+
 #endif /* LIB_H_ */
