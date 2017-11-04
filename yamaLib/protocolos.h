@@ -12,7 +12,9 @@ typedef enum {
 	DN_OKCONN,
 	DN_SETBLOQUE,
 	DN_GETBLOQUE,
-	DN_GETBLOQUEANSW
+	DN_GETBLOQUEANSW,
+	DN_KEEPALIVE,
+	DN_ALIVE
 }t_proto;
 
 typedef enum {

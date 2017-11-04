@@ -174,3 +174,8 @@ void string_append_separador(char** original, char* string_to_add,char* separado
 	string_append(original,separador);
 	string_append(original,string_to_add);
 }
+
+char** array_string_new(int size){
+	char** array = calloc(size,sizeof(char*));
+	return array;
+}

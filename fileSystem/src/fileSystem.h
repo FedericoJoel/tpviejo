@@ -23,6 +23,7 @@ typedef struct nodo{
 	int id;
 	char* ip;
 	int socket;
+	int bloque_cant;
 }t_nodo;
 
 //CANTIDAD MAXIMA DE CLIENTES CONCURRENTES
@@ -51,6 +52,9 @@ void fs_ls(char * arg);
 
 void fs_info(char * arg);
 
+t_list* cortar_texto(char* mensaje, t_list* lista);
+int size_in_bloks(char* mensaje);
+
 void ejecutarConsola();
 int str_array_size(char** array);
 void str_array_print(char ** array);
@@ -58,8 +62,10 @@ void esperar_conexiones();
 void iniciar_servidor();
 void atender_dn();
 
-void set_bloque(int s_nodo,char* datos,int bloque);
+int set_bloque(int s_nodo,char* datos,int bloque);
 char* get_bloque(int s_nodo, int bloque);
+int keep_alive(int socket);
+t_list * cortar_datos(int numeroDePalabra,char** palabras, t_list * bloques);
 
 int leer_cliente(int s_nodo, char * buffer);
 
