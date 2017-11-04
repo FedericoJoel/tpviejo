@@ -26,6 +26,7 @@ int job = 1;
 t_list *numeros_aleatorios;
 
 int main(void) {
+<<<<<<< HEAD
 	/*estados = list_create();*/
 
 	//t_list * a = tablaestadosPrueba();

@@ -74,4 +74,8 @@ t_bloque_archivo* bloque_archivo_from_string(char* char_bloque);
 char* bloque_archivo_to_string(t_bloque_archivo* bloque);
 
 
+char* sacar(char* palabra, char* caracter);
+
+int cantidadElementos(char ** array);
+
 #endif /* LIB_H_ */

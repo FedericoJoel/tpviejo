@@ -1,6 +1,5 @@
 #include "master.h"
 
-
 int puerto_yama = 2323;
 int INICIAR_TRANSFORMACION = 0010;
 int s_yama;
@@ -37,9 +36,11 @@ int main(int argc, char **argv) {
 
 	log_info(logger,"Salir del programa");
 
+	//conectar con YAMA
+	conectarse_yama();
+
 	return EXIT_SUCCESS;
 }
-
 
 void levantar_config(void) {
 	log_info(logger,"Levantando configuracion");

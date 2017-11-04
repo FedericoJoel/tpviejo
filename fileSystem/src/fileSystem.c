@@ -1,6 +1,5 @@
 #include "fileSystem.h"
 
-int PUERTO_FS= 3490;
 int s_servidor;
 int s_clientes[clientes_max];
 t_list *t_dataNodes;
@@ -32,16 +31,117 @@ int main(void) {
 	pthread_t t_consola;
 	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
 
+	cargarDirectorio(fs.directorio);
+
 	//ESPERAMOS A QUE TERMINEN TODOS LOS THREAD
 	pthread_join(t_espera_data_nodes,NULL);
 	pthread_join(t_consola,NULL);
 
 	return EXIT_SUCCESS;
 
-////	PRUEBA YAMALIB
-//	saludar();
-//	return EXIT_SUCCESS;
+}
 
+void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados){
+	char* nodoNumero = string_itoa(id);
+	char* nodoNombre = string_new();
+	string_append(&nodoNombre, "Nodo");
+	string_append(&nodoNombre, nodoNumero);
+	estructuraNodo* nodo = malloc(sizeof(estructuraNodo));
+
+	int posicion = encontrarPosicion(fs->nodos, nodoNombre);
+
+	nodo = list_get(fs->nodos, posicion);
+
+	nodo->tamanioLibreNodo = nodo->tamanioLibreNodo - bloquesOcupados;
+
+	list_replace(fs->nodos, posicion, (void*) nodo);
+
+}
+
+void eliminarNodoDeFs(estructuraFs* fs, int id){
+
+	char* nodoNumero = string_new();
+	nodoNumero = string_itoa(id);
+	char* nodoNombre = string_new();
+	string_append(&nodoNombre, "Nodo");
+	string_append(&nodoNombre, nodoNumero);
+
+	free(nodoNumero);
+
+	int posicion = encontrarPosicion(fs->nodos,nodoNombre);
+
+	list_remove(fs->nodos, posicion);
+}
+
+int encontrarPosicion(t_list* nodos, char* nombre){
+	int posicion = 0;
+	int largo = list_size(nodos);
+
+	while (posicion < largo){
+		estructuraNodo* nodo = malloc(sizeof (estructuraNodo));
+		nodo = list_get(nodos, posicion);
+		if(string_equals_ignore_case(nodo->nombreNodo, nombre)){
+//			free(nodo);
+			break;
+		}
+//		free(nodo);
+		posicion++;
+	}
+	return posicion;
+}
+
+int existenArchivosDeConfiguracion(){
+	if((existeDirectorio() == 0) && (existenNodos() == 0)){
+		return EXIT_SUCCESS;
+	}else{
+		return EXIT_FAILURE;
+	}
+}
+
+void agregarNodoAFs(estructuraFs* fs, int id, int bloquesLibres, int bloquesTotales){
+	fs->tamanioLibreFs = fs->tamanioLibreFs + bloquesLibres;
+	fs->tamanioTotalFs = fs->tamanioTotalFs + bloquesTotales;
+	estructuraNodo* nuevoNodo = malloc(sizeof (estructuraNodo));
+	char* nodoNumero = string_new();
+	nodoNumero = string_itoa(id);
+	char* nodoNombre = string_new();
+	string_append(&nodoNombre, "Nodo");
+	string_append_with_format(&nodoNombre, "%s", nodoNumero);
+
+	nuevoNodo->nombreNodo = string_duplicate(nodoNombre);
+
+	nuevoNodo->tamanioLibreNodo = bloquesLibres;
+	nuevoNodo->tamanioTotalNodo = bloquesTotales;
+
+	list_add(fs->nodos, (void*) nuevoNodo);
+
+	list_sort(fs->nodos, (void*) ordenarNodo);
+
+	free(nodoNombre);
+	free(nodoNumero);
+//	free(nuevoNodo);
+}
+
+void cargarNodosAFs(estructuraFs* nuevoFs){
+
+	int tamanioFs = tamanioTotalFs();
+	int espacioLibreFs = tamanioLibreFs();
+	int contador = 0;
+
+	nuevoFs->nodos = list_create();
+
+	nuevoFs->tamanioTotalFs = tamanioFs;
+	printf("TAMANIO = %d \n", tamanioFs);
+	nuevoFs->tamanioLibreFs = espacioLibreFs;
+	printf("LIBRE = %d \n", espacioLibreFs);
+
+	int cantidadDeNodos = cantidadNodos();
+	for(contador = 0; contador < cantidadDeNodos; contador++){
+		estructuraNodo* nuevoNodo = malloc(sizeof (estructuraNodo));
+		nuevoNodo = levantarNodo(contador);
+		list_add(nuevoFs->nodos, (void*) nuevoNodo);
+//		free(nuevoNodo);
+	}
 }
 
 void ejecutarConsola(){
@@ -81,13 +181,65 @@ void ejecutarConsola(){
 	    	fs_info(string_substring(linea, 5, strlen(linea)));
 	    }
 
+
 	    free(linea);
 	  }
 
 }
+//
+//void esperar_data_nodes(){
+//	//Creamos un servidor
+//	s_servidor = crearServidor(PUERTO_FS);
+//
+//
+//	//Creo lista de sockets
+//	s_dataNodes = list_create();
+//
+//
+//	while(1){
+//
+//		char * AUTH = string_new();
+//		//BLOQUEANTE espero una conexion de un DN
+//		int socket = esperarConexion(s_servidor);
+//		printf("la autorizacion es %s \n",AUTH);
+//
+//		//Lo agrego a la lista de datanodes's sockets
+//		int posicion = list_add(s_dataNodes, (void *) &socket);
+//		printf("Escuchamos una nueva coneccion,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
+//
+//		//LE MANDO UN MENSAJE PARA QUE ESCRIBA UN BLOQUE
+//		void* respuesta = list_get(s_dataNodes, 0);
+//		int * s_nodo = (int*) respuesta;
+//		set_bloque(s_nodo,"datosdatos");
+////		int tam = sizeof(t_atiende_dn)/sizeof(*t_atiende_dn);
+////		pthread_create(&t_atiende_dn + tam,NULL,(void*)&atender_dn, &socket);
+////		printf("el tamaño de t_espera_data_nodes ahora es de %d \n",tam);
+//	}
+//}
+
+//void atender_dn(void* soc){
+//	int *socket = (int *) soc;
+//	printf("voy a ejecutar una escritura \n",*socket);
+//	enviarMensajeConProtocolo(*socket, "DATOSDATOSDATOS", DN_SETBLOQUE);
+//}
+
 
 void fs_format(){
 	printf("Formateo de disco \n");
+	eliminarArchivosDeDirectorio(fs.directorio);
+	eliminarNodos(&fs.estructuraNodos);
+}
+
+void eliminarNodos(estructuraFs* fs){
+	list_clean(fs->nodos);
+	char* touch = string_new();
+	char* rm = string_new();
+	string_append(&rm, "rm -r /home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/algo.dat");
+	string_append(&touch, "touch /home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/directorio1.dat");
+	system(rm);
+	system(touch);
+	free(rm);
+	free(touch);
 }
 
 void fs_rm(char * arg){
@@ -95,23 +247,47 @@ void fs_rm(char * arg){
 	char ** argumentos;
 	char ** path;
 	int i;
-	argumentos = string_split(arg, " ");
 
-	for(i=0;i<str_array_size(argumentos);i++){
+	argumentos = string_split(arg, " ");
+	int cantidadDeElementos = cantidadElementos(argumentos);
+
+	for(i=0;i<cantidadDeElementos;i++){
 		string_trim(&argumentos[i]);
 	}
 
 	if (string_equals_ignore_case(*argumentos, "-d")){
 		if (string_starts_with(argumentos[1], "/")){
-		printf("Se eliminó el directorio '%s'\n",argumentos[str_array_size(*argumentos) - 1]);
+			char* rm = string_new();
+			string_append(&rm, "rm -d ");
+			string_append(&rm, argumentos[cantidadDeElementos - 1]);
+			printf("comando: %s \n", rm);
+			int finalizo = system(rm);
+			if (finalizo == 0){
+				path = string_split(argumentos[cantidadDeElementos-1], "/");
+				int cantidadDeElementosPath = cantidadElementos(path);
+				eliminarUnDirectorio(fs.directorio, path);
+				printf("Se eliminó el directorio %s \n",path[cantidadDeElementosPath - 1]);
+			}else if (finalizo == 256){
+
+			}
+			guardarDirectorioEnMemoria(fs.directorio);
+			free(rm);
+
 		}
 		else
 		{
-		printf("No se puede eliminar el directorio \n");
+			printf("No se puede eliminar el directorio, ya que no se encuentra \n");
 		}
 	}
 	else if(string_equals_ignore_case(*argumentos, "-b"))
 	{
+		t_archivo* estructuraArchivo = malloc(sizeof(t_archivo));
+		char* pathArchivo = string_duplicate(argumentos[1]);
+		char* numeroBloque = string_duplicate(argumentos[2]);
+		char* numeroCopia = string_duplicate(argumentos[3]);
+		cargarTablaArchivo(estructuraArchivo, pathArchivo);
+		eliminarBloqueDeArchivo(estructuraArchivo, numeroBloque, numeroCopia);
+		printf("%s \n %s \n %s \n",pathArchivo, numeroBloque, numeroCopia);
 		printf("Se elimino el nodo '%s'\n",*argumentos);
 	}
 	else
@@ -119,10 +295,21 @@ void fs_rm(char * arg){
 	if(string_starts_with(*argumentos, "/"))
 		{
 		path = string_split(arg, "/");
-		printf("Archivo Eliminado '%s'\n",path[str_array_size(*path) - 1]);
+		char* rm = string_new();
+		string_append(&rm, "rm -d ");
+		string_append(&rm, argumentos[cantidadDeElementos - 1]);
+		printf("comando: %s \n", rm);
+		int finalizo = system(rm);
+		if (finalizo == 0){
+			path = string_split(arg, "/");
+			int cantidadDeElementosPath = cantidadElementos(path);
+			printf("Archivo Eliminado %s\n",path[cantidadDeElementosPath - 1]);
+		}else if (finalizo == 256){
+
 		}
-		else
-		{
+		free(rm);
+		}
+	else{
 		printf("Archivo Eliminado '%s'\n", *argumentos);
 		}
 	}
@@ -130,38 +317,76 @@ void fs_rm(char * arg){
 
 void fs_rename(char * arg){
 	char** argumentos;
-	char** path;
 	argumentos = string_split(arg, " ");
-	if (string_starts_with(argumentos[0], "/")){
-	path = string_split(arg, "/");
-	printf("Renombrar el archivo '%s' a '%s' \n",path[str_array_size(*path) - 1],argumentos[1]);
-	}
-	else
-	{
-	printf("Renombrar el archivo '%s' a '%s' \n",argumentos[0],argumentos[1]);
-	}
+	char* rename = string_new();
+	string_append(&rename, "mv ");
 
+	if (string_starts_with(argumentos[0], "/") && string_starts_with(argumentos[1], "/")){
+		int pos = 0;
+		char** path = string_split(argumentos[0], "/");
+		int cantidadParametrosPath = cantidadElementos(path);
+		char** path1 = string_split(argumentos[1], "/");
+		int cantidadParametrosPath1 = cantidadElementos(path1);
+		cantidadParametrosPath--;
+		cantidadParametrosPath1--;
+		if (cantidadParametrosPath == cantidadParametrosPath1){
+			while (string_equals_ignore_case(path[pos], path1[pos]) && pos < cantidadParametrosPath){
+				pos++;
+			}
+			if (pos == cantidadParametrosPath){
+				string_append(&rename, argumentos[0]);
+				string_append(&rename, " ");
+				string_append(&rename, argumentos[1]);
+				system(rename);
+				printf("Se renombro de %s a %s \n", argumentos[0], argumentos[1]);
+			}else{
+				printf("No se puede renombrar, ya que los path no coinciden \n");
+			}
+		}else{
+			printf("No se puede renombrar, ya que los path no coinciden \n");
+		}
+	}else{
+		printf("Uno de los path no comienza con /");
+	}
+	free(rename);
 }
 
 void fs_mv(char * arg){
 	char** argumentos;
-	char** path;
 	argumentos = string_split(arg, " ");
-	if (string_starts_with(argumentos[0], "/")){
-	path = string_split(arg, "/");
-	printf("Se movio de '%s' a '%s' \n",path[str_array_size(*path) - 1], argumentos[1]);
-	}
-	else
-	{
-	printf("Se movio de '%s' a '%s' \n",argumentos[0], argumentos[1]);
+
+	if (string_starts_with(argumentos[0], "/") && string_starts_with(argumentos[1], "/")){
+		char** path = string_split(argumentos[0], "/");
+		int cantidadParametrosPath = cantidadElementos(path);
+		cantidadParametrosPath--;
+		char** path1 = string_split(argumentos[1], "/");
+		int cantidadParametrosPath1 = cantidadElementos(path1);
+		cantidadParametrosPath1--;
+
+		if (string_equals_ignore_case(path[cantidadParametrosPath], path1[cantidadParametrosPath1]) ){
+			char* rename = string_new();
+			string_append(&rename, "mv ");
+			string_append(&rename, argumentos[0]);
+			string_append(&rename, " ");
+			string_append(&rename, argumentos[1]);
+			system(rename);
+			printf("Se movio de %s a %s", argumentos[0], argumentos[1]);
+			free(rename);
+		}else{
+			printf("El nombre no coincide");
+		}
+	}else{
+		printf("Uno de los argumentos no comienza con /");
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_cat(char * arg){
 	char** path;
+	int cantidadElementos = sizeof(path)/sizeof(path[0]);
 	if (string_starts_with(arg, "/")){
 	path = string_split(arg, "/");
-	printf("Archivo a mostrar '%s'\n",path[str_array_size(*path) - 1]);
+	printf("Archivo a mostrar '%s'\n",path[cantidadElementos - 1]);
 	}
 	else
 	{
@@ -170,25 +395,45 @@ void fs_cat(char * arg){
 }
 
 void fs_mkdir(char * arg){
-	char** path;
 	if (string_starts_with(arg, "/")){
-	path = string_split(arg, "/");
-	printf("Directorio creado '%s'\n",path[str_array_size(*path) - 1]);
+		char* mkdir = string_new();
+		string_append(&mkdir, "mkdir ");
+		string_append(&mkdir, arg);
+		int finalizo = system(mkdir);
+		char** path = string_split(arg, "/");
+		int cantidadDeElementos = cantidadElementos(path);
+
+		if(finalizo == 0){
+			agregarPath(fs.directorio, arg);
+			guardarDirectorioEnMemoria(fs.directorio);
+			printf("Directorio creado '%s'\n",path[cantidadDeElementos - 1]);
+			int pos = 0;
+			for (;pos<99;pos++){
+				printf("Nombre \t Padre \t \n");
+				printf("%s \t %d \n", fs.directorio[pos].nombre, fs.directorio[pos].padre);
+			}
+		}else if (finalizo == 256){
+				printf("Existe el directorio %s \n", path[cantidadDeElementos - 1]);
+			}else{
+				printf("Error");
+			}
 	}
 	else
 	{
-	printf("Directorio creado '%s'\n",arg);
+		printf("Permiso denegado, no se puede crear el directorio '%s'\n",arg);
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_cpfrom(char * arg){
 	char** path;
 	char** argumentos;
+	int cantidadElementos = sizeof(path)/sizeof(path[0]);
 
 	if (string_starts_with(arg, "/")){
 	argumentos = string_split(arg, " ");
 	path = string_split(argumentos[0], "/");
-	printf("Archivo copiado a YAMA: '%s'\n", strcat(argumentos[1], path[str_array_size(*path) - 1]));
+	printf("Archivo copiado a YAMA: '%s'\n", strcat(argumentos[1], path[cantidadElementos - 1]));
 	}
 	else
 	{
@@ -196,11 +441,13 @@ void fs_cpfrom(char * arg){
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_cpto(char * arg){
 	char** path;
+	int cantidadElementos = sizeof(path)/sizeof(path[0]);
 	if (string_starts_with(arg, "/")){
 	path = string_split(arg, "/");
-	printf("Archivo copiado a YAMAFs:'%s'\n", path[str_array_size(*path) - 1]);
+	printf("Archivo copiado a YAMAFs:'%s'\n", path[cantidadElementos - 1]);
 	}
 	else
 	{
@@ -208,6 +455,7 @@ void fs_cpto(char * arg){
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_cpblok(char * arg){
 	char** argumentos;
 	argumentos = string_split(arg, " ");
@@ -216,11 +464,13 @@ void fs_cpblok(char * arg){
 	printf("Copia creada en el nodo '%s'\n", argumentos[2]);
 }
 
+//FALTA DESARROLLAR
 void fs_md5(char * arg){
 	char** path;
+	int cantidadElementos = sizeof(path)/sizeof(path[0]);
 	if (string_starts_with(arg, "/")){
 	path = string_split(arg, "/");
-	printf("Archivo con MD5: '%s' creado \n", path[str_array_size(*path) - 1]);
+	printf("Archivo con MD5: '%s' creado \n", path[cantidadElementos - 1]);
 	}
 	else
 	{
@@ -228,15 +478,18 @@ void fs_md5(char * arg){
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_ls(char * arg){
 	printf("Archivos en la dirección: '%s'\n", arg);
 }
 
+//FALTA DESARROLLAR
 void fs_info(char * arg){
 	char** path;
+	int cantidadElementos = sizeof(path)/sizeof(path[0]);
 	if (string_starts_with(arg, "/")){
 	path = string_split(arg, "/");
-	printf("Información del archivo: '%s'\n", path[str_array_size(*path) - 1]);
+	printf("Información del archivo: '%s'\n", path[cantidadElementos - 1]);
 	}
 	else
 	{
