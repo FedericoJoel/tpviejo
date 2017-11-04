@@ -3,6 +3,55 @@
 char* rutaDirectorio =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/directorio.dat";
 
+int buscarPosicionEnDirectorio(t_directory* directorio, char* ruta){
+	int posicion = 0;
+	for(posicion = 0; posicion < 99; posicion++){
+		if(string_equals_ignore_case(directorio[posicion].nombre, ruta)){
+			break;
+		}
+	}
+	if(posicion != 0){
+		return posicion;
+	}else{
+		return -1;
+	}
+}
+
+void eliminarUnDirectorio(t_directory* directorio, char** path){
+	int cantidadDeElementos = cantidadElementos(path);
+	int pos = 1;
+	int posicionAux = 0;
+	char* ruta = string_new();
+	string_append(&ruta, "/");
+	string_append(&ruta, path[pos]);
+	int posicion = buscarPosicionEnDirectorio(directorio, ruta);
+	pos++;
+	for(; pos < cantidadDeElementos; pos++){
+		ruta = string_new();
+		string_append(&ruta, "/");
+		string_append(&ruta, path[pos]);
+		posicionAux = buscarPosicionEnDirectorio(directorio, ruta);
+		if (directorio[posicion].index == directorio[posicionAux].padre){
+			posicion = posicionAux;
+		}else{
+			break;
+		}
+	}
+	if(pos == cantidadDeElementos){
+		vaciarPosicion(directorio, posicion);
+		free(ruta);
+	}else{
+		printf("error");
+		free(ruta);
+	}
+}
+
+void vaciarPosicion(t_directory* directorio, int pos){
+	directorio[pos].index = 0;
+	vaciarArray(directorio[pos].nombre, 255);
+	directorio[pos].padre = 0;
+}
+
 void cargarDirectorio(t_directory* directorio) {
 	int pos = 0;
 	char * linea = string_new();
@@ -45,13 +94,14 @@ int existeDirectorio() {
 void convertirDirectorio(char * linea, t_directory directorio[]) {
 	t_directory* unDirectorio = malloc(sizeof(t_directory));
 
-//	int pos0 = 0;
 	int pos = 0;
 	int termino = -1;
 	int aux = 0;
 	int nivel = -1;
 	int largoNombre = 0;
 	int largo = string_length(linea);
+
+	vaciarArray(unDirectorio->nombre, 255);
 
 	for (pos = 0; pos < largo; pos++) {
 		if (string_starts_with(linea, "/")) {
@@ -106,12 +156,8 @@ void convertirDirectorio(char * linea, t_directory directorio[]) {
 		int reg = comprobarDirectorio(nivel, directorio, unDirectorio);
 		guardarRegistro(directorio, unDirectorio, reg, largoNombre);
 	} else {
-		//loguear error
 		printf("Error");
 	}
-/*	for (pos0 = 0; pos0 < 255; pos0++) {
-		unDirectorio->nombre[pos0] = '\0';
-	}*/
 	free(unDirectorio);
 }
 
@@ -186,8 +232,11 @@ void guardarRegistro(t_directory directorio[], t_directory* unDirectorio,
 	for (pos = 0; pos <= largo; pos++) {
 		directorio[reg].nombre[pos] = unDirectorio->nombre[pos];
 	}
-	directorio[reg].padre = unDirectorio->padre;
-
+	if(reg == 0){
+		directorio[reg].padre = -1;
+	}else{
+		directorio[reg].padre = unDirectorio->padre;
+	}
 }
 
 void borrarContenido(char* path){
@@ -251,9 +300,7 @@ int eliminarArchivosDeDirectorio(t_directory* directorio) {
 void vaciarEstructuraDirectorio(t_directory* directorio){
 	int pos = 0;
 	for (pos = 0; pos < 99; pos++){
-		directorio[pos].index = 0;
-		directorio[pos].padre = 0;
-		vaciarArray(directorio[pos].nombre, 255); //255 cantidad de espacios del array de char
+		vaciarPosicion(directorio, pos); //255 cantidad de espacios del array de char
 	}
 }
 
@@ -288,4 +335,67 @@ char* listarDirectorio(char* path){
 		closedir(d);
 	}
 	return listaDirectorio;
+}
+
+void guardarDirectorioEnMemoria(t_directory* directorio){
+	char* argumentos;
+	char* ruta;
+	int pos = 99;
+	estructuraAux structAux[99];
+	for(;pos >= 0; pos--){
+		ruta  = string_new();
+		argumentos = string_new();
+		if(directorio[pos].nombre[0] == '/'){
+			if(directorio[pos].padre != -1 || string_equals_ignore_case(directorio[pos].nombre, "/root") ){
+				string_append(&argumentos, directorio[pos].nombre);
+				int posAux = directorio[pos].padre;
+				while(directorio[posAux].padre != -1 && directorio[pos].padre != -1){
+					string_append(&argumentos, directorio[posAux].nombre);
+					posAux = directorio[posAux].padre;
+				}
+			char** argumentosSeparados = string_split(argumentos, "/");
+			string_append(&ruta, invertirOrden(argumentosSeparados));
+			structAux[pos].nivel = directorio[pos].padre;
+			structAux[pos].path = string_duplicate(ruta);
+			}
+		}else{
+			structAux[pos].nivel = -1000;
+			structAux[pos].path = string_new();
+		}
+	}
+	ordenarArray(structAux);
+	char* archivoRuta = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/directorio1.dat");
+	FILE* archivo = fopen(archivoRuta, "w");
+	for(pos = 0; pos < 99; pos++){
+		if (!(string_is_empty(structAux[pos].path))){
+			fputs(structAux[pos].path, archivo);
+			fputc('\n', archivo);
+		}
+	}
+	fclose(archivo);
+	free(ruta);
+	free(argumentos);
+}
+
+void ordenarArray(estructuraAux* array){
+	int pos = 99;
+	int posAux = 0;
+	char* argumentos[99];
+	for(;pos >= 0; pos--){
+		if(!(string_is_empty(array[pos].path)) ){
+			argumentos[posAux] = string_duplicate(array[pos].path);
+		}
+	}
+}
+
+char* invertirOrden(char** argumentos){
+	int cantidad = cantidadElementos(argumentos);
+	char* path = string_new();
+	cantidad--;
+	int pos = 0;
+	for(;pos <= cantidad; cantidad--){
+		string_append(&path, "/");
+		string_append(&path, argumentos[cantidad]);
+	}
+	return path;
 }

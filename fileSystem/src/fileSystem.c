@@ -9,6 +9,7 @@ int main(void) {
 	pthread_t t_consola;
 	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
 
+	cargarDirectorio(fs.directorio);
 	//ESPERAMOS A QUE TERMINEN TODOS LOS THREAD
 	pthread_join(t_espera_data_nodes,NULL);
 	pthread_join(t_consola,NULL);
@@ -157,6 +158,7 @@ void ejecutarConsola(){
 	    	fs_info(string_substring(linea, 5, strlen(linea)));
 	    }
 
+
 	    free(linea);
 	  }
 
@@ -206,12 +208,14 @@ void fs_rm(char * arg){
 			printf("comando: %s \n", rm);
 			int finalizo = system(rm);
 			if (finalizo == 0){
-				path = string_split(arg, "/");
+				path = string_split(argumentos[cantidadDeElementos-1], "/");
 				int cantidadDeElementosPath = cantidadElementos(path);
+				eliminarUnDirectorio(fs.directorio, path);
 				printf("Se eliminó el directorio %s \n",path[cantidadDeElementosPath - 1]);
 			}else if (finalizo == 256){
 
 			}
+			guardarDirectorioEnMemoria(fs.directorio);
 			free(rm);
 
 		}
@@ -259,32 +263,66 @@ void fs_rm(char * arg){
 
 void fs_rename(char * arg){
 	char** argumentos;
-	char** path;
-	int cantidadElementosPath = sizeof(path)/sizeof(path[0]);
 	argumentos = string_split(arg, " ");
-	if (string_starts_with(argumentos[0], "/")){
-	path = string_split(arg, "/");
-	printf("Renombrar el archivo '%s' a '%s' \n",path[cantidadElementosPath - 1],argumentos[1]);
-	}
-	else
-	{
-	printf("Renombrar el archivo '%s' a '%s' \n",argumentos[0],argumentos[1]);
-	}
+	char* rename = string_new();
+	string_append(&rename, "mv ");
 
+	if (string_starts_with(argumentos[0], "/") && string_starts_with(argumentos[1], "/")){
+		int pos = 0;
+		char** path = string_split(argumentos[0], "/");
+		int cantidadParametrosPath = cantidadElementos(path);
+		char** path1 = string_split(argumentos[1], "/");
+		int cantidadParametrosPath1 = cantidadElementos(path1);
+		cantidadParametrosPath--;
+		cantidadParametrosPath1--;
+		if (cantidadParametrosPath == cantidadParametrosPath1){
+			while (string_equals_ignore_case(path[pos], path1[pos]) && pos < cantidadParametrosPath){
+				pos++;
+			}
+			if (pos == cantidadParametrosPath){
+				string_append(&rename, argumentos[0]);
+				string_append(&rename, " ");
+				string_append(&rename, argumentos[1]);
+				system(rename);
+				printf("Se renombro de %s a %s \n", argumentos[0], argumentos[1]);
+			}else{
+				printf("No se puede renombrar, ya que los path no coinciden \n");
+			}
+		}else{
+			printf("No se puede renombrar, ya que los path no coinciden \n");
+		}
+	}else{
+		printf("Uno de los path no comienza con /");
+	}
+	free(rename);
 }
 
 void fs_mv(char * arg){
 	char** argumentos;
-	char** path;
-	int cantidadElementosPath = sizeof(path)/sizeof(path[0]);
 	argumentos = string_split(arg, " ");
-	if (string_starts_with(argumentos[0], "/")){
-	path = string_split(arg, "/");
-	printf("Se movio de '%s' a '%s' \n",path[cantidadElementosPath - 1], argumentos[1]);
-	}
-	else
-	{
-	printf("Se movio de '%s' a '%s' \n",argumentos[0], argumentos[1]);
+
+	if (string_starts_with(argumentos[0], "/") && string_starts_with(argumentos[1], "/")){
+		char** path = string_split(argumentos[0], "/");
+		int cantidadParametrosPath = cantidadElementos(path);
+		cantidadParametrosPath--;
+		char** path1 = string_split(argumentos[1], "/");
+		int cantidadParametrosPath1 = cantidadElementos(path1);
+		cantidadParametrosPath1--;
+
+		if (string_equals_ignore_case(path[cantidadParametrosPath], path1[cantidadParametrosPath1]) ){
+			char* rename = string_new();
+			string_append(&rename, "mv ");
+			string_append(&rename, argumentos[0]);
+			string_append(&rename, " ");
+			string_append(&rename, argumentos[1]);
+			system(rename);
+			printf("Se movio de %s a %s", argumentos[0], argumentos[1]);
+			free(rename);
+		}else{
+			printf("El nombre no coincide");
+		}
+	}else{
+		printf("Uno de los argumentos no comienza con /");
 	}
 }
 
