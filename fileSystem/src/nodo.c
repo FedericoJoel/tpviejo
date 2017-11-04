@@ -149,3 +149,7 @@ void imprimirEstado (t_bitarray *bitArray, off_t pos){
 void borrarNodo(int idNodo, int idBloque){
 	printf("Bloque %d borrado, del nodo %d", idBloque, idNodo);
 }
+
+void posicion(t_bitarray* array, int pos){
+	bitarray_test_bit(array, pos);
+}

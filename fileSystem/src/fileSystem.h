@@ -30,13 +30,13 @@ typedef struct{
 }t_fileSystem;
 
 t_fileSystem fs;
-
 int PUERTO_FS= 3490;
 int s_servidor;
 t_list *t_dataNodes;
 t_list *s_dataNodes;
 pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
+
 
 //DEVUELVE LA POSICION DE UN NODO SEGUN EL NOMBRE
 int encontrarPosicion(t_list* fs, char* nombre);
@@ -53,13 +53,18 @@ void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados);
 //CARGA LOS NODOS EXISTENTES EN EL ARCHIO AL FS
 void cargarNodosAFs(estructuraFs* fs);
 
-//DEVUELVE EL VALOR DE UNA POSICION DETERMINADA
-void posicion(t_bitarray* array, int pos);
+void ejecutarConsola();
+void str_array_print(char ** array);
+void esperar_data_nodes();
+void iniciar_servidor();
+void atender_dn();
+void set_bloque(int *s_nodo,char* datos);
+int existenArchivosDeConfiguracion();
+void fs_format();
 
 //ELIMINA TODOS LOS NODOS DE LA ESTRUCTURA FS
 void eliminarNodos(estructuraFs* fs);
 
-void fs_format();
 void fs_rm(char * arg);
 void fs_rename(char * arg);
 void fs_mv(char * arg);
@@ -71,12 +76,4 @@ void fs_cpblok(char * arg);
 void fs_md5(char * arg);
 void fs_ls(char * arg);
 void fs_info(char * arg);
-void ejecutarConsola();
-void str_array_print(char ** array);
-void esperar_data_nodes();
-void iniciar_servidor();
-void atender_dn();
-void set_bloque(int *s_nodo,char* datos);
-int existenArchivosDeConfiguracion();
-
 #endif /* FILESYSTEM_H_ */

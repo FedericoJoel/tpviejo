@@ -10,7 +10,7 @@ int buscarPosicionEnDirectorio(t_directory* directorio, char* ruta){
 			break;
 		}
 	}
-	if(posicion != 0){
+	if(posicion < 99){
 		return posicion;
 	}else{
 		return -1;
@@ -52,6 +52,11 @@ void vaciarPosicion(t_directory* directorio, int pos){
 	directorio[pos].padre = 0;
 }
 
+void agregarPath(t_directory* directorio, char* path){
+	convertirDirectorio(path, directorio, 0);
+
+}
+
 void cargarDirectorio(t_directory* directorio) {
 	int pos = 0;
 	char * linea = string_new();
@@ -59,7 +64,7 @@ void cargarDirectorio(t_directory* directorio) {
 	FILE * archivo = fopen(rutaDirectorio, "r");
 
 	while (((getline(&linea, &len, archivo)) != EOF) && pos <= 99) {
-		convertirDirectorio(linea, directorio);
+		convertirDirectorio(linea, directorio, pos);
 		pos++;
 	}
 
@@ -91,38 +96,94 @@ int existeDirectorio() {
 	}
 }
 
-void convertirDirectorio(char * linea, t_directory directorio[]) {
-	t_directory* unDirectorio = malloc(sizeof(t_directory));
+void escribirEnChar(char nombre[], char* argumentos, int pos){
+	int largo = string_length(argumentos);
+	//largo--;
+	int auxPos = 0;
+	int posAux = 0;
+	nombre[auxPos] = '/';
+	auxPos++;
+	for(; auxPos < largo; auxPos++, posAux++ ){
+		nombre[auxPos] = argumentos[posAux];
+	}
+	for(; largo < pos; largo++){
+		nombre[largo] = '\0';
+	}
+}
 
+void convertirDirectorio(char * linea, t_directory directorio[], int pos) {
+//	t_directory* unDirectorio = malloc(sizeof(t_directory));
+
+	if(string_starts_with(linea, "/")){
+		char** listaArgumentos = string_split(linea, "/");
+		int cantidad = cantidadElementos(listaArgumentos);
+		if(cantidad == 1 && string_equals_ignore_case(linea, "/root\n")){
+			directorio[pos].index = pos;
+			escribirEnChar(directorio[pos].nombre, listaArgumentos[pos], 255);
+			directorio[pos].padre = -1;
+		}else{
+			directorio[pos].index = pos;
+			escribirEnChar(directorio[pos].nombre, listaArgumentos[cantidad - 1], 255);
+			if(cantidad == 1){
+				char* nuevo = string_new();
+				char* nuevo1 = string_new();
+				string_append(&nuevo, "root");
+				string_append(&nuevo, "/");
+				string_append(&nuevo, listaArgumentos[cantidad - 1]);
+				char** algo = string_split(nuevo, "/");
+				string_append(&nuevo1, "/");
+				string_append(&nuevo1, algo[0]);
+				directorio[pos].padre = buscarPosicionEnDirectorio(directorio, nuevo1);
+				free(nuevo);
+				free(nuevo1);
+			}else{
+				char* nuevo = string_new();
+				string_append(&nuevo, "/");
+				string_append(&nuevo, listaArgumentos[cantidad - 2]);
+				directorio[pos].padre = buscarPosicionEnDirectorio(directorio, nuevo);
+				free(nuevo);
+			}
+		}
+	}
+}
+
+
+/*void convertirDirectorio(char * linea, t_directory directorio[]) {
+	t_directory* unDirectorio = malloc(sizeof(t_directory));
 	int pos = 0;
 	int termino = -1;
 	int aux = 0;
 	int nivel = -1;
 	int largoNombre = 0;
 	int largo = string_length(linea);
+	int conPadre = 1;
 
 	vaciarArray(unDirectorio->nombre, 255);
 
 	for (pos = 0; pos < largo; pos++) {
 		if (string_starts_with(linea, "/")) {
-			if (linea[pos] == '\n') {
+			if (linea[pos] == '\n' && conPadre == 1) {
 				nivel++;
 				unDirectorio->padre = nivel;
 				unDirectorio->nombre[pos] = '\0';
 				largoNombre = string_length(unDirectorio->nombre);
 				termino = 0;
 			} else {
-				if (pos != 0 && linea[pos] == '/') {
-					int limpiar = string_length(unDirectorio->nombre);
-					int lugar = 0;
-					for (lugar = 0; lugar <= limpiar; lugar++) {
-						unDirectorio->nombre[lugar] = '\0';
+				if ( ((pos != 0 || conPadre == 0) && linea[pos] == '/') || (conPadre == 0 && linea[pos] == '\n') ) {
+					if(linea[pos+1] != '\0'){
+						unDirectorio->padre = buscarPosicionEnDirectorio(directorio, unDirectorio->nombre);
+						int limpiar = string_length(unDirectorio->nombre);
+						int lugar = 0;
+						for (lugar = 0; lugar <= limpiar; lugar++) {
+							unDirectorio->nombre[lugar] = '\0';
+						}
 					}
-					unDirectorio->padre = (nivel + 1);
+//					unDirectorio->padre = (nivel + 1);
 					comprobarDirectorio(nivel, directorio, unDirectorio);
 					unDirectorio->nombre[0] = '/';
 					aux = 1;
 					nivel++;
+					conPadre = 0;
 				} else {
 					unDirectorio->nombre[aux] = linea[pos];
 					aux++;
@@ -152,7 +213,7 @@ void convertirDirectorio(char * linea, t_directory directorio[]) {
 		}
 	}
 
-	if (termino == 0) {
+	if (termino == 0 || linea[pos] == '\0') {
 		int reg = comprobarDirectorio(nivel, directorio, unDirectorio);
 		guardarRegistro(directorio, unDirectorio, reg, largoNombre);
 	} else {
@@ -160,7 +221,7 @@ void convertirDirectorio(char * linea, t_directory directorio[]) {
 	}
 	free(unDirectorio);
 }
-
+*/
 int comprobarDirectorio(int nivel, t_directory directorio[],
 		t_directory* unDirectorio) {
 	int reg = 0;

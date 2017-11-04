@@ -8,6 +8,7 @@
 #include <commons/bitarray.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
+#include <lib.h>
 
 typedef struct{
 	char* nombreNodo;
@@ -27,5 +28,9 @@ int tamanioLibreFs();
 int cantidadNodos();
 int existenNodos();
 void borrarNodo(int idNodo, int idBloque);
+
+//DEVUELVE EL VALOR DE UNA POSICION DETERMINADA
+void posicion(t_bitarray* array, int pos);
+
 
 #endif /* NODO_H_ */

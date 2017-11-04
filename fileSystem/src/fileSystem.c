@@ -10,6 +10,7 @@ int main(void) {
 	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
 
 	cargarDirectorio(fs.directorio);
+
 	//ESPERAMOS A QUE TERMINEN TODOS LOS THREAD
 	pthread_join(t_espera_data_nodes,NULL);
 	pthread_join(t_consola,NULL);
@@ -164,8 +165,68 @@ void ejecutarConsola(){
 
 }
 
-void posicion(t_bitarray* array, int pos){
-	bitarray_test_bit(array, pos);
+int str_array_size(char ** array){
+	    size_t count = 0;
+	    while (array[count] != NULL) count++;
+	    return count;
+}
+
+void str_array_print(char ** array){
+	int i;
+		for (i=0;i<str_array_size(array);i++){
+			printf("El argumento de la posicion %d es '%s'\n",i,array[i]);
+		}
+}
+
+void esperar_data_nodes(){
+	//Creamos un servidor
+	s_servidor = crearServidor(PUERTO_FS);
+
+
+	//Creo lista de sockets
+	s_dataNodes = list_create();
+
+
+	while(1){
+
+		char * AUTH = string_new();
+		//BLOQUEANTE espero una conexion de un DN
+		int socket = esperarConexion(s_servidor, AUTH);
+		printf("la autorizacion es %s \n",AUTH);
+
+		//Lo agrego a la lista de datanodes's sockets
+		int posicion = list_add(s_dataNodes, (void *) &socket);
+		printf("Escuchamos una nueva coneccion,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
+
+		//LE MANDO UN MENSAJE PARA QUE ESCRIBA UN BLOQUE
+		void* respuesta = list_get(s_dataNodes, 0);
+		int * s_nodo = (int*) respuesta;
+		set_bloque(s_nodo,"datosdatos");
+//		int tam = sizeof(t_atiende_dn)/sizeof(*t_atiende_dn);
+//		pthread_create(&t_atiende_dn + tam,NULL,(void*)&atender_dn, &socket);
+//		printf("el tamaño de t_espera_data_nodes ahora es de %d \n",tam);
+	}
+}
+
+void iniciar_servidor(){
+	pthread_create(&t_espera_data_nodes,NULL,(void*)&esperar_data_nodes, NULL);
+}
+
+//void atender_dn(void* soc){
+//	int *socket = (int *) soc;
+//	printf("voy a ejecutar una escritura \n",*socket);
+//	enviarMensajeConProtocolo(*socket, "DATOSDATOSDATOS", DN_SETBLOQUE);
+//}
+
+void set_bloque(int *s_nodo,char* datos){
+	printf("grabo un bloque en el nodo sockeft %d \n",*s_nodo);
+	enviarMensajeConProtocolo(*s_nodo, "DATOSDATOSDATOS", DN_SETBLOQUE);
+	// TODO VERIFICAR SI SALE OK
+	// TODO que me conviene hacer con en que bloque lo guarda? lo meto en el protocolo? mando 2 mensajes juntos?
+	//	pthread_t t_atiende_escritura;
+	//	pthread_create(&t_atiende_escritura,NULL,(void*)&atender_escritura, &s_nodo);
+	//	TODO COMO HAGO PARA RETORNAR SI LA ESCRITURA FUE BUENA O MALA CON EL THREAD y mandarle varios parametros
+	//	pthread_join(t_atiende_escritura);
 }
 
 void fs_format(){
@@ -184,7 +245,6 @@ void eliminarNodos(estructuraFs* fs){
 	system(touch);
 	free(rm);
 	free(touch);
-
 }
 
 void fs_rm(char * arg){
@@ -240,7 +300,6 @@ void fs_rm(char * arg){
 	if(string_starts_with(*argumentos, "/"))
 		{
 		path = string_split(arg, "/");
-		int cantidadDeElementosPath = cantidadElementos(path);
 		char* rm = string_new();
 		string_append(&rm, "rm -d ");
 		string_append(&rm, argumentos[cantidadDeElementos - 1]);
@@ -326,6 +385,7 @@ void fs_mv(char * arg){
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_cat(char * arg){
 	char** path;
 	int cantidadElementos = sizeof(path)/sizeof(path[0]);
@@ -340,18 +400,36 @@ void fs_cat(char * arg){
 }
 
 void fs_mkdir(char * arg){
-	char** path;
-	int cantidadElementos = sizeof(path)/sizeof(path[0]);
-	if (!string_starts_with(arg, "/")){
-	path = string_split(arg, "/");
-	printf("Directorio creado '%s'\n",path[cantidadElementos - 1]);
+	if (string_starts_with(arg, "/")){
+		char* mkdir = string_new();
+		string_append(&mkdir, "mkdir ");
+		string_append(&mkdir, arg);
+		int finalizo = system(mkdir);
+		char** path = string_split(arg, "/");
+		int cantidadDeElementos = cantidadElementos(path);
+
+		if(finalizo == 0){
+			agregarPath(fs.directorio, arg);
+			guardarDirectorioEnMemoria(fs.directorio);
+			printf("Directorio creado '%s'\n",path[cantidadDeElementos - 1]);
+			int pos = 0;
+			for (;pos<99;pos++){
+				printf("Nombre \t Padre \t \n");
+				printf("%s \t %d \n", fs.directorio[pos].nombre, fs.directorio[pos].padre);
+			}
+		}else if (finalizo == 256){
+				printf("Existe el directorio %s \n", path[cantidadDeElementos - 1]);
+			}else{
+				printf("Error");
+			}
 	}
 	else
 	{
-	printf("Permiso denegado, no se puede crear el directorio '%s'\n",arg);
+		printf("Permiso denegado, no se puede crear el directorio '%s'\n",arg);
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_cpfrom(char * arg){
 	char** path;
 	char** argumentos;
@@ -368,6 +446,7 @@ void fs_cpfrom(char * arg){
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_cpto(char * arg){
 	char** path;
 	int cantidadElementos = sizeof(path)/sizeof(path[0]);
@@ -381,6 +460,7 @@ void fs_cpto(char * arg){
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_cpblok(char * arg){
 	char** argumentos;
 	argumentos = string_split(arg, " ");
@@ -389,6 +469,7 @@ void fs_cpblok(char * arg){
 	printf("Copia creada en el nodo '%s'\n", argumentos[2]);
 }
 
+//FALTA DESARROLLAR
 void fs_md5(char * arg){
 	char** path;
 	int cantidadElementos = sizeof(path)/sizeof(path[0]);
@@ -402,10 +483,12 @@ void fs_md5(char * arg){
 	}
 }
 
+//FALTA DESARROLLAR
 void fs_ls(char * arg){
 	printf("Archivos en la dirección: '%s'\n", arg);
 }
 
+//FALTA DESARROLLAR
 void fs_info(char * arg){
 	char** path;
 	int cantidadElementos = sizeof(path)/sizeof(path[0]);
@@ -417,68 +500,4 @@ void fs_info(char * arg){
 	{
 	printf("Información del archivo: '%s'\n", arg);
 	}
-}
-
-int str_array_size(char ** array){
-	    size_t count = 0;
-	    while (array[count] != NULL) count++;
-	    return count;
-}
-
-void str_array_print(char ** array){
-	int i;
-		for (i=0;i<str_array_size(array);i++){
-			printf("El argumento de la posicion %d es '%s'\n",i,array[i]);
-		}
-}
-
-void esperar_data_nodes(){
-	//Creamos un servidor
-	s_servidor = crearServidor(PUERTO_FS);
-
-
-	//Creo lista de sockets
-	s_dataNodes = list_create();
-
-
-	while(1){
-
-		char * AUTH = string_new();
-		//BLOQUEANTE espero una conexion de un DN
-		int socket = esperarConexion(s_servidor, AUTH);
-		printf("la autorizacion es %s \n",AUTH);
-
-		//Lo agrego a la lista de datanodes's sockets
-		int posicion = list_add(s_dataNodes, (void *) &socket);
-		printf("Escuchamos una nueva coneccion,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
-
-		//LE MANDO UN MENSAJE PARA QUE ESCRIBA UN BLOQUE
-		void* respuesta = list_get(s_dataNodes, 0);
-		int * s_nodo = (int*) respuesta;
-		set_bloque(s_nodo,"datosdatos");
-//		int tam = sizeof(t_atiende_dn)/sizeof(*t_atiende_dn);
-//		pthread_create(&t_atiende_dn + tam,NULL,(void*)&atender_dn, &socket);
-//		printf("el tamaño de t_espera_data_nodes ahora es de %d \n",tam);
-	}
-}
-
-void iniciar_servidor(){
-	pthread_create(&t_espera_data_nodes,NULL,(void*)&esperar_data_nodes, NULL);
-}
-
-//void atender_dn(void* soc){
-//	int *socket = (int *) soc;
-//	printf("voy a ejecutar una escritura \n",*socket);
-//	enviarMensajeConProtocolo(*socket, "DATOSDATOSDATOS", DN_SETBLOQUE);
-//}
-
-void set_bloque(int *s_nodo,char* datos){
-	printf("grabo un bloque en el nodo sockeft %d \n",*s_nodo);
-	enviarMensajeConProtocolo(*s_nodo, "DATOSDATOSDATOS", DN_SETBLOQUE);
-	// TODO VERIFICAR SI SALE OK
-	// TODO que me conviene hacer con en que bloque lo guarda? lo meto en el protocolo? mando 2 mensajes juntos?
-	//	pthread_t t_atiende_escritura;
-	//	pthread_create(&t_atiende_escritura,NULL,(void*)&atender_escritura, &s_nodo);
-	//	TODO COMO HAGO PARA RETORNAR SI LA ESCRITURA FUE BUENA O MALA CON EL THREAD y mandarle varios parametros
-	//	pthread_join(t_atiende_escritura);
 }
