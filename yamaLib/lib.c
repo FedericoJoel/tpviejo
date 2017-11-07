@@ -7,6 +7,98 @@ t_log* abrir_logger(char* ruta_archivo, char* nombre_programa,
 	return log_create(ruta_archivo, nombre_programa, 1, nivel);
 }
 
+char* reg_planificacion_to_string( t_reg_planificacion* data_worker) {
+	char* char_data_worker = string_new();
+	char* tamanio;
+
+	char* char_availability = int_to_string(data_worker->availability);
+	char* char_worker = int_to_string(data_worker->worker);
+
+	char* char_bloques = iterate_bloques_to_string(data_worker->bloques);
+	char* cant_bloques = int_to_string(list_size(data_worker->bloques));
+
+	char* char_bloques_asignados = iterate_bloques_to_string(data_worker->bloquesAsignados);
+	char* cant_bloques_asignados = int_to_string(list_size(data_worker->bloquesAsignados));
+
+	char* char_job = int_to_string(data_worker->job);
+	char* char_temporal_transformacion = data_worker->temporalTransformacion;
+	char* char_temp_reduc_local = data_worker->tempReducLocal;
+	char* char_temp_reduc_global= data_worker->tempReudcGlobal;
+	char* char_ip = data_worker->ip;
+
+	string_append(&char_data_worker, char_availability);
+	string_append(&char_data_worker, char_worker);
+
+
+	string_append(&char_data_worker,cant_bloques);
+	string_append(&char_data_worker, char_bloques);
+
+	string_append(&char_data_worker,cant_bloques_asignados);
+	string_append(&char_data_worker, char_bloques_asignados);
+
+	string_append(&char_data_worker, char_job);
+	tamanio = int_to_string(strlen(char_temporal_transformacion));
+	string_append(&char_data_worker,tamanio);
+	free(tamanio);
+	string_append(&char_data_worker, char_temporal_transformacion);
+
+	tamanio = int_to_string(strlen(char_temp_reduc_local));
+	string_append(&char_data_worker,tamanio);
+	free(tamanio);
+	string_append(&char_data_worker, char_temp_reduc_local);
+
+	tamanio = int_to_string(strlen(char_temp_reduc_global));
+	string_append(&char_data_worker,tamanio);
+	free(tamanio);
+	string_append(&char_data_worker, char_temp_reduc_global);
+
+	tamanio = int_to_string(strlen(char_ip));
+	string_append(&char_data_worker,tamanio);
+	free(tamanio);
+	string_append(&char_data_worker, char_ip);
+
+	free(char_availability);
+	free(char_worker);
+	free(char_bloques);
+	free(cant_bloques);
+	free(char_bloques_asignados);
+	free(cant_bloques_asignados);
+	free(char_job);
+	free(char_temp_reduc_global);
+	free(char_temp_reduc_local);
+	free(char_temporal_transformacion);
+	return char_data_worker;
+}
+
+char* iterate_bloques_to_string(t_list* bloques){
+	char* char_bloques = string_new();
+
+	void _iterate_bloques(int bloque) {
+		char* char_bloque = int_to_string(bloque);
+		string_append(&char_bloques,char_bloque);
+	}
+
+	list_iterate(bloques, (void*) _iterate_bloques);
+
+	return char_bloques;
+}
+
+t_list* iterate_bloques_from_string(char* bloques, int cantidad) {
+	t_list* lista = list_create();
+	int i,puntero;
+	puntero = 0;
+	char* char_num;
+	for (i=0; i< cantidad; i++) {
+		char_num  = extraer_string(bloques,puntero, puntero + 3);
+		int num = atoi(char_num);
+		list_add(lista,(void*) num);
+		free(char_num);
+		puntero += 4;
+	}
+
+	return lista;
+}
+
 char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
 	char* char_bloque = string_new();
 
@@ -41,6 +133,74 @@ char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
 	free(char_copia1);
 	free(char_elegida);
 	return char_bloque;
+}
+
+t_reg_planificacion* reg_planificacion_from_string(char* char_reg) {
+	t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
+	int puntero;
+	puntero = 0;
+
+	char* char_availability = extraer_string(char_reg,puntero,puntero + 3);
+	reg->availability = atoi(char_availability);
+	puntero += 4;
+
+	char* char_worker = extraer_string(char_reg,puntero,puntero + 3);
+	reg->worker = atoi(char_worker);
+	puntero += 4;
+
+	char* char_cant_bloques = extraer_string(char_reg,puntero,puntero + 3);
+	int cant_bloques = atoi(char_cant_bloques);
+	puntero += 4;
+
+	char* char_bloques = extraer_string(char_reg, puntero, puntero + (cant_bloques * sizeof(int)) - 1);
+	reg->bloques = iterate_bloques_from_string(char_bloques, cant_bloques);
+	puntero += cant_bloques * sizeof(int);
+
+	char* char_cant_bloques_asignados = extraer_string(char_reg,puntero,puntero + 3);
+	int cant_bloques_asignados = atoi(char_cant_bloques_asignados);
+	puntero += 4;
+
+	char* char_bloques_asignados = extraer_string(char_reg, puntero, puntero + (cant_bloques_asignados * sizeof(int)) - 1);
+	reg->bloquesAsignados = iterate_bloques_from_string(char_bloques_asignados, cant_bloques_asignados);
+	puntero += cant_bloques_asignados * (sizeof(int));
+
+	char* char_job = extraer_string(char_reg,puntero,puntero + 3);
+	reg->job = atoi(char_job);
+	puntero += 4;
+
+	char* char_tamanio_temporal_tr = extraer_string(char_reg, puntero, puntero + 3);
+	int tamanio_temporal_tr = atoi(char_tamanio_temporal_tr);
+	puntero += 4;
+
+	char* char_temporal_tr = extraer_string(char_reg, puntero, puntero + tamanio_temporal_tr -1);
+	reg->temporalTransformacion= string_from_format(char_temporal_tr);
+	puntero += tamanio_temporal_tr;
+
+	char* char_tamanio_temporal_rl = extraer_string(char_reg, puntero, puntero + 3);
+	int tamanio_temporal_rl = atoi(char_tamanio_temporal_rl);
+	puntero += 4;
+
+	char* char_temporal_rl = extraer_string(char_reg, puntero, puntero + tamanio_temporal_rl -1);
+	reg->tempReducLocal= string_from_format(char_temporal_rl);
+	puntero += tamanio_temporal_rl;
+
+	char* char_tamanio_temporal_rg = extraer_string(char_reg, puntero, puntero + 3);
+	int tamanio_temporal_rg = atoi(char_tamanio_temporal_rg);
+	puntero += 4;
+
+	char* char_temporal_rg = extraer_string(char_reg, puntero, puntero + tamanio_temporal_rg -1);
+	reg->tempReudcGlobal= string_from_format(char_temporal_rg);
+	puntero += tamanio_temporal_rg;
+
+	char* char_tamanio_ip = extraer_string(char_reg, puntero, puntero + 3);
+	int tamanio_ip = atoi(char_tamanio_ip);
+	puntero += 4;
+
+	char* char_ip = extraer_string(char_reg, puntero, puntero + tamanio_ip -1);
+	reg->ip= string_from_format(char_ip);
+	puntero += tamanio_ip;
+
+	return reg;
 }
 
 t_bloque_archivo* bloque_archivo_from_string(char* char_bloque) {

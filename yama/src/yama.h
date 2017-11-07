@@ -15,7 +15,6 @@
 #include <time.h>
 
 #define nombre_programa "YAMA"
-#define clientes_max 10
 
 #define ETAPA_TRANSFORMACION 0
 #define ETAPA_REDUCCION_LOCAL 1
@@ -49,14 +48,14 @@ t_log* logger;
 
 //--------server------------
 int socket_server;
-int socket_clientes[clientes_max];
+t_list* socket_clientes;
 int socket_fs;
 int cantidad_masters_conectados = 0;
 fd_set fds_masters;
 t_proto protocolo;
 
 int levantar_servidor(void);
-void construir_fds(int* max_actual,int conectados[]);
+void construir_fds(int* max_actual);
 void leer_cambios_select();
 void recibir_nuevo_master();
 void recibir_data_de_master(int posicion);
@@ -79,11 +78,11 @@ void enviar_ruta_fs(char* mensaje);
 char* generar_numero_aleatorio();
 t_list * tablaestadosPrueba();
 //----------otros---------------------
-char* AUTH;
 
 void levantar_config(void);
 void levantar_logger(void);
 void esperar_master(void);
 void esperar_masters(void);
+int get_socket_posicion(int posicion);
 
 #endif /* YAMA_H_ */

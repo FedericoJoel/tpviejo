@@ -126,7 +126,7 @@ void transformacion() {
 	int i;
 	int proto_recibido;
 	char* char_bloque_recibido;
-	t_bloque_archivo* bloque_recibido;
+	t_reg_planificacion* worker_recibido;
 	proto_recibido = recibirProtocolo(socket_yama);
 
 	//me fijo si es el de transformacion que esperaba
@@ -135,13 +135,18 @@ void transformacion() {
 		cantidad_bloques = atoi(esperarMensaje(socket_yama));
 		for(i=0; i < cantidad_bloques; i++) {
 			char_bloque_recibido = esperarMensaje(socket_yama);
-			printf("bloque: %s \n", char_bloque_recibido);
-			bloque_recibido = bloque_archivo_from_string(char_bloque_recibido);
-			printf("bloque ip: %s\n",bloque_recibido->copia0->ip);
-			list_add(&list_bloques, (void*) bloque_recibido);
+			printf("worker: %s \n", char_bloque_recibido);
+			worker_recibido = reg_planificacion_from_string(char_bloque_recibido);
+			//todo aca se manda la info de transformacion al worker indicado
+			int i;
+			log_info(logger,"para el worker: %d",worker_recibido->worker);
+			for (i=0; i< list_size(worker_recibido->bloquesAsignados); i++) {
+				int bloque_archivo = (int) list_get(worker_recibido->bloquesAsignados,i);
+				log_info(logger,"bloque de archivo: %d",bloque_archivo);
+			}
+			//vale la pena guardar en una lista todos los t_reg_planificacion??
+			//list_add(&list_bloques, (void*) worker_recibido);
 		}
-
-		//TODO enviar lista a master
 		break;
 	}
 }

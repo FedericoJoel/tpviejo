@@ -73,10 +73,15 @@ char* generar_string_separador2(char* str1, char* str2, char* separador);
 //------parseos-------------
 char* int_to_string(int numero);
 char* extraer_string(char* string, int inicio, int fin);
-t_copia* copia_from_string(char* copia);
-char* copia_to_string(t_copia* copia);
-t_bloque_archivo* bloque_archivo_from_string(char* char_bloque);
-char* bloque_archivo_to_string(t_bloque_archivo* bloque);
 
+t_copia* copia_from_string(char* copia);
+t_bloque_archivo* bloque_archivo_from_string(char* char_bloque);
+t_reg_planificacion* reg_planificacion_from_string(char* char_reg_planificacion);
+t_list* iterate_bloques_from_string(char* bloques, int tamanio);
+
+char* reg_planificacion_to_string( t_reg_planificacion* data_worker);
+char* copia_to_string(t_copia* copia);
+char* bloque_archivo_to_string(t_bloque_archivo* bloque);
+char* iterate_bloques_to_string(t_list* bloques);
 
 #endif /* LIB_H_ */

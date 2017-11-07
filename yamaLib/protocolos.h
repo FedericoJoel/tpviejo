@@ -14,7 +14,6 @@ typedef enum {
 	DN_GETBLOQUE,
 	DN_GETBLOQUEANSW,
 	FS_YM_ERRORCONN,
-	FS_YM_ERRORCONN,
 	YM_FS_RUTA
 }t_proto;
 

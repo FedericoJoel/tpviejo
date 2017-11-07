@@ -29,10 +29,10 @@ int main(void) {
 	/*estados = list_create();*/
 
 	//t_list * a = tablaestadosPrueba();
-	 srand(time(NULL));
-	t_list * tabla = tablaPlanificacionCompleta();
-	enviarAMaster(tabla);
-	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
+//	 srand(time(NULL));
+//	t_list * tabla = tablaPlanificacionCompleta();
+//	enviarAMaster(tabla);
+//	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
 
 	levantar_logger();
 
@@ -347,7 +347,11 @@ t_list* tablaPlanif() {
 			reg->availability = BASE+ PWL(reg->worker, job);
 			reg->bloquesAsignados = list_create();
 			reg->bloques = list_create();
-
+			//todo setear rutas temporales acumulando en algun lado las que ya se generaron para este master
+			reg->temporalTransformacion = string_from_format("/tmp/Master-",int_to_string(i));
+			reg->tempReducLocal = string_from_format("/tmp/Master-",int_to_string(i));
+			reg->tempReudcGlobal= string_from_format("/tmp/Master-",int_to_string(i));
+			reg->ip = "127.0.0.1";
 			reg->job = job;
 			agregarBloque(reg, nBloque);
 			list_add(planificacion, (void*) reg);
@@ -367,6 +371,10 @@ t_list* tablaPlanif() {
 			reg1->bloquesAsignados = list_create();
 			reg1->bloques = list_create();
 			reg1->job = job;
+			reg1->temporalTransformacion = string_from_format("/tmp/Master-",int_to_string(i));
+			reg1->tempReducLocal = string_from_format("/tmp/Master-",int_to_string(i));
+			reg1->tempReudcGlobal= string_from_format("/tmp/Master-",int_to_string(i));
+			reg1->ip = "127.0.0.1";
 			agregarBloque(reg1, nBloque);
 			list_add(planificacion, (void*) reg1);
 		} else {
@@ -690,6 +698,7 @@ int levantar_servidor(void) {
 		log_error(logger, "No se pudo levantar el servidor");
 		return EXIT_FAILURE;
 	}
+	socket_clientes = list_create();
 	return EXIT_SUCCESS;
 }
 
@@ -727,7 +736,7 @@ void esperar_masters(void) {
 		// en cada iteracion hay que blanquear(FD_ZERO) el fds_masters, que es un bitarray donde queda guardado
 		// que sockets tienen cambios despues del select y tambien volver a setear(FD_SET) los filedescriptors en el fds_set.
 		//ademas de volver a calcular cual es el filedescriptor mas alto
-		construir_fds(&max_fds, socket_clientes);
+		construir_fds(&max_fds);
 
 		log_info(logger, "esperando conexiones");
 
@@ -748,17 +757,16 @@ void esperar_masters(void) {
 
 }
 
-void construir_fds(int* max_actual, int conectados[]) {
+void construir_fds(int* max_actual) {
 	int i;
 
 	FD_ZERO(&fds_masters);
 	FD_SET(socket_server, &fds_masters);
-	for (i = 0; i < clientes_max; i++) {
-		if (conectados[i] != 0) {
-			FD_SET(conectados[i], &fds_masters);
-			if (*max_actual < conectados[i]) {
-				*max_actual = socket_clientes[i];
-			}
+	for (i = 0; i < list_size(socket_clientes); i++) {
+		int socket_actual = get_socket_posicion(i);
+		FD_SET(socket_actual, &fds_masters);
+		if (*max_actual < socket_actual) {
+			*max_actual = socket_actual;
 		}
 	}
 }
@@ -774,8 +782,9 @@ void leer_cambios_select() {
 
 	//recibo data de uno ya conectado
 	//TODO handlear si el cliente se desconecta abruptamente(seguramente hay que usar alguna signal o algo asi)
-	for (i = 0; i < clientes_max; i++) {
-		if (FD_ISSET(socket_clientes[i], &fds_masters)) {
+	for (i = 0; i < list_size(socket_clientes); i++) {
+		int socket_actual = get_socket_posicion(i);
+		if (FD_ISSET(socket_actual, &fds_masters)) {
 			log_info(logger, "se recibio data de un master conectado");
 			recibir_data_de_master(i);
 		}
@@ -783,40 +792,23 @@ void leer_cambios_select() {
 }
 
 void recibir_nuevo_master() {
-	int i;
 	int nuevo_cliente;
 
 	//conecto cliente en un nuevo socket
-	if ((nuevo_cliente = esperarConexion(socket_server, AUTH)) < 0) {
+	if ((nuevo_cliente = esperarConexion(socket_server)) < 0) {
 		log_error(logger, "no se pudo crear conexion");
 	}
 
-	//recorro array para encontrarle un lugar vacio al nuevo master
-	for (i = 0; (i < clientes_max) && (nuevo_cliente != -1); i++) {
-		if (socket_clientes[i] == 0) {
-			log_info(logger, "Conexion aceptada: FD=%d posicion=%d",
-					nuevo_cliente, i);
-			socket_clientes[i] = nuevo_cliente;
+	list_add(socket_clientes,(void*) nuevo_cliente);
 
-			// Enviamos un protocolo de confirmacion
-			protocolo = YM_MS_OKCONN;
-			enviarProtocolo(nuevo_cliente, protocolo);
-			nuevo_cliente = -1;
-		}
-	}
-	//no queda lugar en el array de conexiones, libero ese socket
-	if (nuevo_cliente != -1) {
-		log_error(logger,
-				"No queda lugar para nuevo master: %d, servidor muy ocupado",
-				nuevo_cliente);
-		//mandar protocolo al cliente antes de rechazarlo
-		enviarProtocolo(nuevo_cliente, YM_MS_ERRORCONN);
-		close(nuevo_cliente);
-	}
+	// Enviamos un protocolo de confirmacion
+	protocolo = YM_MS_OKCONN;
+	enviarProtocolo(nuevo_cliente, protocolo);
+	nuevo_cliente = -1;
 }
 
 void recibir_data_de_master(int posicion) {
-	int proto_msg;
+	int proto_msg,desconectado;
 
 	//defino todas las copias de 3 bloques de archivo que estan desparramadas en 3 nodos
 	copia_0_bloque_0.nodo = 0;
@@ -866,14 +858,14 @@ void recibir_data_de_master(int posicion) {
 
 	//---------------------------------------------------
 
-	proto_msg = recibirProtocolo(socket_clientes[posicion]);
+	proto_msg = recibirProtocolo(get_socket_posicion(posicion));
 
 	switch (proto_msg) {
 	case MS_YM_DESCONECTAR:	// se desconecta master
-		log_info(logger, "se desconecto el master %d",
-				socket_clientes[posicion]);
-		close(socket_clientes[posicion]);
-		socket_clientes[posicion] = 0;
+		desconectado = get_socket_posicion(posicion);
+		log_info(logger, "se desconecto el master %d", desconectado);
+		close(desconectado);
+		list_remove(socket_clientes,posicion);
 		break;
 	case MS_YM_INICIO_JOB:	// inicia un job un master
 		atender_inicio_job(posicion);
@@ -888,8 +880,8 @@ void recibir_data_de_master(int posicion) {
 
 void enviar_transformacion(int master, t_list* lista_bloques) {
 
-	void _iterate_bloques(t_bloque_archivo* bloque) {
-		char* copia_string = bloque_archivo_to_string(bloque);
+	void _iterate_bloques(t_reg_planificacion* worker_planificado) {
+		char* copia_string = reg_planificacion_to_string(worker_planificado);
 		enviarMensaje(master, copia_string);
 	}
 
@@ -903,13 +895,14 @@ void enviar_transformacion(int master, t_list* lista_bloques) {
 
 void atender_inicio_job(int posicion) {
 	char* mensaje;
-
-	log_info(logger, "iniciar job de master %d", socket_clientes[posicion]);
-	mensaje = esperarMensaje(socket_clientes[posicion]);
+	char* char_archivo;
+	int cliente = get_socket_posicion(posicion);
+	log_info(logger, "iniciar job de master %d", cliente);
+	mensaje = esperarMensaje(cliente);
 	log_info(logger, "ruta de archivo %s", mensaje);
-	enviar_ruta_fs(mensaje);
+	//enviar_ruta_fs(mensaje);
 
-	char* char_archivo = esperarMensaje(socket_clientes[posicion]);
+	//char_archivo = esperarMensaje(cliente);
 
 	//todo mapear archivo a lista de struct
 	//por ahora hardcodeamos la estructura que recibe
@@ -932,13 +925,14 @@ void atender_inicio_job(int posicion) {
 //	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_1);
 //	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_2);
 	// se manda la lista de bloques ya modificados a master
-	enviar_transformacion(socket_clientes[posicion], archivo_planificado);
+	enviar_transformacion(cliente, archivo_planificado);
 
 	transformarBloques(archivo_planificado);
 }
 
 void atender_fin_transf_bloque(int posicion) {
-	char* char_bloque = esperarMensaje(socket_clientes[posicion]);
+	int cliente = get_socket_posicion(posicion);
+	char* char_bloque = esperarMensaje(cliente);
 	int bloque = atoi(char_bloque);
 	modificarBloqueTablaEstados(bloque,ETAPA_TRANSFORMACION,ESTADO_FINALIZADO_OK,posicion,0);//TODO que mierda le paso en los ultimos 2
 	log_info(logger, "finalizo la transformacion del bloque %d del master %d",
@@ -965,5 +959,9 @@ void enviar_ruta_fs(char* mensaje) {
 
 void enviar_reduccion_local(int posicion) {
 
+}
+
+int get_socket_posicion(int posicion) {
+	return (int) list_get(socket_clientes,posicion);
 }
 
