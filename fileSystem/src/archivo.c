@@ -3,35 +3,145 @@
 /*char* rutaArchivo =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/5/ejemplo.csv";
 */
-void eliminarNodoDeArchivo(t_archivo* archivo, int id){
-	char* nodoNumero = string_itoa(id);
-	char* nodoNombre = string_new();
-	string_append(&nodoNombre, "Nodo");
-	string_append(&nodoNombre, nodoNumero);
 
+void vaciarArchivo(char* path){
+	t_archivo* estructuraArchivo = malloc(sizeof(t_archivo));
+	cargarTablaArchivo(estructuraArchivo, path);
+	int largo = list_size(estructuraArchivo->bloques);
+	int pos = 0;
+	for (; pos < largo; pos++){
+		estructuraBloque* nuevoBloque = list_get(estructuraArchivo->bloques, pos);
+		if (!(string_equals_ignore_case(nuevoBloque->nodoBloque, "VACIO"))){
+			char* nodo = string_new();
+			char* Nodo = string_new();
+			string_append(&nodo, "/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/");
+			char* bloque = string_new();
+			char** argumentos = string_split(nuevoBloque->nodoBloque, ",");
+			string_append(&Nodo, sacar(argumentos[0], "["));
+			string_to_lower(Nodo);
+			string_append(&nodo, Nodo);
+			string_append(&nodo, ".dat");
+			t_bitarray* bitArray = cargarBitmapAMemoria(nodo);
+			bloque = sacar(argumentos[1], "]");
+			int posicion = atoi(bloque);
+			free(bloque);
+			posicion--;
+			bitarray_clean_bit(bitArray, posicion);
+			escribirBitArrayEnArchivo(bitArray, nodo);
+			free(nodo);
+			free(Nodo);
+			free(argumentos);
+		}
+		if (!(string_equals_ignore_case(nuevoBloque->nodoBloque1, "VACIO"))){
+			char* nodo = string_new();
+			char* Nodo = string_new();
+			string_append(&nodo, "/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/");
+			char* bloque = string_new();
+			char** argumentos = string_split(nuevoBloque->nodoBloque1, ",");
+			string_append(&Nodo, sacar(argumentos[0], "["));
+			string_to_lower(Nodo);
+			string_append(&nodo, Nodo);
+			string_append(&nodo, ".dat");
+			t_bitarray* bitArray = cargarBitmapAMemoria(nodo);
+			bloque = sacar(argumentos[1], "]");
+			int posicion = atoi(bloque);
+			free(bloque);
+			posicion--;
+			bitarray_clean_bit(bitArray, posicion);
+			escribirBitArrayEnArchivo(bitArray, nodo);
+			free(nodo);
+			free(Nodo);
+			free(argumentos);
+		}
+	}
+}
+
+void vaciarListaNodos(t_list* lista){
+	int tamanio = list_size(lista);
+	int pos = 0;
+	for (;pos < tamanio; pos++){
+		estructuraNodo* nodo = list_get(lista,pos);
+		free(nodo);
+	}
+}
+
+void informacionNodoBloque(t_archivo* archivo){
+	int pos = 0;
+	int tamanio = list_size(archivo->bloques);
+	for(; pos < tamanio; pos++){
+		estructuraBloque* estructuraBloqueDeLista = list_get(archivo->bloques, pos);
+		if(!(string_equals_ignore_case(estructuraBloqueDeLista->nodoBloque, "VACIO")) ||
+				!(string_equals_ignore_case(estructuraBloqueDeLista->nodoBloque1, "VACIO"))){
+			char* nodoALeer;
+			if(!(string_equals_ignore_case(estructuraBloqueDeLista->nodoBloque, "VACIO"))){
+				nodoALeer = string_duplicate(estructuraBloqueDeLista->nodoBloque);
+			}else{
+				nodoALeer = string_duplicate(estructuraBloqueDeLista->nodoBloque1);
+			}
+			char** palabras = string_split(nodoALeer, ",");
+			char* nodo = sacar(palabras[0], "[");
+			int idNodo = obtenerId(nodo);
+			char* bloque = sacar(palabras[1], "]");
+			int idBloque = atoi(bloque);
+			int tamanio = estructuraBloqueDeLista->tamanioBloque;
+
+
+			//PEDIR AL YAMA INFORMACION DEL NODO Y BLOQUE
+
+			free(nodoALeer);
+			free(palabras);
+			free(nodo);
+			free(bloque);
+		}
+	}
+}
+
+void eliminarNodoDeArchivo(t_archivo* archivo, int idNodo, int idBloque){
+	char* nodoNumero = string_itoa(idNodo);
+	char* nodoNombre = string_new();
+	string_append(&nodoNombre, "nodo");
+	string_append(&nodoNombre, nodoNumero);
 	free(nodoNumero);
 
+	char* path = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/");
+	string_append(&path, nodoNombre);
+	string_append(&path, ".dat");
+	t_bitarray* bitArray = cargarBitmapAMemoria(path);
+	bitarray_clean_bit(bitArray, idBloque-1);
+	escribirBitArrayEnArchivo(bitArray, path);
+	free(path);
+	free(nodoNombre);
+}
+
+void guardarArchivoEnArchivo(t_archivo* archivo, char* path){
+	char* elementos = string_duplicate("TAMANIO,TIPO");
+	char* datos = string_duplicate(string_itoa(archivo->tamanio));
 	int pos = 0;
 	int cantidadBloques = list_size(archivo->bloques);
-
-	for(pos = 0; pos < cantidadBloques; pos++){
-		estructuraBloque* bloque = malloc(sizeof(estructuraBloque));
-		int modifico = 0;
+	string_append(&datos, ",");
+	string_append(&datos, archivo->tipo);
+	estructuraBloque* bloque;
+	for(; pos < cantidadBloques; pos++){
 		bloque = list_get(archivo->bloques, pos);
-		if (string_equals_ignore_case(dameNodo(bloque->nodoBloque), nodoNombre)){
-			bloque->nodoBloque = string_duplicate("VACIO");
-			modifico = 1;
-		}
-		if (string_equals_ignore_case(dameNodo(bloque->nodoBloque1), nodoNombre)){
-			bloque->nodoBloque1 = string_duplicate("VACIO");
-			modifico = 1;
-		}
-		if (modifico == 1){
-			list_replace(archivo->bloques, pos,(void*) bloque);
-		}
-//		free(bloque);
+		string_append(&datos, ",");
+		string_append(&elementos, ",");
+		string_append(&elementos, bloque->bloqueCopia);
+		string_append(&elementos, ",");
+		string_append(&datos, bloque->nodoBloque);
+		string_append(&datos, ",");
+		string_append(&elementos, bloque->bloqueCopia1);
+		string_append(&elementos, ",");
+		string_append(&datos, bloque->nodoBloque1);
+		string_append(&datos, ",");
+		string_append(&elementos, bloque->nombreTamanioBloque);
+		string_append(&datos, string_itoa(bloque->tamanioBloque));
 	}
-	free(nodoNombre);
+	FILE* archivoModificado = fopen(path, "w");
+	fputs(elementos, archivoModificado);
+	fputc('\n', archivoModificado);
+	fputs(datos, archivoModificado);
+	fputc('\n', archivoModificado);
+	fclose(archivoModificado);
 }
 
 char* dameNodo(char* nodoBloque){
@@ -42,7 +152,7 @@ char* dameNodo(char* nodoBloque){
 	return nodoObtenido;
 }
 
-void eliminarBloqueDeArchivo(t_archivo* archivo, char* numeroBloque, char* numeroCopia){
+void eliminarBloqueDeArchivo(t_archivo* archivo, char* numeroBloque, char* numeroCopia) {
 	int pos = 0;
 	int cantidadBloques = list_size(archivo->bloques);
 	char* nodoBloqueASacar = string_new();
@@ -52,60 +162,67 @@ void eliminarBloqueDeArchivo(t_archivo* archivo, char* numeroBloque, char* numer
 	string_append(&nodoBloqueASacar, numeroCopia);
 
 	for(pos = 0; pos < cantidadBloques; pos++){
-		estructuraBloque* bloque = malloc(sizeof(estructuraBloque));
-		bloque = list_get(archivo->bloques, pos);
-		if (string_equals_ignore_case(bloque->bloqueCopia, nodoBloqueASacar)){
-			if (!(string_equals_ignore_case(bloque->nodoBloque1, "VACIO")) ){
+		estructuraBloque* bloque = list_get(archivo->bloques, pos);
+		if (string_equals_ignore_case(bloque->bloqueCopia, nodoBloqueASacar) ){
+			if(!(string_equals_ignore_case(bloque->nodoBloque1, "VACIO"))){
 				char** nodoBloque = string_split(bloque->nodoBloque, ",");
 				char* nodo = string_new();
 				nodo = sacar(nodoBloque[0], "[");
 				int idNodo = obtenerId(nodo);
-				char* bloque = string_new();
-				bloque = sacar(nodoBloque[1], "]");
-				bloque = sacar(bloque, " ");
+				char* bloqueChar = string_new();
+				bloqueChar = sacar(nodoBloque[1], "]");
+				bloqueChar = sacar(bloqueChar, " ");
+				int bloqueNumero = atoi(bloqueChar);
 
-				borrarNodo(idNodo, atoi(bloque));
+				borrarNodo(idNodo, bloqueNumero);
 
-				eliminarNodoDeArchivo(archivo, idNodo);
+				eliminarNodoDeArchivo(archivo, idNodo, bloqueNumero);
+				bloque->nodoBloque = string_duplicate("VACIO");
+				list_replace(archivo->bloques, pos,(void*) bloque);
 				free(nodo);
-				free(bloque);
+				free(bloqueChar);
+				break;
 			}else{
-				printf("No se puede borrrar, es la ultima copia");
+				printf("No se puede borrrar, es la ultima copia \n");
+				break;
 			}
-		}
-		if (string_equals_ignore_case(bloque->bloqueCopia1, nodoBloqueASacar)){
-			if (!(string_equals_ignore_case(bloque->nodoBloque, "VACIO")) ){
+		}else{
+			if (!(string_equals_ignore_case(bloque->nodoBloque, "VACIO"))){
 				char** nodoBloque1 = string_split(bloque->nodoBloque1, ",");
 				char* nodo = string_new();
 				nodo = sacar(nodoBloque1[0], "[");
 				int idNodo = obtenerId(nodo);
-				char* bloque = string_new();
-				bloque = sacar(nodoBloque1[1], "]");
-				bloque = sacar(bloque, " ");
+				char* bloqueChar = string_new();
+				bloqueChar = sacar(nodoBloque1[1], "]");
+				bloqueChar = sacar(bloqueChar, " ");
 
-				borrarNodo(idNodo, atoi(bloque));
+				borrarNodo(idNodo, atoi(bloqueChar));
 
-				eliminarNodoDeArchivo(archivo, idNodo);
+				eliminarNodoDeArchivo(archivo, idNodo, atoi(bloqueChar));
+				bloque->nodoBloque1 = string_duplicate("VACIO");
+				list_replace(archivo->bloques, pos,(void*) bloque);
 				free(nodo);
-				free(bloque);
+				free(bloqueChar);
+				break;
 			}else{
-				printf("No se puede borrrar, es la ultima copia");
+				printf("No se puede borrrar, es la ultima copia \n");
+				break;
 			}
 		}
 	}
 	free(nodoBloqueASacar);
-
 }
 
 void cargarTablaArchivo(t_archivo* nuevoArchivo, char* rutaArchivo) {
 	FILE * archivo = fopen(rutaArchivo, "r");
-	char * lineaElem = string_new();
-	char * lineaDatos = string_new();
+	char * lineaElem = NULL;
+	char * lineaDatos = NULL;
 	size_t len = 0;
 	int cantidad = 0;
 
 	if (getline(&lineaElem, &len, archivo) != EOF){
 		cantidad = contarCampos(lineaElem);
+		len=0;
 		if (getline(&lineaDatos, &len, archivo) != EOF){
 			cargarDatos(lineaDatos, lineaElem, nuevoArchivo, cantidad);
 		}
@@ -182,7 +299,7 @@ estructuraBloque* crearBloque(char* copiaBloque, char* copiaBloque1, char* nodoB
 	estructuraBloque* nuevoBloque = malloc(sizeof(estructuraBloque));
 	nuevoBloque->bloqueCopia = string_duplicate(copiaBloque);
 	nuevoBloque->nodoBloque = string_duplicate(nodoBloque);
-	nuevoBloque->bloqueCopia1 = string_duplicate(copiaBloque);
+	nuevoBloque->bloqueCopia1 = string_duplicate(copiaBloque1);
 	nuevoBloque->nodoBloque1 = string_duplicate(nodoBloque1);
 	nuevoBloque->nombreTamanioBloque = string_duplicate(tamanioBytes);
 	nuevoBloque->tamanioBloque = tamanioBloque;
