@@ -569,9 +569,15 @@ void fs_md5(char * arg){
 	}
 }
 
-//FALTA DESARROLLAR
 void fs_ls(char * arg){
-	printf("Archivos en la dirección: '%s'\n", arg);
+	if( string_starts_with(arg, "/")){
+		char* ls = string_duplicate("ls ");
+		string_append(&ls, arg);
+		system(ls);
+		free(ls);
+	}else{
+		printf("El path no comienza con / ");
+	}
 }
 
 //FALTA DESARROLLAR
