@@ -8,11 +8,16 @@ int s_yama;
 
 int main(int argc, char **argv) {
 	int i;
+	sockets_workers = dictionary_create();
 
 
 	levantar_logger();
 
 	levantar_config();
+
+	if(levantar_servidor_workers() == EXIT_FAILURE) {
+		return EXIT_FAILURE;
+	}
 
 	leer_variables_args(argv);
 
@@ -70,6 +75,16 @@ void leer_variables_args(char** argv) {
 
 }
 
+int levantar_servidor_masters() {
+	log_info(logger, "levantando servidor MASTER");
+	socket_server = crearServidor(config_get_int_value(config, "PUERTO_MASTER"));
+	if (socket_server < 0) {
+		log_error(logger, "No se pudo levantar el servidor");
+		return EXIT_FAILURE;
+	}
+	return EXIT_SUCCESS;
+}
+
 
 int abrir_file_args(int argc, char** argv) {
 	char* ruta_file;
@@ -122,12 +137,14 @@ void comenzar_job() {
 	enviarMensajeConProtocolo(socket_yama,ruta_archivo_job_inicial,MS_YM_INICIO_JOB);
 }
 
-void transformacion() {
+void iniciar_transformacion() {
 	int i;
 	int proto_recibido;
+	int socket_worker;
 	char* char_bloque_recibido;
 	t_reg_planificacion* worker_recibido;
 	proto_recibido = recibirProtocolo(socket_yama);
+
 
 	//me fijo si es el de transformacion que esperaba
 	switch(proto_recibido) {
@@ -138,6 +155,14 @@ void transformacion() {
 			printf("worker: %s \n", char_bloque_recibido);
 			worker_recibido = reg_planificacion_from_string(char_bloque_recibido);
 			//todo aca se manda la info de transformacion al worker indicado
+			socket_worker = conectar(config_get_string_value(config,"PUERTO_WORKER"),worker_recibido->ip);
+
+			if(socket_worker){
+				dictionary_put(sockets_workers,int_to_string(worker_recibido->worker),(void*)socket_worker);
+				enviarMensajeConProtocolo(socket_worker,char_bloque_recibido,INICIO_TRANF_WORKER);
+				//cargar nuevo thread para esperar la respuesta del worker
+			}
+
 			int i;
 			log_info(logger,"para el worker: %d",worker_recibido->worker);
 			for (i=0; i< list_size(worker_recibido->bloquesAsignados); i++) {
@@ -145,28 +170,32 @@ void transformacion() {
 				log_info(logger,"bloque de archivo: %d",bloque_archivo);
 			}
 			//vale la pena guardar en una lista todos los t_reg_planificacion??
-			//list_add(&list_bloques, (void*) worker_recibido);
+			list_add(&list_bloques, (void*) worker_recibido);
 		}
 		break;
 	}
 }
 
-void avisar_fin_tranformacion() {
-	int i;
 
-	for(i=0;i < cantidad_bloques; i++) {
-		//TODO esperar que terminen todas las transformaciones en workers, por ahora se mockea los fin de transformacion
+//esta seria la funcion del thread que se abre con el worker en la transformacion
+void tranformacion(int worker) {
+	int socket_esperado = dictionary_get(sockets_workers,int_to_string(worker));
+	t_resp_master* respuesta;
+	respuesta->etapa = TRANSFORMACION;
+	respuesta->worker = worker;
+
+	char* protocolo = esperarMensaje(socket_esperado);
+	switch(protocolo){
+		case TRANSFORMACION_OK:
+			//enviar respuesta serializada en un t_respuesta_master
+			respuesta->estado = 1;
+			enviarMensaje(socket_yama,respuesta_master_to_string(respuesta));
+		break;
+		case TRANSFORMACION_ERROR:
+			respuesta->estado = 0;
+			enviarMensaje(socket_yama,respuesta_master_to_string(respuesta));
 	}
 
-	void _iterate_bloques(t_bloque_archivo* bloque){
-		char* char_bloque =int_to_string(bloque->bloque_archivo);
-		enviarMensajeConProtocolo(socket_yama,char_bloque,FIN_TRANSF_NODO);
-	}
-
-	list_iterate(&list_bloques,(void*) _iterate_bloques);
-
-	//aviso que terminaro todos
-	enviarProtocolo(socket_yama,FIN_TRANSFORMACION);
 }
 
 

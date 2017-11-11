@@ -135,6 +135,44 @@ char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
 	return char_bloque;
 }
 
+char* respuesta_master_to_string(t_resp_master* respuesta){
+	char* char_respuesta = string_new();
+
+	char* char_worker = int_to_string(respuesta->worker);
+	char* char_etapa = int_to_string(respuesta->etapa);
+	char* char_estado = int_to_string(respuesta->estado);
+
+	string_append(char_respuesta,char_worker);
+	string_append(char_respuesta,char_estado);
+	string_append(char_respuesta,char_etapa);
+
+	free(char_estado);
+	free(char_etapa);
+	free(char_worker);
+
+	return char_respuesta;
+}
+
+t_resp_master* respuesta_master_from_string(char* char_respuesta){
+	t_resp_master* respuesta;
+	respuesta = malloc(sizeof(t_resp_master));
+	int puntero = 0;
+
+	char* char_worker = extraer_string(char_respuesta,puntero,puntero + 3);
+	respuesta->worker = char_worker;
+	puntero += 4;
+
+	char* char_estado = extraer_string(char_respuesta,puntero,puntero + 3);
+	respuesta->estado = char_estado;
+	puntero += 4;
+
+	char* char_etapa = extraer_string(char_respuesta,puntero,puntero + 3);
+	respuesta->etapa = char_etapa;
+	puntero += 4;
+
+	return respuesta;
+}
+
 t_reg_planificacion* reg_planificacion_from_string(char* char_reg) {
 	t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
 	int puntero;
