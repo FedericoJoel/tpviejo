@@ -3,6 +3,13 @@
 char* rutaDirectorio =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/directorio.dat";
 
+void modificarDirectorio(t_directory* directorio, char* directorioExistente, char* directorioModificado){
+	char* ruta = string_duplicate("/");
+	string_append(&ruta, directorioExistente);
+	int posicion = buscarPosicionEnDirectorio(directorio, ruta);
+	escribirEnChar(directorio[posicion].nombre, directorioModificado, 255);
+}
+
 int buscarPosicionEnDirectorio(t_directory* directorio, char* ruta){
 	int posicion = 0;
 	for(posicion = 0; posicion < 99; posicion++){
@@ -53,13 +60,19 @@ void vaciarPosicion(t_directory* directorio, int pos){
 }
 
 void agregarPath(t_directory* directorio, char* path){
-	convertirDirectorio(path, directorio, 0);
-
+	int pos = 99;
+	for(; pos >= 0; pos--){
+		if (!(string_is_empty(directorio[pos].nombre))){
+			pos++;
+			convertirDirectorio(path, directorio, pos);
+			break;
+		}
+	}
 }
 
 void cargarDirectorio(t_directory* directorio) {
 	int pos = 0;
-	char * linea = string_new();
+	char * linea = NULL;
 	size_t len = 0;
 	FILE * archivo = fopen(rutaDirectorio, "r");
 
@@ -67,9 +80,26 @@ void cargarDirectorio(t_directory* directorio) {
 		convertirDirectorio(linea, directorio, pos);
 		pos++;
 	}
-
+	crearDirectorioFisico(directorio);
 	fclose(archivo);
 	free(linea);
+}
+
+void crearDirectorioFisico(t_directory* directorio){
+	int reg;
+	for (reg = 0; reg <= 99; reg++) {
+		if (directorio[reg].nombre[0] != '\0' && directorio[reg].padre != -1)
+			{
+			char* mkdir = string_new();
+			directorio[reg].index = reg;
+			string_append(&mkdir, "mkdir /root");
+			string_append(&mkdir, agregarPadreARuta(directorio[reg].padre, directorio));
+			string_append(&mkdir, directorio[reg].nombre);
+			system(mkdir);
+			free(mkdir);
+			printf("se creó el directorio en: %s \n", directorio[reg].nombre);
+		}
+	}
 }
 
 void mostrarDirectorio(t_directory* directorio){
@@ -106,8 +136,14 @@ void escribirEnChar(char nombre[], char* argumentos, int pos){
 	for(; auxPos < largo; auxPos++, posAux++ ){
 		nombre[auxPos] = argumentos[posAux];
 	}
+	if(argumentos[posAux] != '\n'){
+		nombre[auxPos] = argumentos[posAux];
+		largo++;
+		posAux = auxPos;
+	}
 	for(; largo < pos; largo++){
-		nombre[largo] = '\0';
+		posAux++;
+		nombre[posAux] = '\0';
 	}
 }
 
@@ -145,6 +181,7 @@ void convertirDirectorio(char * linea, t_directory directorio[], int pos) {
 			}
 		}
 	}
+	//CREAR DIRECTORIO!!!!!
 }
 
 
@@ -323,7 +360,7 @@ void borrarCarpeta(char* path){
 
 int eliminarArchivosDeDirectorio(t_directory* directorio) {
 	int pos = 0;
-	char* lista = string_new();
+//	char* lista = string_new();
 
 	while (pos < 99) {
 		if (directorio[pos].padre == 0 && directorio[pos].nombre[0] != '\0') {
@@ -333,7 +370,7 @@ int eliminarArchivosDeDirectorio(t_directory* directorio) {
 			string_append(&path, "/root");
 			string_append(&path, directorio[pos].nombre);
 
-			string_append(&lista, listarDirectorio(path));
+//			string_append(&lista, listarDirectorio(path));
 
 			borrarContenido(path);
 			borrarCarpeta(path);
@@ -347,9 +384,9 @@ int eliminarArchivosDeDirectorio(t_directory* directorio) {
 		pos++;
 	}
 	//LISTA CON LOS ARCHIVOS ELIMINADOS
-	lista[string_length(lista) - 1] = '\0';
+//	lista[string_length(lista) - 1] = '\0';
 	if (pos == 99) {
-		borrarContenido("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivo/*");
+		borrarContenido("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/*");
 		printf("se borro el directorio: metadata/archivo");
 		vaciarEstructuraDirectorio(directorio);
 		return EXIT_SUCCESS;
@@ -425,7 +462,7 @@ void guardarDirectorioEnMemoria(t_directory* directorio){
 		}
 	}
 	ordenarArray(structAux);
-	char* archivoRuta = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/directorio1.dat");
+	char* archivoRuta = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/directorio.dat");
 	FILE* archivo = fopen(archivoRuta, "w");
 	for(pos = 0; pos < 99; pos++){
 		if (!(string_is_empty(structAux[pos].path))){

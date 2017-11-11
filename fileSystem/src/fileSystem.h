@@ -87,6 +87,9 @@ int leer_cliente(int s_nodo, char * buffer);
 int existenArchivosDeConfiguracion();
 void fs_format();
 
+//GUARDA LA ESTRUCTURA DEL FS DE MEMORIA EN UN ARCHIVO
+void guardarFsEnArchivo();
+
 //ELIMINA TODOS LOS NODOS DE LA ESTRUCTURA FS
 void eliminarNodos(estructuraFs* fs);
 

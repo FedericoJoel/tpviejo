@@ -6,6 +6,35 @@ char* rutaNodo =
 char* rutaBitMap =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/bitArrayNodo.dat";
 
+void escribirBitArrayEnArchivo(t_bitarray* bitArray, char* nodo){
+	int tamanio = bitarray_get_max_bit(bitArray) / 8;
+	int pos = 0;
+	char* lectura = string_new();
+	for (; pos < tamanio; pos++){
+		string_append(&lectura, string_itoa(bitarray_test_bit(bitArray, pos)));
+	}
+	FILE* archivo = fopen(nodo, "w");
+	fputs(lectura, archivo);
+	fclose(archivo);
+	free(lectura);
+}
+
+void vaciarBitMap(char* path){
+	char* linea = NULL;
+	size_t len = 0;
+	FILE * archivo = fopen(path, "r");
+	getline(&linea, &len, archivo);
+	int largo = string_length(linea);
+	int pos = 0;
+	fclose(archivo);
+	archivo = fopen(path, "w");
+	for(; pos < largo; pos++){
+		fputc('0', archivo);
+	}
+	free(linea);
+	fclose(archivo);
+}
+
 FILE* dameArchivo(){
 	FILE * archivo = fopen(rutaBitMap, "r");
 	return archivo;
@@ -110,22 +139,22 @@ estructuraNodo* levantarNodo(int posicion) {
 	}
 }
 
-//t_bitarray* cargarBitmapAMemoria(){
-//	size_t len = 0;
-//	off_t pos = 0;
-//	FILE * archivo = fopen(rutaBitMap, "r");
-//	char * linea = string_new();
-//		if ((getline(&linea, &len, archivo)) != EOF){
-//			size_t largo = string_length(linea);
-//			t_bitarray* bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
-//			for (pos = 0; pos < largo; pos++){
-//				cargarLinea(pos, linea, bitArray);
-//				imprimirEstado(bitArray, pos);
-//			}
-//			return bitArray;
-//		}
-//		return NULL;
-//}
+
+t_bitarray* cargarBitmapAMemoria(char* path){
+	size_t len = 0;
+	off_t pos = 0;
+	FILE * archivo = fopen(path, "r");
+	char * linea = NULL;
+		if ((getline(&linea, &len, archivo)) != EOF){
+			size_t largo = string_length(linea);
+			t_bitarray* bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
+			for (pos = 0; pos < largo; pos++){
+				cargarLinea(pos, linea, bitArray);
+			}
+			return bitArray;
+		}
+		return NULL;
+}
 
 void cargarLinea(int pos, char* linea, t_bitarray* bitArray){
 	char* copia = string_new();

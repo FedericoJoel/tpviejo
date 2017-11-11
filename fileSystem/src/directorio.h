@@ -40,6 +40,8 @@ int comprobarDirectorio(int nivel, t_directory directorio [], t_directory* unDir
 //AGREGAR DIRECTORIO A STRUCT DE MEMORIA
 void agregarPath(t_directory[], char* path);
 
+void crearDirectorioFisico(t_directory* directorio);
+
 char* agregarPadreARuta(int, t_directory[]);
 int damePosicionDeElemento(char*, t_directory[]);
 void guardarRegistro(t_directory [], t_directory*, int, int);
@@ -48,6 +50,8 @@ void mostrarDirectorio(t_directory* directorio);
 void convertirDirectorio(char *, t_directory [], int pos);
 int existeDirectorio();
 char* listarDirectorio(char* path);
+
+void modificarDirectorio(t_directory* directorio, char* directorioExistente, char* directorioModificado);
 
 //VACIA EL NOMBRE DE UN DIRECTORIO EN MEMORIA
 void vaciarArray(char* nombre, int cantidad);
