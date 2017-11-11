@@ -110,22 +110,22 @@ estructuraNodo* levantarNodo(int posicion) {
 	}
 }
 
-t_bitarray* cargarBitmapAMemoria(){
-	size_t len = 0;
-	off_t pos = 0;
-	FILE * archivo = fopen(rutaBitMap, "r");
-	char * linea = string_new();
-		if ((getline(&linea, &len, archivo)) != EOF){
-			size_t largo = string_length(linea);
-			t_bitarray* bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
-			for (pos = 0; pos < largo; pos++){
-				cargarLinea(pos, linea, bitArray);
-				imprimirEstado(bitArray, pos);
-			}
-			return bitArray;
-		}
-		return NULL;
-}
+//t_bitarray* cargarBitmapAMemoria(){
+//	size_t len = 0;
+//	off_t pos = 0;
+//	FILE * archivo = fopen(rutaBitMap, "r");
+//	char * linea = string_new();
+//		if ((getline(&linea, &len, archivo)) != EOF){
+//			size_t largo = string_length(linea);
+//			t_bitarray* bitArray = bitarray_create_with_mode(linea, largo, LSB_FIRST);
+//			for (pos = 0; pos < largo; pos++){
+//				cargarLinea(pos, linea, bitArray);
+//				imprimirEstado(bitArray, pos);
+//			}
+//			return bitArray;
+//		}
+//		return NULL;
+//}
 
 void cargarLinea(int pos, char* linea, t_bitarray* bitArray){
 	char* copia = string_new();

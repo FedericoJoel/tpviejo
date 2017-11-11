@@ -31,7 +31,7 @@ int main(void) {
 	pthread_t t_consola;
 	pthread_create(&t_consola,NULL,(void*)&ejecutarConsola, NULL);
 
-	cargarDirectorio(fs.directorio);
+//	cargarDirectorio(fs.directorio);
 
 	//ESPERAMOS A QUE TERMINEN TODOS LOS THREAD
 	pthread_join(t_espera_data_nodes,NULL);
@@ -595,6 +595,9 @@ t_list* cortar_texto(char* mensaje, t_list* lista) {
 	int i = 0;
 	int ocupado = 0;
 	int cant_palabras = str_array_size(palabras);
+	for (i=0;i<cant_palabras;i++){
+		string_append(&palabras[i],"\n");
+	}
 	char* bloque = calloc(bloque_size, sizeof(char));
 	for(i=0; i< cant_palabras; i++) {
 		int tam_palabra = string_length((palabras[i]));
@@ -613,6 +616,8 @@ t_list* cortar_texto(char* mensaje, t_list* lista) {
 				ocupado += tam_palabra;
 				free(palabra_actual);
 			}
+		}else{
+			printf("la palabra es muy grande \n");
 		}
 	}
 	list_add(lista,(void*) bloque);
