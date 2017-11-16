@@ -24,13 +24,16 @@ t_list *planif;
 int BASE = 2;
 int job = 1;
 t_list *numeros_aleatorios;
+int algoritmo = ALGORITMO_WCLOCK;
 
 int main(void) {
 	/*estados = list_create();*/
 
 	//t_list * a = tablaestadosPrueba();
 	 srand(time(NULL));
+	abrir_file();
 	t_list * tabla = tablaPlanificacionCompleta();
+
 	enviarAMaster(tabla);
 	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
 
@@ -45,6 +48,50 @@ int main(void) {
 	log_info(logger, "Salir del programa");
 	return EXIT_SUCCESS;
 }
+
+
+int abrir_file() {
+	char* ruta_file;
+	char* linea = NULL;
+	size_t len= 0;
+	size_t leido;
+	FILE* archivo;
+
+	//abrir file y loggear lineas
+	ruta_file = RUTA_ARCHIVO_CONFIG;
+
+
+	archivo = fopen(ruta_file, "r");
+	if(archivo == NULL) {
+		log_error(logger, "file %s no existe", ruta_file);
+		return EXIT_FAILURE;
+	}
+
+	while((leido = getline(&linea, &len, archivo)) != -1) {
+
+		char* token = strtok(linea, "=");
+
+		if(string_contains(linea, "FS_IP")){
+			char* FS_IP = strtok(NULL, "\n");
+			int i=0;
+		}else if(string_contains(linea, "YAMA_PUERTO")){
+			int YAMA_PUERTO = atoi(strtok(NULL, "\n"));
+			int i=0;
+		}else if(string_contains(linea, "ALGORTIMO")){
+			int ALGORITMO = atoi(strtok(NULL, "\n"));
+			int i=0;
+		}
+
+	}
+
+	fclose(archivo);
+	if(linea){
+		free(linea);
+	}
+	return EXIT_SUCCESS;
+}
+
+
 
 void transformarBloques(t_list * tabla) {
 
@@ -76,6 +123,9 @@ void modificarBloqueTablaEstados(int bloque, int etapa, int estadoNuevo, int wor
 	}
 }
 
+
+
+
 void enviarAMaster(t_list * tabla) {
 
 	transformarBloques(tabla);
@@ -86,11 +136,14 @@ void enviarAMaster(t_list * tabla) {
 int PWL(int worker, int job){
 		//
 
+	if(algoritmo == ALGORITMO_WCLOCK){
 		int wlmax = cargaTrabajoMaxima(job); //la mayor carga de trabajo entre todos los worker. Se debera recorrer la tabla de estados para ver cual es la mayor carga de trabajo
 		int wl = cargaTrabajoWorker(worker); //la carga de trabajo actual del worker. Se obtiene de la tabla de estados
-
-
-	return wlmax - wl;
+		return wlmax - wl;
+	}
+		else if(algoritmo == ALGORITMO_CLOCK){
+			return 0;
+		}
 }
 
 
@@ -165,7 +218,7 @@ int cargaTrabajoMinima(int job){
 			list_add(nodosDelJob, (void*) nodo);
 		}
 	}
-	int nodoMinimo;
+	int nodoMinimo = list_get(nodosDelJob, 0);
 	int minimaCarga = cargaTrabajoWorker((int *)list_get(nodosDelJob, 0));
 	for(i=1; i<list_size(nodosDelJob); i++){
 		int nodoActual = list_get(nodosDelJob, i);
@@ -277,20 +330,21 @@ void agregarEstados(int bloque, int etapa, int estadoNuevo, int worker, int job,
 				list_add(estados, (void*) estado);
 }
 
-t_list* iniciarReduccion(int worker, int job){
+t_list* iniciarReduccionLocal(int worker, int job){
 
 	int i;
 	t_list *reduccion = list_create();
 	t_link_element *puntTabla = estados->head;
 	for (i = 0; i < list_size(estados); i++) {
 		t_estado* reg = puntTabla->data;
-		if(reg->job == job && reg->nodo == worker){
-			agregarEstados(reg->bloque, ETAPA_REDUCCION_LOCAL, ESTADO_EN_PROCESO, worker, job, 1, "pin"); // aca el master y el temporal estan harcodeados
+		if(reg->job == job && reg->nodo == worker && reg->etapa == ETAPA_TRANSFORMACION){
+			char* rutaReducLocal= generar_ruta_aleatoria();
+			agregarEstados(reg->bloque, ETAPA_REDUCCION_LOCAL, ESTADO_EN_PROCESO, worker, job, 1, rutaReducLocal); // aca el master esta harcodeados
 			t_reg_planificacion *regPlani = malloc(sizeof(t_reg_planificacion));
 			regPlani->worker = worker;
 			regPlani->ip = "as";//harcodeado;
 			regPlani->temporalTransformacion = reg->temporal;
-			regPlani->tempReducLocal = "asfa";//harcodeado
+			regPlani->tempReducLocal = rutaReducLocal;
 
 			list_add(reduccion, (void*) regPlani);
 		}
@@ -300,14 +354,79 @@ t_list* iniciarReduccion(int worker, int job){
 
 }
 
-void fallaEtapa(int etapa, int job){
-			int i;
+t_list* iniciarReduccionGlobal(int job){
+
+	int i;
+	t_list *reduccion = list_create();
+	t_link_element *puntTabla = estados->head;
+	int nodoEncargado = cargaTrabajoMinima(job);
+	bool encargado;
+	char* rutaReducGlobal;
+	char* rutaAleatoria= generar_ruta_aleatoria();
+	for (i = 0; i < list_size(estados); i++) {
+		t_estado* reg = puntTabla->data;
+		if(reg->job == job && reg->etapa == ETAPA_REDUCCION_LOCAL){
+			if(reg->nodo == nodoEncargado){
+				rutaReducGlobal = rutaAleatoria;
+				encargado = true;
+			}
+			else{
+				rutaReducGlobal = '\0';
+				encargado = false;
+			}
+			agregarEstados(reg->bloque, ETAPA_REDUCCION_GLOBAL, ESTADO_EN_PROCESO, reg->nodo, job, 1, rutaReducGlobal); // aca el master esta harcodeados
+			t_reg_planificacion *regPlani = malloc(sizeof(t_reg_planificacion));
+			regPlani->worker = reg->nodo;
+			regPlani->ip = "as";//harcodeado; TODO: Desharcodear esto
+			regPlani->tempReducLocal = reg->temporal;
+			regPlani->tempReducGlobal = rutaReducGlobal;
+
+			list_add(reduccion, (void*) regPlani);
+		}
+		puntTabla = puntTabla->next;
+	}
+	return reduccion;
+
+}
+
+void replanificar(int job, int planificacion)
+{
+	//TODO: enviar mensaje a  mastar para que termine un job y en caso de que planificacion sea PEDIDO_TRANSFORMACION entonces debera pedir
+	// nuevamente que planifiquemos y si es PEDIDO_ABORTO no lo haga
+
+}
+
+
+void fallaEtapa(int nodo){
+			int i, replanificacion;
+			t_list *jobs = list_create();
 			t_link_element *puntTabla = estados->head;
 			for (i = 0; i < list_size(estados); i++) {
 				t_estado* reg = puntTabla->data;
-				if(reg->job == job){
-					modificarBloqueTablaEstados(reg->bloque, etapa, ESTADO_ERROR, reg->nodo, job);
+
+				if(reg->nodo == nodo && reg->estado == ESTADO_EN_PROCESO){
+					if(reg->etapa == ETAPA_TRANSFORMACION )
+					{
+						 replanificacion = 1;
+					} else {
+						 replanificacion = 0;
+					}
+					//TODO:: Probar que funciones lo de los jobs repetidos
+					bool jobRepetido = false;
+					for (i = 0; i < list_size(jobs); i++) {
+							int* job = list_get(jobs, i);
+							if (reg->job == job) {
+								bool jobRepetido = true;
+								break;
+							}
+						}
+					if(!jobRepetido){
+						list_add(jobs, (void*) reg->job);
+						replanificar(reg->job, replanificacion);
+					}
 				}
+					modificarBloqueTablaEstados(reg->bloque, reg->etapa, ESTADO_ERROR, reg->nodo, reg->job);
+
 				puntTabla = puntTabla->next;
 			}
 }
@@ -328,6 +447,22 @@ bool terminoEtapaTransformacion(int job, int worker){
 		return true;
 }
 
+bool terminoEtapaReduccionLocal(int job){
+
+	int i;
+		t_link_element *puntTabla = estados->head;
+		for (i = 0; i < list_size(estados); i++) {
+			t_estado* reg = puntTabla->data;
+			if(reg->job == job){
+				if(reg->etapa == ETAPA_REDUCCION_LOCAL && reg->estado == ESTADO_EN_PROCESO){
+					return false;
+				}
+			}
+			puntTabla = puntTabla->next;
+		}
+		return true;
+}
+
 t_list* tablaPlanif() {
 	t_list* arch = archivoPrueba2();
 	t_list* planificacion = list_create();
@@ -340,39 +475,42 @@ t_list* tablaPlanif() {
 		int nBloque = bloque->bloque_archivo;
 		int nodocopia0 = bloque->copia0->nodo;
 		int nodocopia1 = bloque->copia1->nodo;
+		if(nodocopia0 != -1){
+			if (!nodoYaAsignado(planificacion, nodocopia0)) {
+				t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
+				reg->worker = nodocopia0;
+				reg->availability = BASE+ PWL(reg->worker, job);
+				reg->bloquesAsignados = list_create();
+				reg->bloques = list_create();
 
-		if (!nodoYaAsignado(planificacion, nodocopia0)) {
-			t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
-			reg->worker = nodocopia0;
-			reg->availability = BASE+ PWL(reg->worker, job);
-			reg->bloquesAsignados = list_create();
-			reg->bloques = list_create();
+				reg->job = job;
+				agregarBloque(reg, nBloque);
+				list_add(planificacion, (void*) reg);
 
-			reg->job = job;
-			agregarBloque(reg, nBloque);
-			list_add(planificacion, (void*) reg);
+			} else {
 
-		} else {
-
-			t_reg_planificacion* reg = buscarRegEnLista(planificacion,
-					nodocopia0);
-			agregarBloque(reg, nBloque);
+				t_reg_planificacion* reg = buscarRegEnLista(planificacion,
+						nodocopia0);
+				agregarBloque(reg, nBloque);
+			}
 		}
 
 
-		if (!nodoYaAsignado(planificacion, nodocopia1)) {
-			t_reg_planificacion* reg1 = malloc(sizeof(t_reg_planificacion));
-			reg1->worker = nodocopia1;
-			reg1->availability = BASE+ PWL(reg1->worker, job);
-			reg1->bloquesAsignados = list_create();
-			reg1->bloques = list_create();
-			reg1->job = job;
-			agregarBloque(reg1, nBloque);
-			list_add(planificacion, (void*) reg1);
-		} else {
-			t_reg_planificacion* reg1 = buscarRegEnLista(planificacion,
-					nodocopia1);
-			agregarBloque(reg1, nBloque);
+		if(nodocopia1 != -1){
+			if (!nodoYaAsignado(planificacion, nodocopia1)) {
+				t_reg_planificacion* reg1 = malloc(sizeof(t_reg_planificacion));
+				reg1->worker = nodocopia1;
+				reg1->availability = BASE+ PWL(reg1->worker, job);
+				reg1->bloquesAsignados = list_create();
+				reg1->bloques = list_create();
+				reg1->job = job;
+				agregarBloque(reg1, nBloque);
+				list_add(planificacion, (void*) reg1);
+			} else {
+				t_reg_planificacion* reg1 = buscarRegEnLista(planificacion,
+						nodocopia1);
+				agregarBloque(reg1, nBloque);
+			}
 		}
 	}
 
@@ -769,9 +907,9 @@ void recibir_nuevo_master() {
 	int nuevo_cliente;
 
 	//conecto cliente en un nuevo socket
-	if ((nuevo_cliente = esperarConexion(socket_server, AUTH)) < 0) {
-		log_error(logger, "no se pudo crear conexion");
-	}
+//	if ((nuevo_cliente = esperarConexion(socket_server, AUTH)) < 0) {
+//		log_error(logger, "no se pudo crear conexion");
+//	}
 
 	//recorro array para encontrarle un lugar vacio al nuevo master
 	for (i = 0; (i < clientes_max) && (nuevo_cliente != -1); i++) {
@@ -924,6 +1062,10 @@ void atender_fin_transformacion(int posicion) {
 	//TODO marcar en tabla de estados la etapa en que se encuentra??
 	log_info(logger, "finalizaron las transformaciones de master %d",
 			socket_clientes[posicion]);
+	//modificarBloqueTablaEstados(bloque, ETAPA_TRANSFOMACION, ESTADO_FINALIZADO_OK, worker, job)
+	/*if(terminoEtapaTransformacion(job, worker)){
+		iniciarReduccionLocal(job, worker)
+	}*/
 	//enviar_reduccion_local(posicion);
 }
 

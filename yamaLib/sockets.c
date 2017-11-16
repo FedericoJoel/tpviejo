@@ -51,9 +51,7 @@ int crearServidor(int puerto){
 	listen(servidor,SOMAXCONN);
 	return servidor;
 }
-<<<<<<< HEAD
-int esperarConexion(int servidor, char* autentificacion){
-=======
+
 int esperarConexion(int servidor){
 	printf("Estoy a la espera de una conexion\n");
 	int cliente = aceptar(servidor);
@@ -66,7 +64,6 @@ int esperarConexion(int servidor){
 }
 int esperarConexionAuth(int servidor, int *AUTH){
 	printf("Estoy a la espera de una conexion\n");
->>>>>>> Fede
 	int cliente = aceptar(servidor);
 	if (cliente <= 0){
 		return -1;

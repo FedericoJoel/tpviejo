@@ -25,7 +25,14 @@
 #define ESTADO_FINALIZADO_OK 1
 #define ESTADO_ERROR 2
 
+#define PEDIDO_ABORTO 0
+#define PEDIDO_TRANSFORMACION 1
+#define RUTA_ARCHIVO_CONFIG "/home/utnso/workspace/tp-2017-2c-LaYamaQueLlama/yama/resources/config.cfg"
+
 #define RUTA_TEMPORAL "/tmp/"
+
+#define ALGORITMO_CLOCK 0
+#define ALGORITMO_WCLOCK 1
 
 
 
@@ -74,8 +81,10 @@ void modificarBloqueTablaEstados(int bloque, int etapa, int estado, int worker, 
 int cargaTrabajoMaxima(int job);
 int cargaTrabajoWorker(int worker);
 void enviarAMaster(t_list * tabla);
-char* generar_numero_aleatorio();
+char* generar_ruta_aleatoria();
 t_list * tablaestadosPrueba();
+t_list * iniciarReduccionLocal(int worker , int job);
+t_list * iniciarReduccionGlobal(int job);
 //----------otros---------------------
 char* AUTH;
 

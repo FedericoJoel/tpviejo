@@ -53,7 +53,7 @@ typedef struct reg_planificacion{
 	int job;
 	char *temporalTransformacion;
 	char *tempReducLocal;
-	char *tempReudcGlobal;
+	char *tempReducGlobal;
 	char* ip;
 }t_reg_planificacion;
 
