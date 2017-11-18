@@ -387,11 +387,12 @@ t_list* iniciarReduccionLocal(int worker, int job){
 	return reduccion;
 
 }
-t_list* nodosDelJob(int job){ //TODO::Probar esto
+t_list* nodosDelJobs(int job){ //TODO::Probar esto
+
 
 	t_list * nodosDelJob;
 		nodosDelJob = list_create();
-
+		int i;
 		for(i=0; i<list_size(estados); i++){
 			t_estado *estado = list_get(estados, i);
 			if(estado->job == job && !repetido(estado->nodo, nodosDelJob)){
@@ -411,28 +412,27 @@ t_list* iniciarReduccionGlobal(int job){
 	char* rutaReducGlobal;
 	char* rutaReducLocal;
 	char* rutaAleatoria= generar_ruta_aleatoria();
+	t_list* nodos = nodosDelJob(job);
 
-	t_list* nodosDelJob = nodosDelJob(job);
 	int nodoEncargado = cargaTrabajoMinima(job);
 
 	for (i = 0; i < list_size(nodosDelJob); i++) {
-		int* nodoActual = list_get(nodosDelJob, i);
+		int* nodoActual = list_get(nodos, i);
 		t_reg_planificacion *regPlani = malloc(sizeof(t_reg_planificacion));
-		regPlani->worker = reg->nodo;
-		regPlani->ip = "as";//harcodeado; TODO: Desharcodear esto
-
-		if(reg->nodo == nodoEncargado){
-			regPlani->tempReducGlobal = rutaAleatoria;
-		}
-		else{
-			regPlani->tempReducGlobal = '\0';
-		}
 
 		for (i = 0; i < list_size(estados); i++) {
 			t_estado* reg = puntTabla->data;
-			if(reg->job == job && reg->etapa == ETAPA_REDUCCION_LOCAL && reg->worker == nodoActual){
+			if(reg->job == job && reg->etapa == ETAPA_REDUCCION_LOCAL && reg->nodo == nodoActual){
 				agregarEstados(reg->bloque, ETAPA_REDUCCION_GLOBAL, ESTADO_EN_PROCESO, reg->nodo, job, 1, rutaReducGlobal); // aca el master esta harcodeados
 				regPlani->tempReducLocal = reg->temporal;
+				regPlani->worker = reg->nodo;
+				regPlani->ip = "as";//harcodeado; TODO: Desharcodear esto
+
+				if(reg->nodo == nodoEncargado){
+					regPlani->tempReducGlobal = rutaAleatoria;
+				}else{
+					regPlani->tempReducGlobal = '\0';
+				}
 			}
 			puntTabla = puntTabla->next;
 		}

@@ -81,12 +81,11 @@ void modificarBloqueTablaEstados(int bloque, int etapa, int estado, int worker, 
 int cargaTrabajoMaxima(int job);
 int cargaTrabajoWorker(int worker);
 void enviarAMaster(t_list * tabla);
-
 char* generar_ruta_aleatoria();
 
 void enviar_ruta_fs(char* mensaje);
 char* generar_numero_aleatorio();
-
+t_list * nodosDelJob(int job);
 t_list * tablaestadosPrueba();
 t_list * iniciarReduccionLocal(int worker , int job);
 t_list * iniciarReduccionGlobal(int job);

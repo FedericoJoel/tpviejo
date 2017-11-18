@@ -58,7 +58,7 @@ typedef struct reg_planificacion{
 typedef struct respuesta_master{
 	int worker;
 	int estado;
-//	t_etapa etapa;
+	t_etapa etapa;
 }t_resp_master;
 
 //---------logger----------
@@ -77,6 +77,7 @@ t_bloque_archivo* bloque_archivo_from_string(char* char_bloque);
 t_reg_planificacion* reg_planificacion_from_string(char* char_reg_planificacion);
 t_list* iterate_bloques_from_string(char* bloques, int tamanio);
 t_resp_master* respuesta_master_from_string(char* char_respuesta);
+char* iterate_rutas_to_string(t_list* rutas);
 
 char* reg_planificacion_to_string( t_reg_planificacion* data_worker);
 char* copia_to_string(t_copia* copia);
