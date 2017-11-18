@@ -29,5 +29,7 @@ void conectarse_fs();
 void escribir(char* mensaje, int offset);
 int map_data();
 void escribir_bloque(char* mensaje, int bloque);
+void keep_alive();
+char* leer_bloque(int bloque);
 
 #endif /* DATANODE_H_ */

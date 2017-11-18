@@ -3,13 +3,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <commons/temporal.h>
 #include <commons/string.h>
-#include <commons/config.h>
 #include <commons/collections/list.h>
+#include "directorio.h"
+#include "archivo.h"
+#include "nodo.h"
 #include <lib.h>
 #include <stdint.h>
 #include <pthread.h>
@@ -18,49 +19,89 @@
 #include <sys/socket.h>
 #include <protocolos.h>
 #include <string.h>
+//CANTIDAD MAXIMA DE CLIENTES CONCURRENTES
+#define clientes_max 10
+
 
 typedef struct nodo{
 	int id;
 	char* ip;
 	int socket;
+	int bloque_cant;
 }t_nodo;
 
-//CANTIDAD MAXIMA DE CLIENTES CONCURRENTES
-#define clientes_max 10
 
 
-void fs_format();
-void fs_rm(char * arg);
-void fs_rename(char * arg);
+typedef struct{
+	int tamanioTotalFs;
+	int tamanioLibreFs;
+	t_list* nodos;
+}estructuraFs;
 
-void fs_mv(char * arg);
+typedef struct{
+	estructuraFs estructuraNodos;
+	t_directory directorio[99];
+	t_archivo tablaArchivo;
+	t_bitarray* bitArray;
+}t_fileSystem;
 
-void fs_cat(char * arg);
+t_fileSystem fs;
+int PUERTO_FS= 3490;
+int s_servidor;
+t_list *t_dataNodes;
+t_list *s_dataNodes;
+pthread_t* t_atiende_dn;
+pthread_t t_espera_data_nodes;
 
-void fs_mkdir(char * arg);
 
-void fs_cpfrom(char * arg);
+//DEVUELVE LA POSICION DE UN NODO SEGUN EL NOMBRE
+int encontrarPosicion(t_list* fs, char* nombre);
 
-void fs_cpto(char * arg);
+//AGREGA UN NODO A LA ESTRUCTURA FS
+void agregarNodoAFs(estructuraFs* fs, int id, int bloquesLibres, int bloquesTotales);
 
-void fs_cpblok(char * arg);
+//ELIMINA UN NODO DE LA ESTRUCTURA FS
+void eliminarNodoDeFs(estructuraFs* fs, int id);
 
-void fs_md5(char * arg);
+//MODIFICA LOS BLOQUES LIBRE DE UN NODO QUE YA FORMA PARTE DEL FS
+void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados);
 
-void fs_ls(char * arg);
+//CARGA LOS NODOS EXISTENTES EN EL ARCHIO AL FS
+void cargarNodosAFs(estructuraFs* fs);
 
-void fs_info(char * arg);
+t_list* cortar_texto(char* mensaje, t_list* lista);
+int size_in_bloks(char* mensaje);
 
 void ejecutarConsola();
-int str_array_size(char** array);
 void str_array_print(char ** array);
 void esperar_conexiones();
 void iniciar_servidor();
 void atender_dn();
 
-void set_bloque(int s_nodo,char* datos,int bloque);
+int set_bloque(int s_nodo,char* datos,int bloque);
 char* get_bloque(int s_nodo, int bloque);
+int keep_alive(int socket);
+t_list * cortar_datos(int numeroDePalabra,char** palabras, t_list * bloques);
 
 int leer_cliente(int s_nodo, char * buffer);
+int existenArchivosDeConfiguracion();
+void fs_format();
 
+//GUARDA LA ESTRUCTURA DEL FS DE MEMORIA EN UN ARCHIVO
+void guardarFsEnArchivo();
+
+//ELIMINA TODOS LOS NODOS DE LA ESTRUCTURA FS
+void eliminarNodos(estructuraFs* fs);
+
+void fs_rm(char * arg);
+void fs_rename(char * arg);
+void fs_mv(char * arg);
+void fs_cat(char * arg);
+void fs_mkdir(char * arg);
+void fs_cpfrom(char * arg);
+void fs_cpto(char * arg);
+void fs_cpblok(char * arg);
+void fs_md5(char * arg);
+void fs_ls(char * arg);
+void fs_info(char * arg);
 #endif /* FILESYSTEM_H_ */

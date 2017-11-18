@@ -62,6 +62,7 @@ int esperarConexion(int servidor){
 	}
 	return cliente;
 }
+
 int esperarConexionAuth(int servidor, int *AUTH){
 	printf("Estoy a la espera de una conexion\n");
 	int cliente = aceptar(servidor);

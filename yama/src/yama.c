@@ -27,15 +27,23 @@ t_list *numeros_aleatorios;
 int algoritmo = ALGORITMO_WCLOCK;
 
 int main(void) {
+
 	/*estados = list_create();*/
 
 	//t_list * a = tablaestadosPrueba();
+
 	 srand(time(NULL));
 	abrir_file();
 	t_list * tabla = tablaPlanificacionCompleta();
 
 	enviarAMaster(tabla);
 	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
+
+//	 srand(time(NULL));
+//	t_list * tabla = tablaPlanificacionCompleta();
+//	enviarAMaster(tabla);
+//	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
+
 
 	levantar_logger();
 
@@ -330,28 +338,68 @@ void agregarEstados(int bloque, int etapa, int estadoNuevo, int worker, int job,
 				list_add(estados, (void*) estado);
 }
 
+t_list* iniciarTransformacion(int job){
+
+	int i;
+	t_list * tabla = tablaPlanificacionCompleta();
+	for (i = 0; i < list_size(tabla); i++) {
+		t_reg_planificacion* reg = list_get(tabla, i);
+
+		for (i = 0; i < list_size(reg->bloquesAsignados); i++){
+
+			char* rutaTransf= generar_ruta_aleatoria();
+			int bloqueActual = list_get(reg->bloquesAsignados, i);
+			list_add(reg->temporalesTransformacion, (void*) rutaTransf);
+
+			agregarEstados(bloqueActual, ETAPA_TRANSFORMACION, ESTADO_EN_PROCESO, reg->worker, job, 1, rutaTransf); // aca el master esta harcodeados
+
+		}
+	}
+	return tabla;
+
+}
+
 t_list* iniciarReduccionLocal(int worker, int job){
 
 	int i;
 	t_list *reduccion = list_create();
 	t_link_element *puntTabla = estados->head;
+
+	char* rutaReducLocal= generar_ruta_aleatoria();
+	t_reg_planificacion *regPlani = malloc(sizeof(t_reg_planificacion));
+	regPlani->worker = worker;
+	regPlani->ip = "as";//harcodeado;
+	regPlani->tempReducLocal = rutaReducLocal;
+
 	for (i = 0; i < list_size(estados); i++) {
+
 		t_estado* reg = puntTabla->data;
 		if(reg->job == job && reg->nodo == worker && reg->etapa == ETAPA_TRANSFORMACION){
-			char* rutaReducLocal= generar_ruta_aleatoria();
-			agregarEstados(reg->bloque, ETAPA_REDUCCION_LOCAL, ESTADO_EN_PROCESO, worker, job, 1, rutaReducLocal); // aca el master esta harcodeados
-			t_reg_planificacion *regPlani = malloc(sizeof(t_reg_planificacion));
-			regPlani->worker = worker;
-			regPlani->ip = "as";//harcodeado;
-			regPlani->temporalTransformacion = reg->temporal;
-			regPlani->tempReducLocal = rutaReducLocal;
 
-			list_add(reduccion, (void*) regPlani);
+			agregarEstados(reg->bloque, ETAPA_REDUCCION_LOCAL, ESTADO_EN_PROCESO, worker, job, 1, rutaReducLocal); // aca el master esta harcodeados
+
+			list_add(regPlani->temporalesTransformacion, (void*) reg->temporal);
+
 		}
 		puntTabla = puntTabla->next;
 	}
+	list_add(reduccion, (void*) regPlani);
 	return reduccion;
 
+}
+t_list* nodosDelJob(int job){ //TODO::Probar esto
+
+	t_list * nodosDelJob;
+		nodosDelJob = list_create();
+
+		for(i=0; i<list_size(estados); i++){
+			t_estado *estado = list_get(estados, i);
+			if(estado->job == job && !repetido(estado->nodo, nodosDelJob)){
+				int nodo = estado->nodo;
+				list_add(nodosDelJob, (void*) nodo);
+			}
+		}
+		return nodosDelJob;
 }
 
 t_list* iniciarReduccionGlobal(int job){
@@ -359,32 +407,38 @@ t_list* iniciarReduccionGlobal(int job){
 	int i;
 	t_list *reduccion = list_create();
 	t_link_element *puntTabla = estados->head;
-	int nodoEncargado = cargaTrabajoMinima(job);
-	bool encargado;
-	char* rutaReducGlobal;
-	char* rutaAleatoria= generar_ruta_aleatoria();
-	for (i = 0; i < list_size(estados); i++) {
-		t_estado* reg = puntTabla->data;
-		if(reg->job == job && reg->etapa == ETAPA_REDUCCION_LOCAL){
-			if(reg->nodo == nodoEncargado){
-				rutaReducGlobal = rutaAleatoria;
-				encargado = true;
-			}
-			else{
-				rutaReducGlobal = '\0';
-				encargado = false;
-			}
-			agregarEstados(reg->bloque, ETAPA_REDUCCION_GLOBAL, ESTADO_EN_PROCESO, reg->nodo, job, 1, rutaReducGlobal); // aca el master esta harcodeados
-			t_reg_planificacion *regPlani = malloc(sizeof(t_reg_planificacion));
-			regPlani->worker = reg->nodo;
-			regPlani->ip = "as";//harcodeado; TODO: Desharcodear esto
-			regPlani->tempReducLocal = reg->temporal;
-			regPlani->tempReducGlobal = rutaReducGlobal;
 
-			list_add(reduccion, (void*) regPlani);
+	char* rutaReducGlobal;
+	char* rutaReducLocal;
+	char* rutaAleatoria= generar_ruta_aleatoria();
+
+	t_list* nodosDelJob = nodosDelJob(job);
+	int nodoEncargado = cargaTrabajoMinima(job);
+
+	for (i = 0; i < list_size(nodosDelJob); i++) {
+		int* nodoActual = list_get(nodosDelJob, i);
+		t_reg_planificacion *regPlani = malloc(sizeof(t_reg_planificacion));
+		regPlani->worker = reg->nodo;
+		regPlani->ip = "as";//harcodeado; TODO: Desharcodear esto
+
+		if(reg->nodo == nodoEncargado){
+			regPlani->tempReducGlobal = rutaAleatoria;
 		}
-		puntTabla = puntTabla->next;
+		else{
+			regPlani->tempReducGlobal = '\0';
+		}
+
+		for (i = 0; i < list_size(estados); i++) {
+			t_estado* reg = puntTabla->data;
+			if(reg->job == job && reg->etapa == ETAPA_REDUCCION_LOCAL && reg->worker == nodoActual){
+				agregarEstados(reg->bloque, ETAPA_REDUCCION_GLOBAL, ESTADO_EN_PROCESO, reg->nodo, job, 1, rutaReducGlobal); // aca el master esta harcodeados
+				regPlani->tempReducLocal = reg->temporal;
+			}
+			puntTabla = puntTabla->next;
+		}
+		list_add(reduccion, (void*) regPlani);
 	}
+
 	return reduccion;
 
 }
@@ -407,9 +461,9 @@ void fallaEtapa(int nodo){
 				if(reg->nodo == nodo && reg->estado == ESTADO_EN_PROCESO){
 					if(reg->etapa == ETAPA_TRANSFORMACION )
 					{
-						 replanificacion = 1;
+						 replanificacion = PEDIDO_TRANSFORMACION;
 					} else {
-						 replanificacion = 0;
+						 replanificacion = PEDIDO_ABORTO;
 					}
 					//TODO:: Probar que funciones lo de los jobs repetidos
 					bool jobRepetido = false;
@@ -431,7 +485,7 @@ void fallaEtapa(int nodo){
 			}
 }
 
-bool terminoEtapaTransformacion(int job, int worker){
+int terminoEtapaTransformacion(int job, int worker){
 
 	int i;
 		t_link_element *puntTabla = estados->head;
@@ -439,12 +493,12 @@ bool terminoEtapaTransformacion(int job, int worker){
 			t_estado* reg = puntTabla->data;
 			if(reg->job == job && reg->nodo == worker){
 				if(reg->etapa == ETAPA_TRANSFORMACION && reg->estado == ESTADO_EN_PROCESO){
-					return false;
+					return 0;
 				}
 			}
 			puntTabla = puntTabla->next;
 		}
-		return true;
+		return 1;
 }
 
 bool terminoEtapaReduccionLocal(int job){
@@ -487,13 +541,33 @@ t_list* tablaPlanif() {
 				agregarBloque(reg, nBloque);
 				list_add(planificacion, (void*) reg);
 
+
 			} else {
+
+		/*if (!nodoYaAsignado(planificacion, nodocopia0)) {
+			t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
+			reg->worker = nodocopia0;
+			reg->availability = BASE+ PWL(reg->worker, job);
+			reg->bloquesAsignados = list_create();
+			reg->bloques = list_create();
+			//todo setear rutas temporales acumulando en algun lado las que ya se generaron para este master
+			reg->temporalTransformacion = string_from_format("/tmp/Master-",int_to_string(i));
+			reg->tempReducLocal = string_from_format("/tmp/Master-",int_to_string(i));
+			reg->tempReudcGlobal= string_from_format("/tmp/Master-",int_to_string(i));
+			reg->ip = "127.0.0.1";
+			reg->job = job;
+			agregarBloque(reg, nBloque);
+			list_add(planificacion, (void*) reg);
+
+		} else {*/
+
 
 				t_reg_planificacion* reg = buscarRegEnLista(planificacion,
 						nodocopia0);
 				agregarBloque(reg, nBloque);
 			}
 		}
+
 
 
 		if(nodocopia1 != -1){
@@ -511,6 +585,25 @@ t_list* tablaPlanif() {
 						nodocopia1);
 				agregarBloque(reg1, nBloque);
 			}
+
+		/*if (!nodoYaAsignado(planificacion, nodocopia1)) {
+			t_reg_planificacion* reg1 = malloc(sizeof(t_reg_planificacion));
+			reg1->worker = nodocopia1;
+			reg1->availability = BASE+ PWL(reg1->worker, job);
+			reg1->bloquesAsignados = list_create();
+			reg1->bloques = list_create();
+			reg1->job = job;
+			reg1->temporalTransformacion = string_from_format("/tmp/Master-",int_to_string(i));
+			reg1->tempReducLocal = string_from_format("/tmp/Master-",int_to_string(i));
+			reg1->tempReudcGlobal= string_from_format("/tmp/Master-",int_to_string(i));
+			reg1->ip = "127.0.0.1";
+			agregarBloque(reg1, nBloque);
+			list_add(planificacion, (void*) reg1);
+		} else {
+			t_reg_planificacion* reg1 = buscarRegEnLista(planificacion,
+					nodocopia1);
+			agregarBloque(reg1, nBloque);*/
+
 		}
 	}
 
@@ -670,12 +763,11 @@ t_link_element * buscarWorkerMayorAvailability(t_list * planificacion){
 	return mayor;
 }
 
-t_list * tablaPlanificacionCompleta()
+t_list * tablaPlanificacionCompleta(t_list* arch)
 {
 
 	t_list * planificacion = tablaPlanif();
 
-	t_list *arch = archivoPrueba2();
 	t_link_element *nodoMayorAvailability = buscarWorkerMayorAvailability(planificacion); // Se empieza apuntando al worker de mayor availability TODO: desampatar por el historial
 	t_link_element *clock = nodoMayorAvailability;
 	t_link_element *auxclock = nodoMayorAvailability;
@@ -829,6 +921,26 @@ int levantar_servidor(void) {
 		log_error(logger, "No se pudo levantar el servidor");
 		return EXIT_FAILURE;
 	}
+	socket_clientes = list_create();
+	return EXIT_SUCCESS;
+}
+
+int conectar_con_fs() {
+	int proto_recibido;
+
+	char* ip_fs = config_get_string_value(config,"FS_IP");
+	int puerto_fs = config_get_int_value(config,"FS_PUERTO");
+
+	log_info(logger,"conectando con proceso FILESYSTEM");
+	socket_fs = conectar(puerto_fs,ip_fs);
+
+	proto_recibido = recibirProtocolo(socket_fs);
+
+	if(proto_recibido == FS_YM_ERRORCONN) {
+		log_error(logger,"no se pudo conectar a filesystem. Reintentar mas tarde");
+		return EXIT_FAILURE;
+	}
+	else log_info(logger,"conexion establecida con FILESYTEM");
 	return EXIT_SUCCESS;
 }
 
@@ -847,7 +959,7 @@ void esperar_masters(void) {
 		// en cada iteracion hay que blanquear(FD_ZERO) el fds_masters, que es un bitarray donde queda guardado
 		// que sockets tienen cambios despues del select y tambien volver a setear(FD_SET) los filedescriptors en el fds_set.
 		//ademas de volver a calcular cual es el filedescriptor mas alto
-		construir_fds(&max_fds, socket_clientes);
+		construir_fds(&max_fds);
 
 		log_info(logger, "esperando conexiones");
 
@@ -868,17 +980,16 @@ void esperar_masters(void) {
 
 }
 
-void construir_fds(int* max_actual, int conectados[]) {
+void construir_fds(int* max_actual) {
 	int i;
 
 	FD_ZERO(&fds_masters);
 	FD_SET(socket_server, &fds_masters);
-	for (i = 0; i < clientes_max; i++) {
-		if (conectados[i] != 0) {
-			FD_SET(conectados[i], &fds_masters);
-			if (*max_actual < conectados[i]) {
-				*max_actual = socket_clientes[i];
-			}
+	for (i = 0; i < list_size(socket_clientes); i++) {
+		int socket_actual = get_socket_posicion(i);
+		FD_SET(socket_actual, &fds_masters);
+		if (*max_actual < socket_actual) {
+			*max_actual = socket_actual;
 		}
 	}
 }
@@ -894,8 +1005,9 @@ void leer_cambios_select() {
 
 	//recibo data de uno ya conectado
 	//TODO handlear si el cliente se desconecta abruptamente(seguramente hay que usar alguna signal o algo asi)
-	for (i = 0; i < clientes_max; i++) {
-		if (FD_ISSET(socket_clientes[i], &fds_masters)) {
+	for (i = 0; i < list_size(socket_clientes); i++) {
+		int socket_actual = get_socket_posicion(i);
+		if (FD_ISSET(socket_actual, &fds_masters)) {
 			log_info(logger, "se recibio data de un master conectado");
 			recibir_data_de_master(i);
 		}
@@ -903,40 +1015,25 @@ void leer_cambios_select() {
 }
 
 void recibir_nuevo_master() {
-	int i;
 	int nuevo_cliente;
 
 	//conecto cliente en un nuevo socket
-//	if ((nuevo_cliente = esperarConexion(socket_server, AUTH)) < 0) {
-//		log_error(logger, "no se pudo crear conexion");
-//	}
 
-	//recorro array para encontrarle un lugar vacio al nuevo master
-	for (i = 0; (i < clientes_max) && (nuevo_cliente != -1); i++) {
-		if (socket_clientes[i] == 0) {
-			log_info(logger, "Conexion aceptada: FD=%d posicion=%d",
-					nuevo_cliente, i);
-			socket_clientes[i] = nuevo_cliente;
+	if ((nuevo_cliente = esperarConexion(socket_server)) < 0) {
+		log_error(logger, "no se pudo crear conexion");
+	}
 
-			// Enviamos un protocolo de confirmacion
-			protocolo = YM_MS_OKCONN;
-			enviarProtocolo(nuevo_cliente, protocolo);
-			nuevo_cliente = -1;
-		}
-	}
-	//no queda lugar en el array de conexiones, libero ese socket
-	if (nuevo_cliente != -1) {
-		log_error(logger,
-				"No queda lugar para nuevo master: %d, servidor muy ocupado",
-				nuevo_cliente);
-		//mandar protocolo al cliente antes de rechazarlo
-		enviarProtocolo(nuevo_cliente, YM_MS_ERRORCONN);
-		close(nuevo_cliente);
-	}
+
+	list_add(socket_clientes,(void*) nuevo_cliente);
+
+	// Enviamos un protocolo de confirmacion
+	protocolo = YM_MS_OKCONN;
+	enviarProtocolo(nuevo_cliente, protocolo);
+	nuevo_cliente = -1;
 }
 
 void recibir_data_de_master(int posicion) {
-	int proto_msg;
+	int proto_msg,desconectado;
 
 	//defino todas las copias de 3 bloques de archivo que estan desparramadas en 3 nodos
 	copia_0_bloque_0.nodo = 0;
@@ -986,20 +1083,20 @@ void recibir_data_de_master(int posicion) {
 
 	//---------------------------------------------------
 
-	proto_msg = recibirProtocolo(socket_clientes[posicion]);
+	proto_msg = recibirProtocolo(get_socket_posicion(posicion));
 
 	switch (proto_msg) {
 	case MS_YM_DESCONECTAR:	// se desconecta master
-		log_info(logger, "se desconecto el master %d",
-				socket_clientes[posicion]);
-		close(socket_clientes[posicion]);
-		socket_clientes[posicion] = 0;
+		desconectado = get_socket_posicion(posicion);
+		log_info(logger, "se desconecto el master %d", desconectado);
+		close(desconectado);
+		list_remove(socket_clientes,posicion);
 		break;
 	case MS_YM_INICIO_JOB:	// inicia un job un master
 		atender_inicio_job(posicion);
 		break;
 	case FIN_TRANSF_NODO:
-		atender_fin_transf_nodo(posicion);
+		atender_fin_transf_bloque(posicion);
 		break;
 	case FIN_TRANSFORMACION:
 		atender_fin_transformacion(posicion);
@@ -1008,8 +1105,8 @@ void recibir_data_de_master(int posicion) {
 
 void enviar_transformacion(int master, t_list* lista_bloques) {
 
-	void _iterate_bloques(t_bloque_archivo* bloque) {
-		char* copia_string = bloque_archivo_to_string(bloque);
+	void _iterate_bloques(t_reg_planificacion* worker_planificado) {
+		char* copia_string = reg_planificacion_to_string(worker_planificado);
 		enviarMensaje(master, copia_string);
 	}
 
@@ -1023,53 +1120,77 @@ void enviar_transformacion(int master, t_list* lista_bloques) {
 
 void atender_inicio_job(int posicion) {
 	char* mensaje;
-
-	log_info(logger, "iniciar job de master %d", socket_clientes[posicion]);
-	mensaje = esperarMensaje(socket_clientes[posicion]);
+	char* char_archivo;
+	int cliente = get_socket_posicion(posicion);
+	log_info(logger, "iniciar job de master %d", cliente);
+	mensaje = esperarMensaje(cliente);
 	log_info(logger, "ruta de archivo %s", mensaje);
-	//todo enviar ruta a filesystem
-	//esperar que envie struct de nodos
+	//enviar_ruta_fs(mensaje);
+
+	//char_archivo = esperarMensaje(cliente);
+
+	//todo mapear archivo a lista de struct
 	//por ahora hardcodeamos la estructura que recibe
 
-	//todo aplicar algoritmo sobre lo que recibo de filesystem
-	//mockeo las copias que se eligen
-	bloque_mock_0.elegida = 0;
-	bloque_mock_0.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
-			0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
-	bloque_mock_1.elegida = 1;
-	bloque_mock_1.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
-			1);
-	bloque_mock_2.elegida = 0;
-	bloque_mock_2.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
-			2);
 
-	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_0);
-	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_1);
-	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_2);
+	t_list* archivo_planificado = tablaPlanificacionCompleta(&lista_de_nodos_recibidos);
+//
+//	//mockeo las copias que se eligen
+//	bloque_mock_0.elegida = 0;
+//	bloque_mock_0.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
+//			0); //todo crear estructura que lleve cuenta de los archivos temporales creados y los master uqe se conectaron??
+//	bloque_mock_1.elegida = 1;
+//	bloque_mock_1.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
+//			1);
+//	bloque_mock_2.elegida = 0;
+//	bloque_mock_2.ruta_temporal = string_from_format("/tmp/master%d-temp%d", 0,
+//			2);
+
+//	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_0);
+//	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_1);
+//	list_add(&lista_de_nodos_respuesta, (void*) &bloque_mock_2);
 	// se manda la lista de bloques ya modificados a master
-	enviar_transformacion(socket_clientes[posicion], &lista_de_nodos_respuesta);
+	enviar_transformacion(cliente, archivo_planificado);
+
+	transformarBloques(archivo_planificado);
 }
 
-void atender_fin_transf_nodo(int posicion) {
-	char* char_bloque = esperarMensaje(socket_clientes[posicion]);
+void atender_fin_transf_bloque(int posicion) {
+	int cliente = get_socket_posicion(posicion);
+	char* char_bloque = esperarMensaje(cliente);
 	int bloque = atoi(char_bloque);
+	modificarBloqueTablaEstados(bloque,ETAPA_TRANSFORMACION,ESTADO_FINALIZADO_OK,posicion,0);//TODO que mierda le paso en los ultimos 2
 	log_info(logger, "finalizo la transformacion del bloque %d del master %d",
 			bloque, socket_clientes[posicion]);
-	//TODO marcar en tabla de estados que termino la transformacion del bloque, si no hay ninguna otra transformacion en curso en ese nodo del worker,arranco reduccion
+	int estado = terminoEtapaTransformacion(0,posicion);//todo aca deberia ir el worker y el job
+
+	if(estado) {
+		t_list* reg = iniciarReduccion(posicion,0);//todo lo mismo que el anteiror
+	}
+
+	//TODO marcar en tabla *de estados que termino la transformacion del bloque, si no hay ninguna otra transformacion en curso en ese nodo del worker,arranco reduccion
 }
 
 void atender_fin_transformacion(int posicion) {
 	//TODO marcar en tabla de estados la etapa en que se encuentra??
 	log_info(logger, "finalizaron las transformaciones de master %d",
 			socket_clientes[posicion]);
-	//modificarBloqueTablaEstados(bloque, ETAPA_TRANSFOMACION, ESTADO_FINALIZADO_OK, worker, job)
+
 	/*if(terminoEtapaTransformacion(job, worker)){
 		iniciarReduccionLocal(job, worker)
 	}*/
 	//enviar_reduccion_local(posicion);
 }
 
+void enviar_ruta_fs(char* mensaje) {
+	enviarMensajeConProtocolo(socket_fs,mensaje,YM_FS_RUTA);
+}
+
 void enviar_reduccion_local(int posicion) {
 
+}
+
+int get_socket_posicion(int posicion) {
+	return (int) list_get(socket_clientes,posicion);
 }
 
