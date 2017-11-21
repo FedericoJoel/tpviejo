@@ -76,13 +76,17 @@ void enviar_reduccion_local(int posicion);
 
 t_list * tablaPlanificacionCompleta();
 t_list * tablaPlanif();
+t_list * iniciarTransformacion();
 void transformarBloques(t_list * tabla);
+void finalizarTransformacion();
+void finalizarReduccionLocal();
+void finalizaReduccionGlobal();
 void modificarBloqueTablaEstados(int bloque, int etapa, int estado, int worker, int job);
 int cargaTrabajoMaxima(int job);
 int cargaTrabajoWorker(int worker);
 void enviarAMaster(t_list * tabla);
 char* generar_ruta_aleatoria();
-
+void agregarEstados(int bloque, int etapa, int estadoNuevo, int worker, int job, int master, char * temporal);
 void enviar_ruta_fs(char* mensaje);
 char* generar_numero_aleatorio();
 t_list * nodosDelJob(int job);

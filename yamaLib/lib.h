@@ -15,6 +15,7 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
+#include "protocolos.h"
 #include <commons/collections/list.h>
 
 
