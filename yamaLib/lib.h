@@ -8,6 +8,7 @@
 #ifndef LIB_H_
 #define LIB_H_
 
+#include "protocolos.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,8 +57,14 @@ typedef struct reg_planificacion{
 	char* ip;
 }t_reg_planificacion;
 
+typedef struct planificacion_worker{
+	t_reg_planificacion* planificacion;
+	char* programa_planificacion;
+}t_planificacion_worker;
+
 typedef struct respuesta_master{
 	int worker;
+	int bloque_archivo;
 	int estado;
 	t_etapa etapa;
 }t_resp_master;
@@ -84,6 +91,7 @@ t_copia* copia_from_string(char* copia);
 t_bloque_archivo* bloque_archivo_from_string(char* char_bloque);
 t_reg_planificacion* reg_planificacion_from_string(char* char_reg_planificacion);
 t_list* iterate_bloques_from_string(char* bloques, int tamanio);
+t_planificacion_worker* planificacion_worker_from_string(char* char_respuesta);
 t_resp_master* respuesta_master_from_string(char* char_respuesta);
 char* iterate_rutas_to_string(t_list* rutas);
 
@@ -91,6 +99,7 @@ char* reg_planificacion_to_string( t_reg_planificacion* data_worker);
 char* copia_to_string(t_copia* copia);
 char* bloque_archivo_to_string(t_bloque_archivo* bloque);
 char* iterate_bloques_to_string(t_list* bloques);
+char* planificacion_worker_to_string(t_planificacion_worker* planificacion_worker);
 char* respuesta_master_to_string(t_resp_master* respuesta);
 
 char* sacar(char* palabra, char* caracter);

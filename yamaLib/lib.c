@@ -172,14 +172,17 @@ char* respuesta_master_to_string(t_resp_master* respuesta){
 	char* char_respuesta = string_new();
 
 	char* char_worker = int_to_string(respuesta->worker);
+	char* char_bloque_archivo = int_to_string(respuesta->bloque_archivo);
 	char* char_etapa = int_to_string(respuesta->etapa);
 	char* char_estado = int_to_string(respuesta->estado);
 
 	string_append(&char_respuesta,char_worker);
+	string_append(&char_respuesta,char_bloque_archivo);
 	string_append(&char_respuesta,char_estado);
 	string_append(&char_respuesta,char_etapa);
 
 	free(char_estado);
+	free(char_bloque_archivo);
 	free(char_etapa);
 	free(char_worker);
 
@@ -195,6 +198,10 @@ t_resp_master* respuesta_master_from_string(char* char_respuesta){
 	respuesta->worker = atoi(char_worker);
 	puntero += 4;
 
+	char* char_bloque_archivo = extraer_string(char_respuesta,puntero,puntero + 3);
+	respuesta->bloque_archivo = atoi(char_bloque_archivo);
+	puntero += 4;
+
 	char* char_estado = extraer_string(char_respuesta,puntero,puntero + 3);
 	respuesta->estado = atoi(char_estado);
 	puntero += 4;
@@ -205,6 +212,55 @@ t_resp_master* respuesta_master_from_string(char* char_respuesta){
 
 	return respuesta;
 }
+
+char* planificacion_worker_to_string(t_planificacion_worker* planificacion_worker){
+	char* char_respuesta = string_new();
+
+	char* char_planificacion = reg_planificacion_to_string(planificacion_worker->planificacion);
+	char* char_tam_planificacion = int_to_string(sizeof(char_planificacion));
+
+	char* char_programa = planificacion_worker->programa_planificacion;
+	char* char_tam_programa = int_to_string(sizeof(char_programa));
+
+	string_append(&char_respuesta,char_tam_planificacion);
+	string_append(&char_respuesta,char_planificacion);
+	string_append(&char_respuesta,char_tam_programa);
+	string_append(&char_respuesta,char_programa);
+
+	free(char_tam_planificacion);
+	free(char_planificacion);
+	free(char_tam_programa);
+	free(char_programa);
+
+	return char_respuesta;
+}
+
+t_planificacion_worker* planificacion_worker_from_string(char* char_respuesta){
+	t_planificacion_worker* respuesta;
+	int tamanio;
+	int puntero = 0;
+	respuesta = malloc(sizeof(t_planificacion_worker));
+
+	char* char_tam_planificacion = extraer_string(char_respuesta,puntero,puntero + 3);
+	tamanio = atoi(char_tam_planificacion);
+	puntero += 4;
+
+	char* char_planificacion = extraer_string(char_respuesta,puntero,puntero + (tamanio -1));
+	respuesta->planificacion = reg_planificacion_from_string(char_planificacion);
+	puntero += tamanio;
+
+	char* char_tam_programa = extraer_string(char_respuesta,puntero,puntero + 3);
+	tamanio = atoi(char_tam_programa);
+	puntero += 4;
+
+	char* char_programa = extraer_string(char_respuesta,puntero,puntero + (tamanio -1));
+	respuesta->programa_planificacion = string_from_format(char_programa);
+	puntero += tamanio;
+
+	return respuesta;
+}
+
+
 
 t_reg_planificacion* reg_planificacion_from_string(char* char_reg) {
 	t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));

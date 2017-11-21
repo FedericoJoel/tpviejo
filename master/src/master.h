@@ -61,6 +61,8 @@ int abrir_file_args(int argc, char** argv);
 int conectar_con_yama();
 void comenzar_job();
 void iniciar_transformacion();
+void transformacion(t_reg_planificacion* planificacion);
+void iniciar_reduccion_local();
 void avisar_fin_tranformacion();
 void reduccion_local();
 void desconectarse_de_yama();

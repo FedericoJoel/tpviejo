@@ -1249,16 +1249,15 @@ int levantar_servidor(void) {
 
 int conectar_con_fs() {
 	int proto_recibido;
+	int respuesta;
 
 	char* ip_fs = config_get_string_value(config,"FS_IP");
 	int puerto_fs = config_get_int_value(config,"FS_PUERTO");
 
 	log_info(logger,"conectando con proceso FILESYSTEM");
-	socket_fs = conectar(puerto_fs,ip_fs);
+	socket_fs = conectarAuth(puerto,ip_fs,YAMA,&respuesta);
 
-	proto_recibido = recibirProtocolo(socket_fs);
-
-	if(proto_recibido == FS_YM_ERRORCONN) {
+	if(respuesta != YAMA_OKCONN) {
 		log_error(logger,"no se pudo conectar a filesystem. Reintentar mas tarde");
 		return EXIT_FAILURE;
 	}
@@ -1417,8 +1416,8 @@ void recibir_data_de_master(int posicion) {
 	case MS_YM_INICIO_JOB:	// inicia un job un master
 		atender_inicio_job(posicion);
 		break;
-	case FIN_TRANSF_NODO:
-		atender_fin_transf_bloque(posicion);
+	case FIN_TRANSF_WORKER:
+		atender_fin_transf_worker(posicion);
 		break;
 	case FIN_TRANSFORMACION:
 		atender_fin_transformacion(posicion);
@@ -1447,7 +1446,7 @@ void atender_inicio_job(int posicion) {
 	log_info(logger, "iniciar job de master %d", cliente);
 	mensaje = esperarMensaje(cliente);
 	log_info(logger, "ruta de archivo %s", mensaje);
-	//enviar_ruta_fs(mensaje);
+	enviar_ruta_fs(mensaje);
 
 	//char_archivo = esperarMensaje(cliente);
 
@@ -1477,11 +1476,11 @@ void atender_inicio_job(int posicion) {
 	transformarBloques(archivo_planificado);
 }
 
-void atender_fin_transf_bloque(int posicion) {
+void atender_fin_transf_worker(int posicion) {
 	int cliente = get_socket_posicion(posicion);
-	char* char_bloque = esperarMensaje(cliente);
-	int bloque = atoi(char_bloque);
-	modificarBloqueTablaEstados(bloque,ETAPA_TRANSFORMACION,ESTADO_FINALIZADO_OK,posicion,0);//TODO que mierda le paso en los ultimos 2
+	char* char_respuesta_master = esperarMensaje(cliente);
+	t_resp_master* respuesta_master = respuesta_master_from_string(char_respuesta_master);
+	modificarBloqueTablaEstados(bloque,respuesta_master->etapa,respuesta_master->estado,posicion,0);//TODO que mierda le paso en los ultimos 2
 	log_info(logger, "finalizo la transformacion del bloque %d del master %d",
 			bloque, socket_clientes[posicion]);
 	int estado = terminoEtapaTransformacion(0,posicion);//todo aca deberia ir el worker y el job
