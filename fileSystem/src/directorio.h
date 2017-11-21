@@ -35,7 +35,10 @@ void eliminarUnDirectorio(t_directory* directorio, char** path);
 int eliminarArchivosDeDirectorio(t_directory* directorio);
 
 //COMPRUEBA QUE EL DIRECTORIO EXISTA EN LA ESTRUCTURA DE MEMORIA
-int comprobarDirectorio(int nivel, t_directory directorio [], t_directory* unDirectorio);
+int comprobarDirectorio(t_directory directorio[], char* unDirectorio);
+int chequearDirectorio(char** lista, int cantidadDeElementos, int pos, t_directory directorio[]);
+int carpetaVacia(t_directory directorio[], char* path);
+int estaVacio(int pos, t_directory directorio[]);
 
 //AGREGAR DIRECTORIO A STRUCT DE MEMORIA
 void agregarPath(t_directory[], char* path);

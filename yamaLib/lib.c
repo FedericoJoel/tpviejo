@@ -158,7 +158,8 @@ char* respuesta_master_to_string(t_resp_master* respuesta){
 	return char_respuesta;
 }
 
-t_resp_master* respuesta_master_from_string(char* char_respuesta){
+/*
+ * t_resp_master* respuesta_master_from_string(char* char_respuesta){
 	t_resp_master* respuesta;
 	respuesta = malloc(sizeof(t_resp_master));
 	int puntero = 0;
@@ -176,7 +177,7 @@ t_resp_master* respuesta_master_from_string(char* char_respuesta){
 	puntero += 4;
 
 	return respuesta;
-}
+}*/
 
 t_reg_planificacion* reg_planificacion_from_string(char* char_reg) {
 	t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));

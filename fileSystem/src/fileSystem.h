@@ -104,4 +104,5 @@ void fs_cpblok(char * arg);
 void fs_md5(char * arg);
 void fs_ls(char * arg);
 void fs_info(char * arg);
+char* obtener_ruta_metadata(char* ruta);
 #endif /* FILESYSTEM_H_ */

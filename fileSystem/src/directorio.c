@@ -259,7 +259,7 @@ void convertirDirectorio(char * linea, t_directory directorio[], int pos) {
 	free(unDirectorio);
 }
 */
-int comprobarDirectorio(int nivel, t_directory directorio[],
+/*int comprobarDirectorio(int nivel, t_directory directorio[],
 		t_directory* unDirectorio) {
 	int reg = 0;
 	for (reg = 0; reg <= 99; reg++) {
@@ -287,6 +287,60 @@ int comprobarDirectorio(int nivel, t_directory directorio[],
 	}
 	//RETURN PARA IGNORAR EL WARNING
 	return EXIT_FAILURE;
+}*/
+
+int comprobarDirectorio(t_directory directorio[], char* unDirectorio){
+	char** lista = string_split(unDirectorio, "/");
+	int cantidadDeElementos = cantidadElementos(lista);
+	char* nombre = string_duplicate("/");
+	cantidadDeElementos--;
+	string_append(&nombre, lista[cantidadDeElementos]);
+	int pos = damePosicionDeElemento(nombre, directorio);
+	int termino = chequearDirectorio(lista, cantidadDeElementos, pos, directorio);
+	free(nombre);
+	return termino;
+}
+
+int chequearDirectorio(char** lista, int cantidadDeElementos, int pos, t_directory directorio[]){
+	if(directorio[pos].padre != -1){
+		t_directory unDirectorio = directorio[directorio[pos].padre];
+		cantidadDeElementos--;
+		char * nombre = string_duplicate("/");
+		string_append(&nombre, lista[cantidadDeElementos]);
+		if(string_equals_ignore_case(unDirectorio.nombre, nombre) && !string_equals_ignore_case(unDirectorio.nombre, "/root")){
+			chequearDirectorio(lista, cantidadDeElementos, unDirectorio.index, directorio);
+		}else{
+			if(string_equals_ignore_case(unDirectorio.nombre, "/root")){
+				return EXIT_SUCCESS;
+			}else{
+				return -1;
+			}
+		}
+	}else{
+		return -1;
+	}
+}
+
+int carpetaVacia(t_directory directorio[], char* path){
+	char** lista = string_split(path, "/");
+	int cantidadDeElementos = cantidadElementos(lista);
+	cantidadDeElementos--;
+	char* nombre = string_duplicate("/");
+	string_append(&nombre, lista[cantidadDeElementos]);
+	int pos = damePosicionDeElemento(nombre, directorio);
+	int finalizo = estaVacio(pos, directorio);
+	free(nombre);
+	return finalizo;
+}
+
+int estaVacio(int pos, t_directory directorio[]){
+	int posicion = 0;
+	for(;posicion < 99; posicion ++){
+		if (directorio[posicion].padre == pos){
+			return EXIT_FAILURE;
+		}
+	}
+	return EXIT_SUCCESS;
 }
 
 char* agregarPadreARuta(int padre, t_directory directorio[]) {
@@ -321,7 +375,11 @@ int damePosicionDeElemento(char* nombre, t_directory directorio[]) {
 		}
 		pos++;
 	}
-	return directorio[pos].index;
+	if (pos == 9){
+		return -1;
+	}else{
+		return directorio[pos].index;
+	}
 }
 
 void guardarRegistro(t_directory directorio[], t_directory* unDirectorio,

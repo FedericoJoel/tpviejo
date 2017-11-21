@@ -16,7 +16,7 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
-
+#include "protocolos.h"
 
 //---------------structs filesystem-----------------
 
