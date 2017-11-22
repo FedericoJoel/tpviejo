@@ -32,6 +32,7 @@ void cargarTablaArchivo(t_archivo* nuevoArchivo, char* rutaArchivo);
 void cargarDatos(char* lineaDatos,char* lineaElem, t_archivo* nuevoArchivo, int cantidadCampos);
 void eliminarNodoDeArchivo(t_archivo* archivo, int idNodo, int idBloque);
 void eliminarBloqueDeArchivo(t_archivo* archivo, char* numeroBloque, char* numeroCopia);
+char* informacionNodoBloque(t_archivo* archivo);
 
 void guardarArchivoEnArchivo(t_archivo* archivo, char* path);
 

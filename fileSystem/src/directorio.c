@@ -64,7 +64,20 @@ void agregarPath(t_directory* directorio, char* path){
 	for(; pos >= 0; pos--){
 		if (!(string_is_empty(directorio[pos].nombre))){
 			pos++;
+			char* mkdir = string_new();
 			convertirDirectorio(path, directorio, pos);
+			string_append(&mkdir, "mkdir /home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/");
+			string_append(&mkdir, string_itoa(pos));
+			int finalizo = system(mkdir);
+			char** arg = string_split(path, "/");
+			int cantidadDeElementos = cantidadElementos(arg);
+			if(finalizo == 0){
+				printf("Directorio creado '%s'\n",arg[cantidadDeElementos - 1]);
+			}else if (finalizo == 256){
+				printf("Existe el directorio %s \n", arg[cantidadDeElementos - 1]);
+			}else{
+				printf("Error");
+			}
 			break;
 		}
 	}
@@ -92,9 +105,9 @@ void crearDirectorioFisico(t_directory* directorio){
 			{
 			char* mkdir = string_new();
 			directorio[reg].index = reg;
-			string_append(&mkdir, "mkdir /root");
-			string_append(&mkdir, agregarPadreARuta(directorio[reg].padre, directorio));
-			string_append(&mkdir, directorio[reg].nombre);
+			string_append(&mkdir, "mkdir /home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/");
+//			string_append(&mkdir, agregarPadreARuta(directorio[reg].padre, directorio));
+			string_append(&mkdir, string_itoa(directorio[reg].index));
 			system(mkdir);
 			free(mkdir);
 			printf("se creó el directorio en: %s \n", directorio[reg].nombre);
@@ -148,8 +161,6 @@ void escribirEnChar(char nombre[], char* argumentos, int pos){
 }
 
 void convertirDirectorio(char * linea, t_directory directorio[], int pos) {
-//	t_directory* unDirectorio = malloc(sizeof(t_directory));
-
 	if(string_starts_with(linea, "/")){
 		char** listaArgumentos = string_split(linea, "/");
 		int cantidad = cantidadElementos(listaArgumentos);
@@ -181,7 +192,6 @@ void convertirDirectorio(char * linea, t_directory directorio[], int pos) {
 			}
 		}
 	}
-	//CREAR DIRECTORIO!!!!!
 }
 
 
@@ -302,19 +312,23 @@ int comprobarDirectorio(t_directory directorio[], char* unDirectorio){
 }
 
 int chequearDirectorio(char** lista, int cantidadDeElementos, int pos, t_directory directorio[]){
-	if(directorio[pos].padre != -1){
-		t_directory unDirectorio = directorio[directorio[pos].padre];
-		cantidadDeElementos--;
-		char * nombre = string_duplicate("/");
-		string_append(&nombre, lista[cantidadDeElementos]);
-		if(string_equals_ignore_case(unDirectorio.nombre, nombre) && !string_equals_ignore_case(unDirectorio.nombre, "/root")){
-			chequearDirectorio(lista, cantidadDeElementos, unDirectorio.index, directorio);
-		}else{
-			if(string_equals_ignore_case(unDirectorio.nombre, "/root")){
-				return EXIT_SUCCESS;
+	if(directorio[pos].padre != -1 || string_equals_ignore_case(directorio[pos].nombre, "/root")){
+		if (!string_equals_ignore_case(directorio[pos].nombre, "/root")){
+			t_directory unDirectorio = directorio[directorio[pos].padre];
+			cantidadDeElementos--;
+			char * nombre = string_duplicate("/");
+			string_append(&nombre, lista[cantidadDeElementos]);
+			if(string_equals_ignore_case(unDirectorio.nombre, nombre) && !string_equals_ignore_case(unDirectorio.nombre, "/root")){
+				chequearDirectorio(lista, cantidadDeElementos, unDirectorio.index, directorio);
 			}else{
-				return -1;
+				if(string_equals_ignore_case(unDirectorio.nombre, "/root")){
+					return EXIT_SUCCESS;
+				}else{
+					return -1;
+				}
 			}
+		}else{
+			return EXIT_SUCCESS;
 		}
 	}else{
 		return -1;

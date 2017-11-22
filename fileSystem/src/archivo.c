@@ -65,9 +65,10 @@ void vaciarListaNodos(t_list* lista){
 	}
 }
 
-void informacionNodoBloque(t_archivo* archivo){
+char* informacionNodoBloque(t_archivo* archivo){
 	int pos = 0;
 	int tamanio = list_size(archivo->bloques);
+	char* informacion = string_new();
 	for(; pos < tamanio; pos++){
 		estructuraBloque* estructuraBloqueDeLista = list_get(archivo->bloques, pos);
 		if(!(string_equals_ignore_case(estructuraBloqueDeLista->nodoBloque, "VACIO")) ||
@@ -85,8 +86,12 @@ void informacionNodoBloque(t_archivo* archivo){
 			int idBloque = atoi(bloque);
 			int tamanio = estructuraBloqueDeLista->tamanioBloque;
 
-
-			//PEDIR AL YAMA INFORMACION DEL NODO Y BLOQUE
+			char* palabra = string_duplicate(get_bloque(idNodo, idBloque));
+			if (string_length(palabra) * (sizeof(char)) == tamanio){
+				string_append(&informacion, palabra);
+			}else{
+				informacionNodoBloque(archivo);
+			}
 
 			free(nodoALeer);
 			free(palabras);
@@ -94,6 +99,7 @@ void informacionNodoBloque(t_archivo* archivo){
 			free(bloque);
 		}
 	}
+	return informacion;
 }
 
 void eliminarNodoDeArchivo(t_archivo* archivo, int idNodo, int idBloque){

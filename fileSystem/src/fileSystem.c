@@ -12,19 +12,19 @@ int main(void) {
 	printf("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA");
 
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.}
-	int cant_bloques = size_in_bloks("ESTO FUNCIONA ESPECTACULAR;;JAJAJA");
+//	int cant_bloques = size_in_bloks("ESTO FUNCIONA ESPECTACULAR;;JAJAJA");
 
-	t_list* lista = list_create();
+//	t_list* lista = list_create();
 //	char** palabras = string_split("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJAJA","\n");
-	t_list* resultado = cortar_texto("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA",lista);
-	char* bloque0 = (char*)list_get(resultado,0);
-	char* bloque1 = (char*)list_get(resultado,1);
-	char* bloque2= (char*)list_get(resultado,2);
-	printf("bloque 0: %s \n", bloque0);
-	printf("bloque 1: %s \n", bloque1);
-	printf("bloque 2: %s \n", bloque2);
+//	t_list* resultado = cortar_texto("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA",lista);
+//	char* bloque0 = (char*)list_get(resultado,0);
+//	char* bloque1 = (char*)list_get(resultado,1);
+//	char* bloque2= (char*)list_get(resultado,2);
+//	printf("bloque 0: %s \n", bloque0);
+//	printf("bloque 1: %s \n", bloque1);
+//	printf("bloque 2: %s \n", bloque2);
 //	t_list* resultado = cortar_datos(0,palabras,lista);
-	iniciar_servidor();
+//	iniciar_servidor();
 	//TODO puedo hacer 2 servidores, uno para yama y uno para los dn? o tengo que armar una especie de handshake para saber quien se me conecta?
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
@@ -368,20 +368,10 @@ void fs_rm(char * arg){
 	if(string_starts_with(*argumentos, "/"))
 		{
 		path = string_split(arg, "/");
-	/*	char* rm = string_new();
-		string_append(&rm, "rm -d ");
-		string_append(&rm, argumentos[cantidadDeElementos - 1]);
-		*/
 		vaciarArchivo(argumentos[0]);
-//		int finalizo = system(rm);
-//		if (finalizo == 0){
 			path = string_split(arg, "/");
 			int cantidadDeElementosPath = cantidadElementos(path);
 			printf("Archivo Eliminado %s\n",path[cantidadDeElementosPath - 1]);
-//		}else if (finalizo == 256){
-
-//		}
-//		free(rm);
 		free(path);
 		}
 	else{
@@ -411,49 +401,40 @@ void fs_rename(char * arg){
 				pos++;
 			}
 			if (pos == cantidadParametrosPath){
-				char** archivo = string_split(path[cantidadParametrosPath-1], ".");
-				char** archivo1 = string_split(path1[cantidadParametrosPath1-1], ".");
-				if(cantidadElementos(archivo) != 1 && cantidadElementos(archivo1) != 1){
-					string_append(&rename, argumentos[0]);
-					string_append(&rename, " ");
-					string_append(&rename, argumentos[1]);
-					int finalizo = system(rename);
-					if(finalizo == 0){
-						char** nombre = string_split(argumentos[0], "/");
-						char** nombre1 = string_split(argumentos[1], "/");
-						int cantidad = cantidadElementos(nombre);
-						int cantidad1 = cantidadElementos(nombre1);
-						modificarDirectorio(fs.directorio, nombre[cantidad-1], nombre1[cantidad1-1]);
+				char** archivo = string_split(path[cantidadParametrosPath], ".");
+				char** archivo1 = string_split(path1[cantidadParametrosPath1], ".");
+				if(cantidadElementos(archivo) == 1 && cantidadElementos(archivo1) == 1){
+					if (comprobarDirectorio(fs.directorio, argumentos[0]) == 0 &&
+							comprobarDirectorio(fs.directorio, argumentos[1]) == 0){
+						modificarDirectorio(fs.directorio, path[cantidadParametrosPath], path1[cantidadParametrosPath1]);
 						guardarDirectorioEnMemoria(fs.directorio);
-						free(nombre);
-						free(nombre1);
 						printf("Se renombro de %s a %s \n", argumentos[0], argumentos[1]);
-					}else if(finalizo == 256){
-
-						}else{
-
-						}
-				}else{
+					}else{
+						printf("Uno de los directorios no existe");
+				}
+				}else if(cantidadElementos(archivo) == 2 && cantidadElementos(archivo1) == 2){
 					char* ruta = obtener_ruta_metadata(argumentos[0]);
-					char** lista = string_split(argumentos[1], "/");
 					char** listaNueva = string_split(ruta, "/");
 					int cantidad = cantidadElementos(listaNueva);
 					cantidad--;
 					int largoTotal = string_length(ruta);
 					int largoArchivo = string_length(listaNueva[cantidad]);
 					int largoRuta = largoTotal - largoArchivo;
-					int cantidadNueva = cantidadElementos(lista);
-					cantidadNueva--;
 					char* nuevoNombre = string_new();
-					string_append(&nuevoNombre, lista[cantidadNueva]);
-					int largoNuevoNombre = string_length(lista[cantidadNueva]);
+					string_append(&nuevoNombre, path1[cantidadParametrosPath1]);
+					int largoNuevoNombre = string_length(path1[cantidadParametrosPath1]) - 3; //SACA LA EXTENCION .TXT INGRESADA POR CONSOLA
 					char* nuevaRuta = calloc(largoRuta+largoNuevoNombre+1, sizeof(char));
 					memcpy(nuevaRuta, ruta, largoRuta);
 					memcpy(nuevaRuta+largoRuta, nuevoNombre, largoNuevoNombre);
 					string_append(&rename, ruta);
 					string_append(&rename, " ");
+					string_append(&nuevaRuta, "csv");
 					string_append(&rename, nuevaRuta);
 					system(rename);
+					printf("Se cambio el archivo de %s a %s", path[cantidadParametrosPath], path1[cantidadParametrosPath1]);
+					free(nuevaRuta);
+					free(nuevoNombre);
+					free(ruta);
 				}
 			}else{
 				printf("No se puede renombrar, ya que los path no coinciden \n");
@@ -482,10 +463,11 @@ char* obtener_ruta_metadata(char* ruta){
 	string_append(&rutaNueva, listaNueva[0]);
 	string_append(&rutaNueva, ".csv");
 	free(index);
+	free(nombre);
 	return rutaNueva;
 }
 
-//MODIFICAR PARA MOVER .CSV, Y DIRECTORIO
+//TERMINADO
 void fs_mv(char * arg){
 	char** argumentos;
 	argumentos = string_split(arg, " ");
@@ -498,18 +480,62 @@ void fs_mv(char * arg){
 		int cantidadParametrosPath1 = cantidadElementos(path1);
 		cantidadParametrosPath1--;
 
-		if (string_equals_ignore_case(path[cantidadParametrosPath], path1[cantidadParametrosPath1]) ){
-			char* rename = string_new();
-			string_append(&rename, "mv ");
-			string_append(&rename, argumentos[0]);
-			string_append(&rename, " ");
-			string_append(&rename, argumentos[1]);
-			system(rename);
-			printf("Se movio de %s a %s", argumentos[0], argumentos[1]);
-			free(rename);
-		}else{
-			printf("El nombre no coincide");
+		if (cantidadElementos(string_split(path[cantidadParametrosPath], ".")) == 1){
+		//AFECTA A DIRECTORIO
+			char* rutaVieja = string_duplicate("/");
+			char* rutaNueva = string_duplicate("/");
+			string_append(&rutaVieja, path[cantidadParametrosPath]);
+			string_append(&rutaNueva, path1[cantidadParametrosPath1]);
+			if (comprobarDirectorio(fs.directorio, argumentos[0]) == 0 &&
+					comprobarDirectorio(fs.directorio, argumentos[1]) == 0){
+				char* directorioNuevo = string_duplicate("/");
+				string_append(&directorioNuevo, path[cantidadParametrosPath]);
+				int posicionNueva = damePosicionDeElemento(directorioNuevo, fs.directorio);
+				char* directorioPadre = string_duplicate("/");
+				string_append(&directorioPadre, path1[cantidadParametrosPath1]);
+				int posicionPadre = damePosicionDeElemento(directorioPadre, fs.directorio);
+				fs.directorio[posicionNueva].padre = posicionPadre;
+				guardarDirectorioEnMemoria(fs.directorio);
+				printf("Se movio de %s a %s", argumentos[0], argumentos[1]);
+				free(directorioPadre);
+				free(directorioNuevo);
+				free(rutaNueva);
+				free(rutaVieja);
+			}else{
+				free(rutaNueva);
+				free(rutaVieja);
+				printf("Algun directorio no existe");
+			}
+		}else if (cantidadElementos(string_split(path[cantidadParametrosPath], ".")) == 2){
+			//AFECTA A ARCHIVO
+			int largoTotal = string_length(argumentos[0]);
+			int largoArchivo = string_length(path[cantidadParametrosPath]);
+			int largoRuta = largoTotal - largoArchivo - 1; //1 x la ultima barra
+			char* ruta = calloc(largoRuta, sizeof(char));
+			memcpy(ruta, argumentos[0],largoRuta);
+			if (comprobarDirectorio(fs.directorio, argumentos[1]) == 0 &&
+					comprobarDirectorio(fs.directorio, ruta) == 0){
+				char* mv = string_duplicate("mv ");
+				char* rutaVieja = obtener_ruta_metadata(argumentos[0]);
+				string_append(&mv, rutaVieja);
+				char* nuevoDirectorio = string_duplicate("/");
+				string_append(&nuevoDirectorio, path1[cantidadParametrosPath1]);
+				int posicionNueva = damePosicionDeElemento(nuevoDirectorio, fs.directorio);
+				char* rutaNueva = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/");
+				string_append(&rutaNueva, string_itoa(fs.directorio[posicionNueva].index));
+				string_append(&mv, " ");
+				string_append(&mv, rutaNueva);
+				system(mv);
+				free(mv);
+				free(nuevoDirectorio);
+				free(rutaNueva);
+				free(rutaVieja);
+			}else{
+				printf("Uno de los directorios no existe");
+			}
+			free(ruta);
 		}
+
 	}else{
 		printf("Uno de los argumentos no comienza con /");
 	}
@@ -520,13 +546,11 @@ void fs_cat(char * arg){
 	char** path;
 	int cantidadDeElementos = cantidadElementos(arg);
 	if (string_starts_with(arg, "/")){
-//		t_archivo* archivo = malloc(sizeof(t_archivo));
-//		cargarTablaArchivo(archivo,arg);
-//		informacionNodoBloque(archivo);
-//		vaciarListaNodo(archivo->bloques);
-//		free(archivo);
+		char* informacion = obtenerInformacionDeBloquesDeUnArchivo(arg);
 		path = string_split(arg, "/");
 		printf("Archivo a mostrar '%s'\n",path[cantidadDeElementos - 1]);
+		printf("%s \n", informacion);
+		free(informacion);
 	}
 	else
 	{
@@ -535,24 +559,22 @@ void fs_cat(char * arg){
 	free(path);
 }
 
+char* obtenerInformacionDeBloquesDeUnArchivo(char* rutaArchivo){
+	t_archivo* archivo = malloc(sizeof(t_archivo));
+	char* rutaMetadata = obtener_ruta_metadata(rutaArchivo);
+	cargarTablaArchivo(archivo,rutaMetadata);
+	char* informacion = informacionNodoBloque(archivo);
+	vaciarListaNodo(archivo->bloques);
+	free(archivo);
+	return informacion;
+}
+
 void fs_mkdir(char * arg){
 	if (string_starts_with(arg, "/")){
-		char* mkdir = string_new();
-		string_append(&mkdir, "mkdir ");
-		string_append(&mkdir, arg);
-		int finalizo = system(mkdir);
 		char** path = string_split(arg, "/");
 		int cantidadDeElementos = cantidadElementos(path);
-
-		if(finalizo == 0){
-			agregarPath(fs.directorio, arg);
-			guardarDirectorioEnMemoria(fs.directorio);
-			printf("Directorio creado '%s'\n",path[cantidadDeElementos - 1]);
-		}else if (finalizo == 256){
-				printf("Existe el directorio %s \n", path[cantidadDeElementos - 1]);
-			}else{
-				printf("Error");
-			}
+		agregarPath(fs.directorio, arg);
+		guardarDirectorioEnMemoria(fs.directorio);
 	}
 	else
 	{

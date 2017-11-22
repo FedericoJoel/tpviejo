@@ -105,4 +105,6 @@ void fs_md5(char * arg);
 void fs_ls(char * arg);
 void fs_info(char * arg);
 char* obtener_ruta_metadata(char* ruta);
+char* obtenerInformacionDeBloquesDeUnArchivo(char* rutaArchivo);
+
 #endif /* FILESYSTEM_H_ */
