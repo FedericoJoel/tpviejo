@@ -62,6 +62,13 @@ typedef struct respuesta_master{
 	t_etapa etapa;
 }t_resp_master;
 
+typedef struct carga_trabajo{
+	int worker;
+	int job;
+	int carga;
+	int tareasAsignadas;
+}t_carga_trabajo;
+
 //---------logger----------
 t_log* abrir_logger(char* ruta_archivo, char* nombre_programa,t_log_level nivel);
 

@@ -13,6 +13,8 @@
 #include <commons/collections/list.h>
 #include <commons/string.h>
 #include <time.h>
+#include <unistd.h>
+#include <math.h>
 
 #define nombre_programa "YAMA"
 
@@ -81,6 +83,9 @@ void transformarBloques(t_list * tabla);
 void finalizarTransformacion();
 void finalizarReduccionLocal();
 void finalizaReduccionGlobal();
+void actualizar_cargas_inicio();
+void actualizar_cargas_reduccion_local();
+void actualizar_cargas_fin_job();
 void modificarBloqueTablaEstados(int bloque, int etapa, int estado, int worker, int job);
 int cargaTrabajoMaxima(int job);
 int cargaTrabajoWorker(int worker);

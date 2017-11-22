@@ -1,5 +1,6 @@
 #include "yama.h"
 
+
 //nodos hardcodeados -------------------------------
 t_list lista_de_nodos_recibidos; //lista de nodos que nos llega de filesystem
 t_list lista_de_nodos_respuesta; //nodos que vamos a enviar a master
@@ -15,6 +16,7 @@ t_copia copia_1_bloque_1;
 t_copia copia_0_bloque_2;
 t_copia copia_1_bloque_2;
 
+useconds_t retardo_planificacion = 0;
 int puerto = 2323;
 int protocoloInicio = 0010;
 int servidor;
@@ -23,6 +25,7 @@ int numeroDeMaster = 0;
 t_list *archivo;
 t_list *estados;
 t_list *planif;
+t_list *cargas_trabajo;
 int BASE = 2;
 int job = 1;
 t_list *numeros_aleatorios;
@@ -32,22 +35,36 @@ int algoritmo = ALGORITMO_WCLOCK;
 /*--------------------------- Main ------------------------------*/
 int main(void) {
 
-	/*estados = list_create();*/
 
-	//t_list * a = tablaestadosPrueba();
+	levantar_logger();
 
-	 srand(time(NULL));
+	levantar_config();
+
+	srand(time(NULL));
 	t_list* tabla = iniciarTransformacion(0);
+	loguear_cargas();
+	//tabla = iniciarTransformacion(1);
+
+	//tabla = iniciarTransformacion(2);
 	finalizarTransformacion(1,1);
-	finalizarTransformacion(2,1);
-	finalizarTransformacion(3,1);
+	finalizarTransformacion(1,2);
+	finalizarTransformacion(1,3);
+
 	t_list* reduccionLocal = iniciarReduccionLocal(1,1);
+	reduccionLocal = iniciarReduccionLocal(1,2);
 	reduccionLocal = iniciarReduccionLocal(2,1);
-	reduccionLocal = iniciarReduccionLocal(3,1);
-	finalizarReduccionLocal(1,1);
+	reduccionLocal = iniciarReduccionLocal(2,2);
+	reduccionLocal = iniciarReduccionLocal(2,3);
+	reduccionLocal = iniciarReduccionLocal(1,3);
 	finalizarReduccionLocal(2,1);
-	finalizarReduccionLocal(3,1);
-	t_list* reduccionGlobal = iniciarReduccionGlobal(1);
+		finalizarReduccionLocal(2,2);
+		finalizarReduccionLocal(2,2);
+		t_list* reduccionGlobal = iniciarReduccionGlobal(2);
+		finalizarReduccionGlobal(2);
+	finalizarReduccionLocal(1,1);
+	finalizarReduccionLocal(1,2);
+	finalizarReduccionLocal(1,3);
+	reduccionGlobal = iniciarReduccionGlobal(1);
 	finalizarReduccionGlobal(1);
 
 	enviarAMaster(tabla);
@@ -59,9 +76,6 @@ int main(void) {
 //	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
 
 
-	levantar_logger();
-
-	levantar_config();
 
 	levantar_servidor();
 
@@ -146,6 +160,19 @@ void modificarBloqueTablaEstados(int bloque, int etapa, int estadoNuevo, int wor
 	}
 }
 
+void loguear_actualizacion_estado(int bloque, char* etapa, char* estadoNuevo, int worker, int job, int master, char* temporal) {
+	log_info(logger, "Estado actualizado: Job: %d, master: %d, worker: %d, bloque: %d, etapa: %s, estado*: %s, temporal: %s.",job , master, worker, bloque, etapa, estadoNuevo, temporal);
+}
+void loguear_agregar_estado(int bloque, char* etapa, char* estadoNuevo, int worker, int job, int master, char* temporal) {
+	log_info(logger, "Estado agregado: Job: %d, master: %d, worker: %d, bloque: %d, etapa*: %s, estado: %s, temporal: %s.",job , master, worker, bloque, etapa, estadoNuevo, temporal);
+}
+void loguear_cargas(){
+	int i;
+	for(i=0 ; i<list_size(cargas_trabajo); i++){
+			t_carga_trabajo* reg = list_get(cargas_trabajo, i);
+			log_info(logger, "job: %d, Worker: %d, carga: %d",reg->job,reg->worker, reg->carga, reg->tareasAsignadas);
+		}
+}
 void agregarBloque(void* registro, int bloque) {
 
 	t_reg_planificacion* reg = registro;
@@ -162,12 +189,10 @@ void agregarEstados(int bloque, int etapa, int estadoNuevo, int worker, int job,
 				estado->job = job;
 				estado->master = master;
 				estado->temporal = temporal;
-				//TODO:: falta job, master y temporal;
+
 				if(estados == NULL){
 					estados =list_create();
 					list_add(estados, (void*) estado);
-					//estados = estado;
-					int p=7;
 				}else{
 				list_add(estados, (void*) estado);
 				}
@@ -345,29 +370,77 @@ void* buscarRegEnLista(t_list *planif, int nodo) {
 	return 0;
 }
 
-t_link_element * buscarWorkerMayorAvailability(t_list * planificacion){
+t_link_element * buscarWorkerMayorAvailability(){
 	int i;
-	t_link_element * mayor = planificacion->head;
-	t_link_element * actual = planificacion->head->next;
+	t_carga_trabajo* mayor = list_get(cargas_trabajo, 0);
+	t_carga_trabajo* actual = list_get(cargas_trabajo, 1);
 
-	for(i=1; i<list_size(planificacion); i++){
-		t_reg_planificacion * regActual = actual->data;
-		t_reg_planificacion * regMayor = mayor->data;
-		if(regActual->availability > regMayor->availability){
+	for(i=1; i<list_size(cargas_trabajo); i++){
+		if(actual->carga > mayor->carga){
 			mayor= actual;
 		}
-		actual = actual->next;
+		actual = list_get(cargas_trabajo, i);
 	}
 
 	return mayor;
 }
 
+void agregar_carga(int job, int worker, int carga){
+	t_carga_trabajo* carga_trabajo = malloc(sizeof(t_carga_trabajo));
+	carga_trabajo->worker = worker;
+	carga_trabajo->job = job;
+	carga_trabajo->carga = carga;
+	list_add(cargas_trabajo, (void*) carga_trabajo);
+}
+
+void actualizar_cargas_inicio(t_list * planificacion,int job){
+	int i;
+	for(i=0; i<list_size(planificacion); i++){
+		t_reg_planificacion* regPlani = list_get(planificacion, i);
+		if(cargas_trabajo == NULL){
+			cargas_trabajo = list_create();
+		}
+		agregar_carga(regPlani->job, regPlani->worker, list_size(regPlani->bloquesAsignados));
+	}
+}
+
+void actualizar_cargas_reduccion_global(int workerEncargado,int cantTemporales){
+	int i;
+		for(i=0; i<list_size(cargas_trabajo); i++){
+			t_carga_trabajo* carga_trabajo = list_get(cargas_trabajo, i);
+			if(workerEncargado == carga_trabajo->worker){
+				carga_trabajo->carga += ceil(cantTemporales/2);
+			}
+		}
+}
+
+
+void carga_destroy(t_carga_trabajo *self) {
+	free(self);
+}
+
+void actualizar_cargas_fin_job(int job){
+	int i;
+		for(i=0; i<list_size(cargas_trabajo); i++){
+			t_carga_trabajo* carga_trabajo = list_get(cargas_trabajo, i);
+			if(job == carga_trabajo->job){
+				list_remove_and_destroy_element(cargas_trabajo, i, (void*)carga_destroy);
+			}
+		}
+}
+
+
 t_list * tablaPlanificacionCompleta(t_list* arch)
 {
-
+	usleep(retardo_planificacion);
 	t_list * planificacion = tablaPlanif();
+	t_link_element *nodoMayorAvailability;
 
-	t_link_element *nodoMayorAvailability = buscarWorkerMayorAvailability(planificacion); // Se empieza apuntando al worker de mayor availability TODO: desampatar por el historial
+	if(cargas_trabajo == NULL){
+		nodoMayorAvailability = list_get(planificacion, 0);
+	}else{
+		nodoMayorAvailability = buscarWorkerMayorAvailability(planificacion); // Se empieza apuntando al worker de mayor availability TODO: desampatar por el historial
+	}
 	t_link_element *clock = nodoMayorAvailability;
 	t_link_element *auxclock = nodoMayorAvailability;
 	t_link_element *head = nodoMayorAvailability;
@@ -430,7 +503,6 @@ t_list * tablaPlanificacionCompleta(t_list* arch)
 	}
 
 	return planificacion;
-
 }
 
 
@@ -453,8 +525,10 @@ t_list* iniciarTransformacion(int master){
 	int i, j;
 	t_list *archivo = archivoPrueba2();
 	t_list * tabla = tablaPlanificacionCompleta(archivo);
+	actualizar_cargas_inicio(tabla, job);
 	char *rutaReducGlobal = '\0';
 	char *rutaReducLocal = '\0';
+
 	for (i = 0; i < list_size(tabla); i++) {
 		t_reg_planificacion* reg = list_get(tabla, i);
 		/*Completo los campos faltantes*/
@@ -471,6 +545,7 @@ t_list* iniciarTransformacion(int master){
 			/*Modifico tabla de estados*/
 			int bloqueActual = (int)list_get(reg->bloquesAsignados, j);
 			agregarEstados(bloqueActual, ETAPA_TRANSFORMACION, ESTADO_EN_PROCESO, reg->worker, job, master, rutaTransf);
+			loguear_agregar_estado(bloqueActual, "transformacion", "en proceso", reg->worker, reg->job, master, rutaTransf);
 		}
 		reg->temporalesTransformacion = temporales;
 
@@ -500,27 +575,27 @@ int terminoEtapaTransformacion(int job, int worker){
 }
 
 /*Modifica la tabla de estados para indicar que la etapa finalizo correctamente*/
-void finalizarTransformacion(int nodo, int job){
+void finalizarTransformacion(int job, int nodo){
 	int i;
 			t_link_element *puntTabla = estados->head;
 			for (i = 0; i < list_size(estados); i++) {
 				t_estado* reg = puntTabla->data;
 				if(reg->job == job && reg->nodo == nodo && reg->etapa == ETAPA_TRANSFORMACION){
 					reg->estado = ESTADO_FINALIZADO_OK;
-					//modificarBloqueTablaEstados(reg->bloque, ETAPA_TRANSFORMACION, ESTADO_FINALIZADO_OK, reg->nodo, reg->job);
+					loguear_actualizacion_estado(reg->bloque,"transformacion", "finalizado", reg->nodo, reg->job, reg->master, reg->temporal);
 				}
 				puntTabla = puntTabla->next;
 			}
 }
 
-recuperar_ip(int nodo){
+char* recuperar_ip(int nodo){
 	//todo: recorrer la lista de fs y recuperar la ip
 	return "192.198.1.1:5000";
 }
 /*---------------------------Reduccion Local------------------------------*/
 
 /*Agrega a la tabla de estados los campos correspondientes y genera la estructura ha enviar a master*/
-t_list* iniciarReduccionLocal(int nodo, int job){
+t_list* iniciarReduccionLocal(int job, int nodo){
 
 	int i;
 	t_list *reduccion = list_create();
@@ -548,6 +623,7 @@ t_list* iniciarReduccionLocal(int nodo, int job){
 		if(reg->job == job && reg->nodo == nodo && reg->etapa == ETAPA_TRANSFORMACION){
 			list_add(regPlani->temporalesTransformacion, (void*) reg->temporal);
 			agregarEstados(reg->bloque, ETAPA_REDUCCION_LOCAL, ESTADO_EN_PROCESO, nodo, job, reg->master, rutaReducLocal);
+			loguear_agregar_estado(reg->bloque, "reduccion local", "en proceso", nodo, job, reg->master, rutaReducLocal);
 		}
 		puntTabla = puntTabla->next;
 	}
@@ -575,20 +651,20 @@ bool terminoEtapaReduccionLocal(int job){
 }
 
 /*Modifica la tabla de estados para indicar que la etapa finalizo correctamente*/
-void finalizarReduccionLocal(int nodo, int job){
+void finalizarReduccionLocal(int job, int nodo){
 	int i;
 			t_link_element *puntTabla = estados->head;
 			for (i = 0; i < list_size(estados); i++) {
 				t_estado* reg = puntTabla->data;
 				if(reg->job == job && reg->nodo == nodo && reg->etapa == ETAPA_REDUCCION_LOCAL){
 					reg->estado = ESTADO_FINALIZADO_OK;
-					//modificarBloqueTablaEstados(reg->bloque, ETAPA_REDUCCION_LOCAL, ESTADO_FINALIZADO_OK, reg->nodo, reg->job);
+					loguear_actualizacion_estado(reg->bloque, "reduccion local", "finalizado", reg->nodo, reg->job, reg->master, reg->temporal);
 				}
 				puntTabla = puntTabla->next;
 			}
 }
 
-t_list* nodosDelJob(int job){ //TODO::Probar esto
+t_list* nodosDelJob(int job){
 
 
 	t_list * nodosDelJob;
@@ -661,7 +737,8 @@ t_list* iniciarReduccionGlobal(int job){
 				rutaReducGlobal = '\0';
 			}
 			agregarEstados(reg->bloque, ETAPA_REDUCCION_GLOBAL, ESTADO_EN_PROCESO, reg->nodo, job, reg->master, rutaReducGlobal); // aca el master esta harcodeados
-	}
+			loguear_agregar_estado(reg->bloque, "reduccion global", "en proceso", reg->nodo, job, reg->master, rutaReducGlobal);
+		}
 		puntTabla = puntTabla->next;
 	}
 	return reduccion;
@@ -676,7 +753,7 @@ void finalizarReduccionGlobal(int job){
 				t_estado* reg = puntTabla->data;
 				if(reg->job == job && reg->etapa == ETAPA_REDUCCION_GLOBAL){
 					reg->estado = ESTADO_FINALIZADO_OK;
-					//modificarBloqueTablaEstados(reg->bloque, ETAPA_REDUCCION_GLOBAL, ESTADO_FINALIZADO_OK, reg->nodo, reg->job);
+					loguear_actualizacion_estado(reg->bloque, "reduccion local", "finalizado", reg->nodo, reg->job, reg->master, reg->temporal);
 				}
 				puntTabla = puntTabla->next;
 			}
@@ -816,7 +893,7 @@ t_list* tablaPlanif() {
 			reg->availability = BASE+ PWL(reg->worker, job);
 			reg->bloquesAsignados = list_create();
 			reg->bloques = list_create();
-			//todo setear rutas temporales acumulando en algun lado las que ya se generaron para este master
+
 			reg->temporalTransformacion = string_from_format("/tmp/Master-",int_to_string(i));
 			reg->tempReducLocal = string_from_format("/tmp/Master-",int_to_string(i));
 			reg->tempReudcGlobal= string_from_format("/tmp/Master-",int_to_string(i));
