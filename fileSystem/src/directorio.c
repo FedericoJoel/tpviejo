@@ -306,7 +306,12 @@ int comprobarDirectorio(t_directory directorio[], char* unDirectorio){
 	cantidadDeElementos--;
 	string_append(&nombre, lista[cantidadDeElementos]);
 	int pos = damePosicionDeElemento(nombre, directorio);
-	int termino = chequearDirectorio(lista, cantidadDeElementos, pos, directorio);
+	int termino;
+	if(pos != -1){
+		termino = chequearDirectorio(lista, cantidadDeElementos, pos, directorio);
+	}else{
+		termino = -1;
+	}
 	free(nombre);
 	return termino;
 }
@@ -389,7 +394,7 @@ int damePosicionDeElemento(char* nombre, t_directory directorio[]) {
 		}
 		pos++;
 	}
-	if (pos == 9){
+	if (pos == 100){
 		return -1;
 	}else{
 		return directorio[pos].index;

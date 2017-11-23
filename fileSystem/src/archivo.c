@@ -86,12 +86,7 @@ char* informacionNodoBloque(t_archivo* archivo){
 			int idBloque = atoi(bloque);
 			int tamanio = estructuraBloqueDeLista->tamanioBloque;
 
-			char* palabra = string_duplicate(get_bloque(idNodo, idBloque));
-			if (string_length(palabra) * (sizeof(char)) == tamanio){
-				string_append(&informacion, palabra);
-			}else{
-				informacionNodoBloque(archivo);
-			}
+			string_append(&informacion, get_bloque(idNodo, idBloque));
 
 			free(nodoALeer);
 			free(palabras);
@@ -217,6 +212,25 @@ void eliminarBloqueDeArchivo(t_archivo* archivo, char* numeroBloque, char* numer
 		}
 	}
 	free(nodoBloqueASacar);
+}
+
+void mostrarArchivo(t_archivo* nuevoArchivo, char* rutaArchivo){
+	FILE * archivo = fopen(rutaArchivo, "r");
+	char * lineaElem = NULL;
+	char * lineaDatos = NULL;
+	size_t len = 0;
+	int cantidad = 0;
+
+	if (getline(&lineaElem, &len, archivo) != EOF){
+		printf("%s \n", lineaElem);
+		len=0;
+		if (getline(&lineaDatos, &len, archivo) != EOF){
+			printf("%s \n", lineaDatos);
+		}
+	}
+	fclose(archivo);
+	free(lineaDatos);
+	free(lineaElem);
 }
 
 void cargarTablaArchivo(t_archivo* nuevoArchivo, char* rutaArchivo) {

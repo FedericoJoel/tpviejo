@@ -69,6 +69,9 @@ void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados);
 //CARGA LOS NODOS EXISTENTES EN EL ARCHIO AL FS
 void cargarNodosAFs(estructuraFs* fs);
 
+void actualizarArchivo(char* ruta);
+int nodoVive(char* nodoBloque);
+
 t_list* cortar_texto(char* mensaje, t_list* lista);
 int size_in_bloks(char* mensaje);
 
@@ -106,5 +109,6 @@ void fs_ls(char * arg);
 void fs_info(char * arg);
 char* obtener_ruta_metadata(char* ruta);
 char* obtenerInformacionDeBloquesDeUnArchivo(char* rutaArchivo);
+void vaciarListaNodo(t_list* nodos);
 
 #endif /* FILESYSTEM_H_ */
