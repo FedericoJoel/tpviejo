@@ -15,6 +15,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <math.h>
+#include <signal.h>
 
 #define nombre_programa "YAMA"
 
@@ -64,6 +65,7 @@ fd_set fds_masters;
 t_proto protocolo;
 
 int levantar_servidor(void);
+void signal_handler(int signal);
 void construir_fds(int* max_actual);
 void leer_cambios_select();
 void recibir_nuevo_master();
@@ -80,6 +82,7 @@ t_list * tablaPlanificacionCompleta();
 t_list * tablaPlanif();
 t_list * iniciarTransformacion();
 void transformarBloques(t_list * tabla);
+void planificacion_destroy(t_reg_planificacion *self);
 void finalizarTransformacion();
 void finalizarReduccionLocal();
 void finalizaReduccionGlobal();

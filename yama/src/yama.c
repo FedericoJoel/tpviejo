@@ -16,7 +16,7 @@ t_copia copia_1_bloque_1;
 t_copia copia_0_bloque_2;
 t_copia copia_1_bloque_2;
 
-useconds_t retardo_planificacion = 0;
+useconds_t retardo_planificacion = 10000000;
 int puerto = 2323;
 int protocoloInicio = 0010;
 int servidor;
@@ -30,42 +30,50 @@ int BASE = 2;
 int job = 1;
 t_list *numeros_aleatorios;
 int algoritmo = ALGORITMO_WCLOCK;
+bool necesidadRecargaConfig = false;
 
 
 /*--------------------------- Main ------------------------------*/
 int main(void) {
 
-
+	signal(SIGUSR1, signal_handler);
+	printf("Process Id = %d\n",(int)getpid());
 	levantar_logger();
 
 	levantar_config();
 
 	srand(time(NULL));
 	t_list* tabla = iniciarTransformacion(0);
+	list_destroy_and_destroy_elements(tabla, (void*)planificacion_destroy);
 	loguear_cargas();
-	//tabla = iniciarTransformacion(1);
-
-	//tabla = iniciarTransformacion(2);
+	tabla = iniciarTransformacion(1);
+	list_destroy_and_destroy_elements(tabla, (void*)planificacion_destroy);
+	loguear_cargas();
+	tabla = iniciarTransformacion(2);
+	list_destroy_and_destroy_elements(tabla, (void*)planificacion_destroy);
+	loguear_cargas();
 	finalizarTransformacion(1,1);
 	finalizarTransformacion(1,2);
 	finalizarTransformacion(1,3);
 
 	t_list* reduccionLocal = iniciarReduccionLocal(1,1);
 	reduccionLocal = iniciarReduccionLocal(1,2);
-	reduccionLocal = iniciarReduccionLocal(2,1);
-	reduccionLocal = iniciarReduccionLocal(2,2);
-	reduccionLocal = iniciarReduccionLocal(2,3);
+	//reduccionLocal = iniciarReduccionLocal(2,1);
+	//reduccionLocal = iniciarReduccionLocal(2,2);
+	//reduccionLocal = iniciarReduccionLocal(2,3);
 	reduccionLocal = iniciarReduccionLocal(1,3);
-	finalizarReduccionLocal(2,1);
+	/*finalizarReduccionLocal(2,1);
 		finalizarReduccionLocal(2,2);
 		finalizarReduccionLocal(2,2);
 		t_list* reduccionGlobal = iniciarReduccionGlobal(2);
-		finalizarReduccionGlobal(2);
+		finalizarReduccionGlobal(2);*/
 	finalizarReduccionLocal(1,1);
 	finalizarReduccionLocal(1,2);
 	finalizarReduccionLocal(1,3);
-	reduccionGlobal = iniciarReduccionGlobal(1);
+	t_list* reduccionGlobal = iniciarReduccionGlobal(1);
+	loguear_cargas();
 	finalizarReduccionGlobal(1);
+	loguear_cargas();
 
 	enviarAMaster(tabla);
 	modificarBloqueTablaEstados(1, 2, 3, 1, 1);
@@ -126,7 +134,12 @@ int main(void) {
 	}
 	return EXIT_SUCCESS;
 }*/
+/*--------------------------- Manejas senial ------------------------------*/
 
+void signal_handler(int signal){
+	log_info(logger, "Pedido de recarga de configuracion");
+	necesidadRecargaConfig = true;
+}
 
 /*--------------------------- Manejo de Bloques Tabla de Estados ------------------------------*/
 
@@ -252,19 +265,16 @@ int PWL(int worker, int job){
 int cargaTrabajoWorker(int worker){
 
 	int i;
-	//t_link_element *puntTabla = estados->head;
-	int carga = 0;
+	int carga=0;
 
-	if(estados == NULL){ // Si no hay estados por ser el primero
+	if(cargas_trabajo == NULL){ // Si no hay estados por ser el primero
 		return 0;
 	}
 
-	for(i=0; i<list_size(estados); i++){
-		//t_estado *estado = puntTabla->data;
-		t_estado *estado = list_get(estados, i);
-		if(estado->nodo == worker && estado->estado == ESTADO_EN_PROCESO)
-		{
-			carga++;
+	for(i=0; i<list_size(cargas_trabajo); i++){
+		t_carga_trabajo *carga_trabajo = list_get(cargas_trabajo, i);
+		if(carga_trabajo->worker == worker){
+			carga += carga_trabajo->carga;
 		}
 	}
 	return carga;
@@ -285,61 +295,49 @@ bool repetido(int nodo, t_list * nodosDelJob){
 }
 
 int cargaTrabajoMaxima(int job){
-
 	int i;
+		int maximaCarga = -1;
+		t_carga_trabajo* nodoMaximo;
+		if(cargas_trabajo == NULL){
+				return 0;
+			}
 
-	t_list * nodosDelJob;
-	nodosDelJob = list_create();
-	if(estados == NULL){ //Cuando la tabla de estados esta vacia
-		return 0;
-	}
-	for(i=0; i<list_size(estados); i++){
-		t_estado *estado = list_get(estados, i);
-		if(estado->job == job && !repetido(estado->nodo, nodosDelJob)){
-			int nodo = estado->nodo;
-			list_add(nodosDelJob, (void*) nodo);
+		for(i=0; i<list_size(cargas_trabajo); i++){
+			t_carga_trabajo* nodoActual = list_get(cargas_trabajo, i);
+			if(nodoActual->job == job){
+				int cargaActual = cargaTrabajoWorker(nodoActual->worker);
+				if(cargaActual > maximaCarga){
+					maximaCarga = cargaActual;
+					nodoMaximo = nodoActual;
+				}
+			}
 		}
-	}
+		return maximaCarga;
 
-	int maximaCarga = cargaTrabajoWorker((int)list_get(nodosDelJob, 0));
-	for(i=1; i<list_size(nodosDelJob); i++){
-		int nodoActual = (int)list_get(nodosDelJob, i);
-		int cargaActual = cargaTrabajoWorker(nodoActual);
-		if(cargaActual > maximaCarga){
-			maximaCarga = cargaActual;
-		}
-	}
-	return maximaCarga;
+
 }
 
 int cargaTrabajoMinima(int job){
 
 	int i;
+	int minimaCarga = 100000000;
+	t_carga_trabajo* nodoMinimo;
+	if(cargas_trabajo == NULL){
+		return 0;
+	}
 
-	t_list * nodosDelJob;
-	nodosDelJob = list_create();
-	if(estados == NULL){
-			return 0;
-		}
-
-	for(i=0; i<list_size(estados); i++){
-		t_estado *estado = list_get(estados, i);
-		if(estado->job == job && !repetido(estado->nodo, nodosDelJob)){
-			int nodo = estado->nodo;
-			list_add(nodosDelJob, (void*) nodo);
+	for(i=0; i<list_size(cargas_trabajo); i++){
+		t_carga_trabajo* nodoActual = list_get(cargas_trabajo, i);
+		if(nodoActual->job == job){
+			int cargaActual = cargaTrabajoWorker(nodoActual->worker);
+			if(cargaActual < minimaCarga){
+				minimaCarga = cargaActual;
+				nodoMinimo = nodoActual;
+			}
 		}
 	}
-	int nodoMinimo = (int)list_get(nodosDelJob, 0);
-	int minimaCarga = cargaTrabajoWorker((int)list_get(nodosDelJob, 0));
-	for(i=1; i<list_size(nodosDelJob); i++){
-		int nodoActual = (int)list_get(nodosDelJob, i);
-		int cargaActual = cargaTrabajoWorker(nodoActual);
-		if(cargaActual < minimaCarga){
-			minimaCarga = cargaActual;
-			nodoMinimo = nodoActual;
-		}
-	}
-	return nodoMinimo;
+	return nodoMinimo->worker;
+
 }
 
 
@@ -370,19 +368,32 @@ void* buscarRegEnLista(t_list *planif, int nodo) {
 	return 0;
 }
 
-t_link_element * buscarWorkerMayorAvailability(){
+t_link_element * buscarWorkerMayorAvailability(t_list* planificacion){
 	int i;
-	t_carga_trabajo* mayor = list_get(cargas_trabajo, 0);
-	t_carga_trabajo* actual = list_get(cargas_trabajo, 1);
 
-	for(i=1; i<list_size(cargas_trabajo); i++){
-		if(actual->carga > mayor->carga){
+	if(list_size(planificacion)<2){ //Si no hay contra quien comparar retorna el primero, por las dudas verifico
+		return planificacion->head;
+	}
+	t_reg_planificacion* mayor = list_get(planificacion, 0);
+	t_reg_planificacion* puntero_mayor;
+
+	for(i=1; i<list_size(planificacion); i++){
+		t_reg_planificacion* actual = list_get(planificacion, i);
+		if(actual->availability > mayor->availability){
 			mayor= actual;
 		}
-		actual = list_get(cargas_trabajo, i);
 	}
 
-	return mayor;
+	/*Esto es porque cuando hicimos el algoritmo eramos unos giles*/
+	t_link_element* puntero= planificacion->head;
+	for(i=0; i<list_size(planificacion); i++){
+		puntero_mayor = puntero->data;
+		if(puntero_mayor->worker == mayor->worker){
+			return puntero;
+		}
+		puntero = puntero->next;
+	}
+
 }
 
 void agregar_carga(int job, int worker, int carga){
@@ -400,31 +411,35 @@ void actualizar_cargas_inicio(t_list * planificacion,int job){
 		if(cargas_trabajo == NULL){
 			cargas_trabajo = list_create();
 		}
-		agregar_carga(regPlani->job, regPlani->worker, list_size(regPlani->bloquesAsignados));
+		agregar_carga(job, regPlani->worker, list_size(regPlani->bloquesAsignados));
 	}
 }
 
-void actualizar_cargas_reduccion_global(int workerEncargado,int cantTemporales){
+void actualizar_cargas_reduccion_global(int workerEncargado,int cantTemporales, int job){
 	int i;
 		for(i=0; i<list_size(cargas_trabajo); i++){
 			t_carga_trabajo* carga_trabajo = list_get(cargas_trabajo, i);
-			if(workerEncargado == carga_trabajo->worker){
-				carga_trabajo->carga += ceil(cantTemporales/2);
+			if(workerEncargado == carga_trabajo->worker && job == carga_trabajo->job){
+				//carga_trabajo->carga += ceil(cantTemporales/2);
+				carga_trabajo->carga += cantTemporales/2;
 			}
 		}
 }
 
-
+void planificacion_destroy(t_reg_planificacion *self) {
+	free(self);
+}
 void carga_destroy(t_carga_trabajo *self) {
 	free(self);
 }
 
 void actualizar_cargas_fin_job(int job){
 	int i;
-		for(i=0; i<list_size(cargas_trabajo); i++){
+		for(i=0; i< list_size(cargas_trabajo); i++){
 			t_carga_trabajo* carga_trabajo = list_get(cargas_trabajo, i);
 			if(job == carga_trabajo->job){
 				list_remove_and_destroy_element(cargas_trabajo, i, (void*)carga_destroy);
+				i--;
 			}
 		}
 }
@@ -437,7 +452,7 @@ t_list * tablaPlanificacionCompleta(t_list* arch)
 	t_link_element *nodoMayorAvailability;
 
 	if(cargas_trabajo == NULL){
-		nodoMayorAvailability = list_get(planificacion, 0);
+		nodoMayorAvailability = planificacion->head;
 	}else{
 		nodoMayorAvailability = buscarWorkerMayorAvailability(planificacion); // Se empieza apuntando al worker de mayor availability TODO: desampatar por el historial
 	}
@@ -520,6 +535,10 @@ void recorrerTablaEstados(t_list* lista){
 /*Agrega a la tabla de estados los campos correspondientes y genera la estructura ha enviar a master*/
 //todo: ver como cargar ip y puerto
 t_list* iniciarTransformacion(int master){
+	if(necesidadRecargaConfig){
+		log_info(logger, "Recarga de configuracion"); //todo
+		necesidadRecargaConfig = false;
+	}
 	numeroDeJob++;
 	int job = numeroDeJob;
 	int i, j;
@@ -686,6 +705,7 @@ t_list* nodosDelJob(int job){
 t_list* iniciarReduccionGlobal(int job){
 
 	int i;
+	int cantReduccionesLocales = 0;
 	t_list *reduccion = list_create();
 	t_link_element *puntTabla = estados->head;
 
@@ -721,6 +741,7 @@ t_list* iniciarReduccionGlobal(int job){
 				regPlani->job = reg->job;
 
 				regPlani->tempReducGlobal = rutaReducGlobal;
+
 			}
 			puntTabla = puntTabla->next;
 		}
@@ -730,6 +751,7 @@ t_list* iniciarReduccionGlobal(int job){
 	puntTabla = estados->head;
 	for (i = 0; i < list_size(estados); i++) {
 		t_estado* reg = puntTabla->data;
+		/*Modifico la tabla de estados*/
 		if(reg->job == job && reg->etapa == ETAPA_REDUCCION_LOCAL){
 			if(reg->nodo == nodoEncargado){
 				rutaReducGlobal = rutaAleatoria;
@@ -741,6 +763,9 @@ t_list* iniciarReduccionGlobal(int job){
 		}
 		puntTabla = puntTabla->next;
 	}
+
+	actualizar_cargas_reduccion_global(nodoEncargado, list_size(nodos), job);
+
 	return reduccion;
 
 }
@@ -753,10 +778,11 @@ void finalizarReduccionGlobal(int job){
 				t_estado* reg = puntTabla->data;
 				if(reg->job == job && reg->etapa == ETAPA_REDUCCION_GLOBAL){
 					reg->estado = ESTADO_FINALIZADO_OK;
-					loguear_actualizacion_estado(reg->bloque, "reduccion local", "finalizado", reg->nodo, reg->job, reg->master, reg->temporal);
+					loguear_actualizacion_estado(reg->bloque, "reduccion global", "finalizado", reg->nodo, reg->job, reg->master, reg->temporal);
 				}
 				puntTabla = puntTabla->next;
 			}
+			actualizar_cargas_fin_job(job);
 }
 
 
@@ -859,6 +885,23 @@ t_list * archivoPrueba() {
 	return archivo;
 
 }
+
+void cargar_archivo(int bloque_archivo, int nodo_copia_0, int bloque_copia_0, int nodo_copia_1, int bloque_copia_1, int bytes_ocupados){
+	t_bloque_archivo* bloque = malloc(sizeof(t_bloque_archivo));
+	bloque->copia0->nodo = nodo_copia_0;
+	bloque->copia0->bloque_nodo = bloque_copia_0;
+	bloque->copia0->ip = recuperar_ip(nodo_copia_0);
+
+	bloque->copia1->nodo = nodo_copia_1;
+	bloque->copia1->bloque_nodo = bloque_copia_1;
+	bloque->copia1->ip = recuperar_ip(nodo_copia_1);
+
+	bloque->bloque_archivo = bloque_archivo;
+	bloque->bytes = bytes_ocupados;
+
+	list_add(archivo, (void *)bloque);
+}
+
 
 t_list* tablaPlanif() {
 	t_list* arch = archivoPrueba2();
