@@ -27,7 +27,6 @@ t_list *estados;
 t_list *planif;
 t_list *cargas_trabajo;
 int BASE = 2;
-int job = 1;
 t_list *numeros_aleatorios;
 int algoritmo = ALGORITMO_WCLOCK;
 bool necesidadRecargaConfig = false;
@@ -49,19 +48,33 @@ int main(void) {
 	tabla = iniciarTransformacion(1);
 	list_destroy_and_destroy_elements(tabla, (void*)planificacion_destroy);
 	loguear_cargas();
+	finalizarTransformacion(1,1);
+	finalizarTransformacion(1,2);
+	finalizarTransformacion(1,3);
+	t_list* reduccionLocal = iniciarReduccionLocal(1,1);
+	reduccionLocal = iniciarReduccionLocal(1,2);
+	reduccionLocal = iniciarReduccionLocal(1,3);
+	fallaEtapa(1);
+	loguear_cargas();
+	tabla = iniciarTransformacion(0);
+	list_destroy_and_destroy_elements(tabla, (void*)planificacion_destroy);
+	loguear_cargas();
+
 	tabla = iniciarTransformacion(2);
+	list_destroy_and_destroy_elements(tabla, (void*)planificacion_destroy);
+	tabla = iniciarTransformacion(3);
 	list_destroy_and_destroy_elements(tabla, (void*)planificacion_destroy);
 	loguear_cargas();
 	finalizarTransformacion(1,1);
 	finalizarTransformacion(1,2);
 	finalizarTransformacion(1,3);
 
-	t_list* reduccionLocal = iniciarReduccionLocal(1,1);
-	reduccionLocal = iniciarReduccionLocal(1,2);
+
+
 	//reduccionLocal = iniciarReduccionLocal(2,1);
 	//reduccionLocal = iniciarReduccionLocal(2,2);
 	//reduccionLocal = iniciarReduccionLocal(2,3);
-	reduccionLocal = iniciarReduccionLocal(1,3);
+
 	/*finalizarReduccionLocal(2,1);
 		finalizarReduccionLocal(2,2);
 		finalizarReduccionLocal(2,2);
@@ -267,7 +280,7 @@ int cargaTrabajoWorker(int worker){
 	int i;
 	int carga=0;
 
-	if(cargas_trabajo == NULL){ // Si no hay estados por ser el primero
+	if(cargas_trabajo == NULL || list_is_empty(cargas_trabajo)){ // Si no hay estados por ser el primero
 		return 0;
 	}
 
@@ -298,7 +311,7 @@ int cargaTrabajoMaxima(int job){
 	int i;
 		int maximaCarga = -1;
 		t_carga_trabajo* nodoMaximo;
-		if(cargas_trabajo == NULL){
+		if(cargas_trabajo == NULL || list_is_empty(cargas_trabajo)){
 				return 0;
 			}
 
@@ -322,7 +335,7 @@ int cargaTrabajoMinima(int job){
 	int i;
 	int minimaCarga = 100000000;
 	t_carga_trabajo* nodoMinimo;
-	if(cargas_trabajo == NULL){
+	if(cargas_trabajo == NULL || list_is_empty(cargas_trabajo)){
 		return 0;
 	}
 
@@ -404,14 +417,30 @@ void agregar_carga(int job, int worker, int carga){
 	list_add(cargas_trabajo, (void*) carga_trabajo);
 }
 
-void actualizar_cargas_inicio(t_list * planificacion,int job){
+
+void crear_cargas_inicio(t_list * planificacion, int job){
 	int i;
 	for(i=0; i<list_size(planificacion); i++){
 		t_reg_planificacion* regPlani = list_get(planificacion, i);
 		if(cargas_trabajo == NULL){
 			cargas_trabajo = list_create();
 		}
-		agregar_carga(job, regPlani->worker, list_size(regPlani->bloquesAsignados));
+		agregar_carga(job, regPlani->worker, 0);
+	}
+}
+
+void actualizar_cargas_inicio(t_list * planificacion){
+	int i, j;
+	for(i=0; i<list_size(planificacion); i++){
+		t_reg_planificacion* regPlani = list_get(planificacion, i);
+		for(j=0; j<list_size(cargas_trabajo); j++){
+			t_carga_trabajo* carga_trabajo = list_get(cargas_trabajo, j);
+			if(regPlani->job == carga_trabajo->job && regPlani->worker == carga_trabajo->worker){
+				carga_trabajo->carga += list_size(regPlani->bloquesAsignados);
+				int h=8;
+				break;
+			}
+		}
 	}
 }
 
@@ -444,14 +473,24 @@ void actualizar_cargas_fin_job(int job){
 		}
 }
 
+void asignar_availability(t_list* planificacion){
+	int i;
+	for(i=0; i< list_size(planificacion); i++){
+		t_reg_planificacion* regPlani = list_get(planificacion, i);
+		regPlani->availability = BASE+ PWL(regPlani->worker, regPlani->job);
+		int h=9;
+	}
 
-t_list * tablaPlanificacionCompleta(t_list* arch)
+}
+t_list * tablaPlanificacionCompleta(t_list* arch, int job)
 {
 	usleep(retardo_planificacion);
-	t_list * planificacion = tablaPlanif();
+	t_list * planificacion = tablaPlanif(job);
+	crear_cargas_inicio(planificacion, job);
+	asignar_availability(planificacion);
 	t_link_element *nodoMayorAvailability;
 
-	if(cargas_trabajo == NULL){
+	if(cargas_trabajo == NULL || list_is_empty(cargas_trabajo)){
 		nodoMayorAvailability = planificacion->head;
 	}else{
 		nodoMayorAvailability = buscarWorkerMayorAvailability(planificacion); // Se empieza apuntando al worker de mayor availability TODO: desampatar por el historial
@@ -461,7 +500,7 @@ t_list * tablaPlanificacionCompleta(t_list* arch)
 	t_link_element *head = nodoMayorAvailability;
 
 	t_reg_planificacion* ultimoReg = list_get(planificacion,list_size(planificacion) - 1);
-	int i, bloqueNumero = 0;
+	int i, j, bloqueNumero = 0;
 
 	t_bloque_archivo* bloqueABuscar = list_get(arch, bloqueNumero);
 	for (i = 0; i < list_size(arch); i++) { //Este for hace un bucle por cada bloque que se quiera encontrar
@@ -495,9 +534,9 @@ t_list * tablaPlanificacionCompleta(t_list* arch)
 
 							auxclock =reg->worker != ultimoReg->worker ? auxclock->next : planificacion->head;
 						} else {
-							for (i = 0; i < list_size(planificacion); i++) {
+							for (j = 0; j < list_size(planificacion); j++) {
 								t_reg_planificacion* regP = list_get(
-										planificacion, i);
+										planificacion, j);
 								regP->availability += BASE;
 							}
 						}
@@ -543,8 +582,8 @@ t_list* iniciarTransformacion(int master){
 	int job = numeroDeJob;
 	int i, j;
 	t_list *archivo = archivoPrueba2();
-	t_list * tabla = tablaPlanificacionCompleta(archivo);
-	actualizar_cargas_inicio(tabla, job);
+	t_list *tabla = tablaPlanificacionCompleta(archivo, job);
+	actualizar_cargas_inicio(tabla);
 	char *rutaReducGlobal = '\0';
 	char *rutaReducLocal = '\0';
 
@@ -792,41 +831,49 @@ void replanificar(int job, int planificacion)
 	//TODO: enviar mensaje a  mastar para que termine un job y en caso de que planificacion sea PEDIDO_TRANSFORMACION entonces debera pedir
 	// nuevamente que planifiquemos y si es PEDIDO_ABORTO no lo haga
 
+	if(planificacion == PEDIDO_TRANSFORMACION){
+		log_info(logger, "Se ha caido un nodo realizando la etapa de transformacion, se realizara una re-planificacion del job %d",job);
+	}else{
+		log_info(logger, "Se ha caido un nodo realizando la etapa de reduccion, se realizara un aborto del job %d", job);
+	}
+
 }
 
 
 void fallaEtapa(int nodo){
-			int i, replanificacion;
-			t_list *jobs = list_create();
-			t_link_element *puntTabla = estados->head;
-			for (i = 0; i < list_size(estados); i++) {
-				t_estado* reg = puntTabla->data;
 
-				if(reg->nodo == nodo && reg->estado == ESTADO_EN_PROCESO){
-					if(reg->etapa == ETAPA_TRANSFORMACION )
+			int i,j, replanificacion;
+			t_list *jobs = list_create();
+			for (i = 0; i < list_size(estados); i++) {
+				t_estado *estado = list_get(estados, i);
+
+				if(estado->nodo == nodo && estado->estado == ESTADO_EN_PROCESO){
+					if(estado->etapa == ETAPA_TRANSFORMACION )
 					{
 						 replanificacion = PEDIDO_TRANSFORMACION;
+
 					} else {
 						 replanificacion = PEDIDO_ABORTO;
+
 					}
 					//TODO:: Probar que funciones lo de los jobs repetidos
 					bool jobRepetido = false;
-					for (i = 0; i < list_size(jobs); i++) {
-							int* job = list_get(jobs, i);
-							if (reg->job == (int)job) {
+					for (j = 0; j < list_size(jobs); j++) {
+							int* job = list_get(jobs, j);
+							if (estado->job == (int)job) {
 								jobRepetido = true;
 								break;
 							}
 						}
 					if(!jobRepetido){
-						list_add(jobs, (void*) reg->job);
-						replanificar(reg->job, replanificacion);
+						list_add(jobs, (void*) estado->job);
+						actualizar_cargas_fin_job(estado->job);
+						replanificar(estado->job, replanificacion);
 					}
+					modificarBloqueTablaEstados(estado->bloque, estado->etapa, ESTADO_ERROR, estado->nodo, estado->job);
 				}
-					modificarBloqueTablaEstados(reg->bloque, reg->etapa, ESTADO_ERROR, reg->nodo, reg->job);
-
-				puntTabla = puntTabla->next;
 			}
+
 }
 
 
@@ -903,7 +950,7 @@ void cargar_archivo(int bloque_archivo, int nodo_copia_0, int bloque_copia_0, in
 }
 
 
-t_list* tablaPlanif() {
+t_list* tablaPlanif(int job) {
 	t_list* arch = archivoPrueba2();
 	t_list* planificacion = list_create();
 	//t_list * estados = tablaestadosPrueba();
@@ -919,7 +966,7 @@ t_list* tablaPlanif() {
 			if (!nodoYaAsignado(planificacion, nodocopia0)) {
 				t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
 				reg->worker = nodocopia0;
-				reg->availability = BASE+ PWL(reg->worker, job);
+				reg->availability = 0;
 				reg->bloquesAsignados = list_create();
 				reg->bloques = list_create();
 
@@ -960,7 +1007,7 @@ t_list* tablaPlanif() {
 			if (!nodoYaAsignado(planificacion, nodocopia1)) {
 				t_reg_planificacion* reg1 = malloc(sizeof(t_reg_planificacion));
 				reg1->worker = nodocopia1;
-				reg1->availability = BASE+ PWL(reg1->worker, job);
+				reg1->availability = 0;
 				reg1->bloquesAsignados = list_create();
 				reg1->bloques = list_create();
 				reg1->job = job;
@@ -1408,7 +1455,7 @@ void atender_inicio_job(int posicion) {
 	//por ahora hardcodeamos la estructura que recibe
 
 
-	t_list* archivo_planificado = tablaPlanificacionCompleta(&lista_de_nodos_recibidos);
+	t_list* archivo_planificado = tablaPlanificacionCompleta(&lista_de_nodos_recibidos, posicion); //En posicion se debe mandar el numero de job
 //
 //	//mockeo las copias que se eligen
 //	bloque_mock_0.elegida = 0;
