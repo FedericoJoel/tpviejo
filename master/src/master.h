@@ -73,6 +73,7 @@ void reduccion_global();
 //funciones que corren en threads
 void transformacion_nodo(void* planificacion);
 void replanificacion_nodo(void* planificacion_nodo);
+void reduccion_global_nodo(void* lista_nodos);
 void reduccion_local_nodo(void* planificacion);
 
 void desconectarse_de_yama();

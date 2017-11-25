@@ -1416,8 +1416,8 @@ void recibir_data_de_master(int posicion) {
 	case MS_YM_INICIO_JOB:	// inicia un job un master
 		atender_inicio_job(posicion);
 		break;
-	case FIN_TRANSF_WORKER:
-		atender_fin_transf_worker(posicion);
+	case FIN_TRANSF_NODO:
+		atender_fin_transf_bloque(posicion);
 		break;
 	case FIN_TRANSFORMACION:
 		atender_fin_transformacion(posicion);
@@ -1476,20 +1476,20 @@ void atender_inicio_job(int posicion) {
 	transformarBloques(archivo_planificado);
 }
 
-void atender_fin_transf_worker(int posicion) {
+void atender_fin_transf_bloque(int posicion) {
 	int cliente = get_socket_posicion(posicion);
-	char* char_respuesta_master = esperarMensaje(cliente);
-	t_resp_master* respuesta_master = respuesta_master_from_string(char_respuesta_master);
-	modificarBloqueTablaEstados(bloque,respuesta_master->etapa,respuesta_master->estado,posicion,0);//TODO que mierda le paso en los ultimos 2
-	log_info(logger, "finalizo la transformacion del bloque %d del master %d",
-			bloque, socket_clientes[posicion]);
-	int estado = terminoEtapaTransformacion(0,posicion);//todo aca deberia ir el worker y el job
+		char* char_bloque = esperarMensaje(cliente);
+		int bloque = atoi(char_bloque);
+		modificarBloqueTablaEstados(bloque,ETAPA_TRANSFORMACION,ESTADO_FINALIZADO_OK,posicion,0);//TODO que mierda le paso en los ultimos 2
+		log_info(logger, "finalizo la transformacion del bloque %d del master %d",
+				bloque, socket_clientes[posicion]);
+		int estado = terminoEtapaTransformacion(0,posicion);//todo aca deberia ir el worker y el job
 
-	if(estado) {
-		t_list* reg = iniciarReduccionLocal(posicion,0);//todo lo mismo que el anteiror
-	}
+		if(estado) {
+			t_list* reg = iniciarReduccionLocal(posicion,0);//todo lo mismo que el anteiror
+		}
 
-	//TODO marcar en tabla *de estados que termino la transformacion del bloque, si no hay ninguna otra transformacion en curso en ese nodo del worker,arranco reduccion
+	//TODO marcar en tabla *de estados que termino la transformacion del bloque, si no hay ninguna otra transformacion en curso en ese nodo del worker,arranco reduccion}
 }
 
 void atender_fin_transformacion(int posicion) {

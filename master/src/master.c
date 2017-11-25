@@ -188,7 +188,7 @@ void reduccion_global() {
 	char* char_bloque_recibido;
 	int i;
 
-	pthread_t* thread_transformacion;
+	pthread_t* thread_reduc_global;
 
 		//recibo cantidad de bloques que tengo que usar
 		cantidad_bloques = atoi(esperarMensaje(socket_yama));
@@ -297,7 +297,7 @@ void reduccion_global_nodo(void* void_workers) {
 
 }
 
-void replanificacion_nodo() {
+void replanificacion_nodo(void* planificacion_nodo) {
 
 }
 
