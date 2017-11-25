@@ -55,6 +55,7 @@ pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
 
 
+void generarBloqueCopiaBytes(char** elementos, int cantidad);
 //DEVUELVE LA POSICION DE UN NODO SEGUN EL NOMBRE
 int encontrarPosicion(t_list* fs, char* nombre);
 
@@ -71,11 +72,11 @@ void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados);
 void cargarNodosAFs(estructuraFs* fs);
 
 int tomarTamanioDeArchivo(char* ruta);
-char* ocuparBloques(char* ruta);
+char* ocuparBloques(char* ruta, char* contenidoBloque);
 void actualizarArchivo(char* ruta);
 int nodoVive(char* nodoBloque);
 
-t_list* cortar_texto(char* mensaje, t_list* lista);
+t_list* cortar_texto(char* mensaje);
 int size_in_bloks(char* mensaje);
 
 void ejecutarConsola();

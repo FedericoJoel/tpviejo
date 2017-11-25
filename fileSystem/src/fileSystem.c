@@ -6,11 +6,10 @@ t_list *t_dataNodes;
 t_list *lista_dataNodes;
 pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
-int bloque_size=12;
+int bloque_size=1048576;
 
 int main(void) {
 	printf("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA");
-
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.}
 //	int cant_bloques = size_in_bloks("ESTO FUNCIONA ESPECTACULAR;;JAJAJA");
 
@@ -82,10 +81,8 @@ int encontrarPosicion(t_list* nodos, char* nombre){
 		estructuraNodo* nodo = malloc(sizeof (estructuraNodo));
 		nodo = list_get(nodos, posicion);
 		if(string_equals_ignore_case(nodo->nombreNodo, nombre)){
-//			free(nodo);
 			break;
 		}
-//		free(nodo);
 		posicion++;
 	}
 	return posicion;
@@ -615,66 +612,56 @@ void fs_cpfrom(char * arg){
 					string_append(&informacion, string_itoa(tamanioArchivoEntero));
 					string_append(&informacion, ",");
 					string_append(&elementos, ",TIPO,");
+					char * linea = NULL;
+					size_t len = 0;
+					FILE* archivoLeido = fopen(argumentos[0], "r");
+					int leido = 0;
+					char* informacionArchivo = string_new();
+					while((leido = getline(&linea, &len, archivoLeido)) != -1){
+						string_append(&informacionArchivo, linea);
+						linea = NULL;
+						len = 0;
+					}
+					t_list* listaBloques;
 					if (string_equals_ignore_case(elementosPath[cantidadElementos(elementosPath) - 1], "bin")){
 						string_append(&informacion, "BINARIO,");
+//						listaBloques = cortar_datos()
 					}else{
 						string_append(&informacion, "TEXTO,");
+						listaBloques = cortar_texto(informacionArchivo);
 					}
-					int byte = 1048576;
-					int bloquesAUsar = -1;
-					if (tamanioArchivo / byte > 0){
-						bloquesAUsar = tamanioArchivo/byte;
-						if (tamanioArchivoEntero % byte != 0){
-							bloquesAUsar++;
-						}
-						int cantidad = 0;
-						int copia = 0;
-						string_append(&elementos, "BLOQUE");
-						string_append(&elementos, string_itoa(cantidad));
-						string_append(&elementos,"COPIA");
-						string_append(&elementos, string_itoa(copia));
+
+					int bloquesAUsar = list_size(listaBloques);
+					int cantidad = 0;
+					generarBloqueCopiaBytes(&elementos, cantidad);
+					int posicionLista = 0;
+					char* nodosOcupados = ocuparBloques(argumentos[0], list_get(listaBloques, posicionLista));
+					int tamanioUsadoBloque = string_length(list_get(listaBloques,posicionLista));
+					string_append(&informacion, nodosOcupados);
+					string_append(&informacion, ",");
+					string_append(&informacion, string_itoa(tamanioUsadoBloque));
+					string_append(&informacion, ",");
+					cantidad++;
+					posicionLista++;
+					while(cantidad < bloquesAUsar){
 						string_append(&elementos, ",");
-						string_append(&elementos,"BLOQUE");
-						string_append(&elementos, string_itoa(cantidad));
-						string_append(&elementos,"COPIA");
-						copia++;
-						string_append(&elementos, string_itoa(copia));
-						string_append(&elementos, ",");
-						string_append(&elementos,"BLOQUE");
-						string_append(&elementos, string_itoa(cantidad));
-						string_append(&elementos,"BYTES");
-						char* nodosOcupados = ocuparBloques(argumentos[0]);
+						generarBloqueCopiaBytes(&elementos, cantidad);
+						nodosOcupados = ocuparBloques(argumentos[0], list_get(listaBloques,posicionLista));
 						string_append(&informacion, nodosOcupados);
+						string_append(&informacion, ", ");
+						tamanioUsadoBloque = string_length(list_get(listaBloques,posicionLista));
+						string_append(&informacion, nodosOcupados);
+						string_append(&informacion, ",");
+						string_append(&informacion, string_itoa(tamanioUsadoBloque));
+						string_append(&informacion, ",");
 						cantidad++;
-						while(cantidad < bloquesAUsar){
-							copia = 0;
-							string_append(&elementos, ",");
-							string_append(&elementos,"BLOQUE");
-							string_append(&elementos, string_itoa(cantidad));
-							string_append(&elementos,"COPIA");
-							string_append(&elementos, string_itoa(copia));
-							string_append(&elementos, ",");
-							string_append(&elementos,"BLOQUE");
-							string_append(&elementos, string_itoa(cantidad));
-							string_append(&elementos,"COPIA");
-							copia++;
-							string_append(&elementos, string_itoa(copia));
-							string_append(&elementos, ",");
-							string_append(&elementos,"BLOQUE");
-							string_append(&elementos, string_itoa(cantidad));
-							string_append(&elementos,"BYTES");
-							nodosOcupados = ocuparBloques(argumentos[0]);
-							string_append(&informacion, nodosOcupados);
-							string_append(&informacion, ", ");
-							nodosOcupados = ocuparBloques(argumentos[0]);
-							string_append(&informacion, nodosOcupados);
+						posicionLista++;
+//						nodosOcupados = ocuparBloques(argumentos[0]);
+//(						string_append(&informacion, nodosOcupados);
 						}
 						printf("%s \n", elementos);
 						printf("%s \n", informacion);
 						free(nodosOcupados);
-					}else{
-						printf("Fallo al tomar tamanio de archivo");
-					}
 					elementosPath = string_split(argumentos[0], "/");
 					char* directorio = string_duplicate("/");
 					char** rutaYamaFS = string_split(argumentos[1], "/");
@@ -714,7 +701,25 @@ void fs_cpfrom(char * arg){
 	free(argumentos);
 }
 
-char* ocuparBloques(char* ruta){
+void generarBloqueCopiaBytes(char** elementos, int cantidad){
+	int copia = 0;
+	string_append(elementos, "BLOQUE");
+	string_append(elementos, string_itoa(cantidad));
+	string_append(elementos,"COPIA");
+	string_append(elementos, string_itoa(copia));
+	string_append(elementos, ",");
+	string_append(elementos,"BLOQUE");
+	string_append(elementos, string_itoa(cantidad));
+	string_append(elementos,"COPIA");
+	copia++;
+	string_append(elementos, string_itoa(copia));
+	string_append(elementos, ",");
+	string_append(elementos,"BLOQUE");
+	string_append(elementos, string_itoa(cantidad));
+	string_append(elementos,"BYTES");
+}
+
+char* ocuparBloques(char* ruta, char* contenidoBloque){
 	int pos = 0;
 	list_sort(fs.estructuraNodos.nodos, (void*) ordenarNodoPorEspacioLibre);
 	estructuraNodo* nodo1 = list_get(fs.estructuraNodos.nodos, pos);
@@ -734,6 +739,8 @@ char* ocuparBloques(char* ruta){
 	int posLibre1 = buscarPosicionLibre(array1);
 	ocuparPosicionDeBitArray(array1, posLibre1);
 	escribirBitArrayEnArchivo(array1, rutaBitMap1);
+	int idNodo1 = obtenerId(nodo1->nombreNodo);
+	set_bloque(idNodo1, contenidoBloque, posLibre1);
 	posLibre1++;
 	string_append(&nodosUsados, string_itoa(posLibre1));
 	string_append(&nodosUsados, "],");
@@ -749,6 +756,8 @@ char* ocuparBloques(char* ruta){
 	int posLibre2 = buscarPosicionLibre(array2);
 	ocuparPosicionDeBitArray(array2, posLibre2);
 	escribirBitArrayEnArchivo(array2, rutaBitMap2);
+	int idNodo2 = obtenerId(nodo2->nombreNodo);
+	set_bloque(idNodo2, contenidoBloque, posLibre2);
 	posLibre2++;
 	string_append(&nodosUsados, string_itoa(posLibre2));
 	string_append(&nodosUsados, "]");
@@ -992,7 +1001,8 @@ int size_in_bloks(char* mensaje){
 //t_list* cortar_datos(char* mensaje){
 // cortar_datos(0, palabras, bloques)
 
-t_list* cortar_texto(char* mensaje, t_list* lista) {
+t_list* cortar_texto(char* mensaje) {
+	t_list* lista = list_create();
 	char** palabras = string_split(mensaje,"\n");
 	int i = 0;
 	int ocupado = 0;
