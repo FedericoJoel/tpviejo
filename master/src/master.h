@@ -13,6 +13,7 @@
 #include <lib.h>
 #include <sockets.h>
 #include <protocolos.h>
+#include <pthread.h>
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/string.h>
@@ -22,16 +23,25 @@
 
 int puerto_yama,
 	socket_yama,
-	cantidad_bloques;
+	cantidad_bloques,
+	socket_server;
+int finalizado = 0;
 
 char* ip_yama;
 char* ruta_transformador;
 char* ruta_reductor;
 char* ruta_archivo_job_inicial;
 char* ruta_archivo_job_resultado;
+char* AUTH;
+t_dictionary* sockets_workers;
 t_list list_bloques;
+t_list list_bloques_global;
 
-
+//threads
+t_list threads_transformacion;
+t_list threads_reduc_local;
+pthread_t thread_replanificacion;
+pthread_t thread_reduc_global;
 
 
 //-------config------------
@@ -47,24 +57,24 @@ t_log* logger;
 
 
 //----------otros---------------------
-char* AUTH;
-int socket_server;
-
-
-t_dictionary* sockets_workers;
 void levantar_config(void);
 void levantar_logger(void);
 int levantar_servidor_masters(void);
-void leer_variables_args(char** argv);
 t_log* start_logger();
 int abrir_file_args(int argc, char** argv);
 int conectar_con_yama();
 void comenzar_job();
-void iniciar_transformacion();
-void transformacion(t_reg_planificacion* planificacion);
-void iniciar_reduccion_local();
-void avisar_fin_tranformacion();
+void esperar_indicaciones();
+void transformacion();
+void replanificacion();
 void reduccion_local();
+void reduccion_global();
+
+//funciones que corren en threads
+void transformacion_nodo(void* planificacion);
+void replanificacion_nodo(void* planificacion_nodo);
+void reduccion_local_nodo(void* planificacion);
+
 void desconectarse_de_yama();
 
 

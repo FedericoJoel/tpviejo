@@ -12,22 +12,17 @@ int main(int argc, char **argv) {
 
 	levantar_config();
 
-	leer_variables_args(argv);
-
 	if(conectar_con_yama() == EXIT_FAILURE){
 		return EXIT_FAILURE;
 	}
 
 	comenzar_job();
 
-	iniciar_transformacion();
-
-	iniciar_reduccion_local();
+	esperar_indicaciones();
 
 	desconectarse_de_yama();
 
 	log_info(logger,"Salir del programa");
-
 
 	return EXIT_SUCCESS;
 }
@@ -120,37 +115,97 @@ void comenzar_job() {
 	enviarMensajeConProtocolo(socket_yama,ruta_archivo_job_inicial,MS_YM_INICIO_JOB);
 }
 
-void iniciar_transformacion() {
-	int i;
+void esperar_indicaciones() {
 	int proto_recibido;
-	char* char_bloque_recibido;
-	t_reg_planificacion* worker_recibido;
-	proto_recibido = recibirProtocolo(socket_yama);
 
+	while(finalizado == 0){
+		//recibo algun protocolo de yama
+		proto_recibido = recibirProtocolo(socket_yama);
 
-	//me fijo si es el de transformacion que esperaba
-	switch(proto_recibido) {
-	case YM_MS_TRANSFORMACION:
-		cantidad_bloques = atoi(esperarMensaje(socket_yama));
-		for(i=0; i < cantidad_bloques; i++) {
-			char_bloque_recibido = esperarMensaje(socket_yama);
-			printf("worker: %s \n", char_bloque_recibido);
-			worker_recibido = reg_planificacion_from_string(char_bloque_recibido);
-			//TODO aca se manda la info de transformacion al worker indicado en un nuevo hilo
-			transformacion(worker_recibido);
-
-			//vale la pena guardar en una lista todos los t_reg_planificacion??
-			list_add(&list_bloques, (void*) worker_recibido);
+		switch(proto_recibido) {
+			case YM_MS_TRANSFORMACION://inicio transformacion
+				transformacion();
+			break;
+			case REPLANIFICACION: //se replanifico transformacion de nodo
+				replanificacion();
+			break;
+			case REDUC_LOCAL:
+				reduccion_local();
+			break;
+			case REDUC_GLOBAL:
+				reduccion_global();
+			break;
 		}
-		break;
+	}
+
+}
+
+void transformacion() {
+	int i;
+	char* char_bloque_recibido;
+	pthread_t* thread_transformacion;
+
+	//recibo cantidad de bloques que tengo que usar
+	cantidad_bloques = atoi(esperarMensaje(socket_yama));
+
+	for(i=0; i < cantidad_bloques; i++) {
+		//recibo bloques, los guardo en lista y creo thread
+		char_bloque_recibido = esperarMensaje(socket_yama);
+
+		list_add(&list_bloques, (void*) char_bloque_recibido);
+		thread_transformacion = (pthread_t *) malloc(sizeof(pthread_t));
+		list_add(&threads_transformacion,(void*) thread_transformacion);
+
+		//aca se manda la info de transformacion al worker indicado en un nuevo hilo
+		pthread_create(thread_transformacion,NULL,(void*)&transformacion_nodo, (void*) char_bloque_recibido);
 	}
 }
 
+void replanificacion() {
+	//si hay replanificacion hay que matar a todos los threads de transformacion que podrian estar corriendo
+	char* char_bloque_recibido;
+
+	//espero data del nodo replanificado
+	char_bloque_recibido = esperarMensaje(socket_yama);
+	pthread_create(&thread_replanificacion,NULL,(void*)&replanificacion_nodo, (void*) char_bloque_recibido);
+}
+
+void reduccion_local() {
+	char* char_bloque_recibido;
+	pthread_t* thread_reduc_local;
+
+	//espero data del nodo a reducir
+	char_bloque_recibido = esperarMensaje(socket_yama);
+	thread_reduc_local = (pthread_t *) malloc(sizeof(pthread_t));
+	list_add(&threads_reduc_local,(void*) thread_reduc_local);
+
+	pthread_create(thread_reduc_local,NULL,(void*)&reduccion_local_nodo, (void*) char_bloque_recibido);
+}
+
+void reduccion_global() {
+	char* char_bloque_recibido;
+	int i;
+
+	pthread_t* thread_transformacion;
+
+		//recibo cantidad de bloques que tengo que usar
+		cantidad_bloques = atoi(esperarMensaje(socket_yama));
+
+		for(i=0; i < cantidad_bloques; i++) {
+			char_bloque_recibido = esperarMensaje(socket_yama);
+			list_add(&list_bloques_global, (void*) char_bloque_recibido);
+		}
+		thread_reduc_global = (pthread_t *) malloc(sizeof(pthread_t));
+		pthread_create(thread_reduc_global,NULL,(void*)&reduccion_global_nodo, (void*) &list_bloques_global);
+}
 
 //esta seria la funcion del thread que se abre con el worker en la transformacion
-void transformacion(t_reg_planificacion* worker) {
-	int socket_worker = conectar(config_get_int_value(config,"PUERTO_WORKER"),worker->ip);
+void transformacion_nodo(void* void_worker) {
 	int i;
+	int bloque_archivo;
+	t_resp_master* respuesta;
+	t_reg_planificacion* worker = reg_planificacion_from_string((char*) void_worker);
+	int socket_worker = conectar(config_get_int_value(config,"PUERTO_WORKER"),worker->ip);
 
 	if(socket_worker){
 		//guardo en diccionario worker -> socket
@@ -166,34 +221,81 @@ void transformacion(t_reg_planificacion* worker) {
 		char* char_planificacion_worker = planificacion_worker_to_string(planificacion_worker);
 		enviarMensajeConProtocolo(socket_worker,char_planificacion_worker,INICIO_TRANF_WORKER);
 
+		//espero informacion de la finalizacion de las transformaciones
+		respuesta = malloc(sizeof(t_resp_master));
+		respuesta->etapa = TRANSFORMACION;
+		respuesta->worker = worker->worker;
 
-		for(i=0; i < list_size(planificacion_worker->planificacion->bloquesAsignados); i++) {
-			//me preparo para recibir la respuesta a medida que van terminando las transformaciones
-			t_resp_master* respuesta = malloc(sizeof(t_resp_master));
-			respuesta->etapa = TRANSFORMACION;
-			respuesta->worker = worker->worker;
+		for(i=0; i < list_size(worker->bloquesAsignados); i++) {
 
 			int protocolo = recibirProtocolo(socket_worker);
 
 			switch(protocolo){ //dependiendo del protocolo termino bien o mal la transformacion en el worker
 				case TRANSFORMACION_OK:
-					//enviar respuesta serializada en un t_respuesta_master
 					respuesta->estado = 1;
+					bloque_archivo = (int) esperarMensaje(socket_worker);
+					respuesta->bloque_archivo = bloque_archivo;
+					enviarMensajeConProtocolo(socket_yama,respuesta_master_to_string(respuesta),FIN_TRANSF_WORKER);
 				break;
 				case TRANSFORMACION_ERROR:
 					respuesta->estado = 0;
+					bloque_archivo = (int) esperarMensaje(socket_worker);
+					respuesta->bloque_archivo = bloque_archivo;
+					enviarMensajeConProtocolo(socket_yama,respuesta_master_to_string(respuesta),FIN_TRANSF_WORKER);
 				break;
 			}
-			int bloque_archivo = (int) esperarMensaje(socket_worker);
-			respuesta->bloque_archivo = bloque_archivo;
-			enviarMensajeConProtocolo(socket_yama,respuesta_master_to_string(respuesta),FIN_TRANSF_WORKER);
-
 		}
-		//TODO desconectar de worker
 	}
 }
 
-void iniciar_reduccion_local() {
+
+void reduccion_local_nodo(void* void_worker) {
+	t_resp_master* respuesta;
+	t_reg_planificacion* worker = reg_planificacion_from_string((char*) void_worker);
+
+	int socket_worker = conectar(config_get_int_value(config,"PUERTO_WORKER"),worker->ip);
+
+	if(socket_worker){
+		t_planificacion_worker* planificacion_worker = malloc(sizeof(t_planificacion_worker));
+		planificacion_worker->planificacion = worker;
+
+		planificacion_worker->programa_planificacion = string_new();
+		get_char_archivo(ruta_reductor,&planificacion_worker->programa_planificacion);
+
+		char* char_planificacion_worker = planificacion_worker_to_string(planificacion_worker);
+		enviarMensajeConProtocolo(socket_worker,char_planificacion_worker,INICIO_REDUC_LOCAL_WORKER);
+
+		//espero informacion de la finalizacion de la reduccion
+		respuesta = malloc(sizeof(t_resp_master));
+		respuesta->etapa = REDUC_LOCAL;
+		respuesta->worker = worker->worker;
+
+		int protocolo = recibirProtocolo(socket_worker);
+
+		switch(protocolo){ //dependiendo del protocolo termino bien o mal la reduccion en el worker
+			case REDUC_LOCAL_OK:
+				respuesta->estado = 1;
+				respuesta->bloque_archivo = -1; //TODO no necesito el bloque en esta instancia
+				enviarMensajeConProtocolo(socket_yama,respuesta_master_to_string(respuesta),FIN_REDUC_LOCAL_WORKER);
+			break;
+			case REDUC_LOCAL_ERROR:
+				respuesta->estado = 0;
+				respuesta->bloque_archivo = -1;
+				enviarMensajeConProtocolo(socket_yama,respuesta_master_to_string(respuesta),FIN_REDUC_LOCAL_WORKER);
+			break;
+		}
+
+	}
+
+}
+
+void reduccion_global_nodo(void* void_workers) {
+	t_resp_master* respuesta;
+	t_list* list_workers= (t_list*) void_workers;
+
+}
+
+void replanificacion_nodo() {
 
 }
 
