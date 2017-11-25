@@ -597,20 +597,174 @@ void fs_mkdir(char * arg){
 	}
 }
 
-//FALTA DESARROLLAR
+//FALTA DESARROLLAR BLOQUE0BYTES Y SETEO EN NODO
 void fs_cpfrom(char * arg){
-	char** path;
 	char** argumentos;
-	int cantidadElementos = sizeof(path)/sizeof(path[0]);
-
-	if (string_starts_with(arg, "/")){
 	argumentos = string_split(arg, " ");
-	path = string_split(argumentos[0], "/");
-	printf("Archivo copiado a YAMA: '%s'\n", strcat(argumentos[1], path[cantidadElementos - 1]));
+
+	if (string_starts_with(argumentos[0], "/") && string_starts_with(argumentos[1], "/")){
+		if (comprobarDirectorio(fs.directorio, argumentos[1]) == 0){
+			char** elementosPath = string_split(argumentos[0], ".");
+			if (cantidadElementos(elementosPath) == 2){
+				if (string_equals_ignore_case(elementosPath[cantidadElementos(elementosPath) - 1], "bin") || string_equals_ignore_case(elementosPath[cantidadElementos(elementosPath) - 1],"txt")){
+					char* elementos = string_new();
+					char* informacion = string_new();
+					double tamanioArchivo = tomarTamanioDeArchivo(argumentos[0]);
+					int tamanioArchivoEntero = tamanioArchivo;
+					string_append(&elementos, "TAMANIO");
+					string_append(&informacion, string_itoa(tamanioArchivoEntero));
+					string_append(&informacion, ",");
+					string_append(&elementos, ",TIPO,");
+					if (string_equals_ignore_case(elementosPath[cantidadElementos(elementosPath) - 1], "bin")){
+						string_append(&informacion, "BINARIO,");
+					}else{
+						string_append(&informacion, "TEXTO,");
+					}
+					int byte = 1048576;
+					int bloquesAUsar = -1;
+					if (tamanioArchivo / byte > 0){
+						bloquesAUsar = tamanioArchivo/byte;
+						if (tamanioArchivoEntero % byte != 0){
+							bloquesAUsar++;
+						}
+						int cantidad = 0;
+						int copia = 0;
+						string_append(&elementos, "BLOQUE");
+						string_append(&elementos, string_itoa(cantidad));
+						string_append(&elementos,"COPIA");
+						string_append(&elementos, string_itoa(copia));
+						string_append(&elementos, ",");
+						string_append(&elementos,"BLOQUE");
+						string_append(&elementos, string_itoa(cantidad));
+						string_append(&elementos,"COPIA");
+						copia++;
+						string_append(&elementos, string_itoa(copia));
+						string_append(&elementos, ",");
+						string_append(&elementos,"BLOQUE");
+						string_append(&elementos, string_itoa(cantidad));
+						string_append(&elementos,"BYTES");
+						char* nodosOcupados = ocuparBloques(argumentos[0]);
+						string_append(&informacion, nodosOcupados);
+						cantidad++;
+						while(cantidad < bloquesAUsar){
+							copia = 0;
+							string_append(&elementos, ",");
+							string_append(&elementos,"BLOQUE");
+							string_append(&elementos, string_itoa(cantidad));
+							string_append(&elementos,"COPIA");
+							string_append(&elementos, string_itoa(copia));
+							string_append(&elementos, ",");
+							string_append(&elementos,"BLOQUE");
+							string_append(&elementos, string_itoa(cantidad));
+							string_append(&elementos,"COPIA");
+							copia++;
+							string_append(&elementos, string_itoa(copia));
+							string_append(&elementos, ",");
+							string_append(&elementos,"BLOQUE");
+							string_append(&elementos, string_itoa(cantidad));
+							string_append(&elementos,"BYTES");
+							nodosOcupados = ocuparBloques(argumentos[0]);
+							string_append(&informacion, nodosOcupados);
+							string_append(&informacion, ", ");
+							nodosOcupados = ocuparBloques(argumentos[0]);
+							string_append(&informacion, nodosOcupados);
+						}
+						printf("%s \n", elementos);
+						printf("%s \n", informacion);
+						free(nodosOcupados);
+					}else{
+						printf("Fallo al tomar tamanio de archivo");
+					}
+					elementosPath = string_split(argumentos[0], "/");
+					char* directorio = string_duplicate("/");
+					char** rutaYamaFS = string_split(argumentos[1], "/");
+					string_append(&directorio, rutaYamaFS[cantidadElementos(rutaYamaFS)-1]);
+					int posicionDirectorio = damePosicionDeElemento(directorio, fs.directorio);
+					char* rutaCsv = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/");
+					string_append(&rutaCsv, string_itoa(posicionDirectorio));
+					string_append(&rutaCsv,"/");
+					char** nombreDeArchivo = string_split(elementosPath[cantidadElementos(elementosPath)-1], ".");
+					string_append(&rutaCsv,nombreDeArchivo[cantidadElementos(nombreDeArchivo)-2]);
+					string_append(&rutaCsv, ".csv");
+					free(nombreDeArchivo);
+					free(rutaYamaFS);
+					string_append(&elementos, "\n");
+					string_append(&informacion, "\n");
+					FILE* archivoNuevo = fopen(rutaCsv, "w");
+					fputs(elementos, archivoNuevo);
+					fputs(informacion, archivoNuevo);
+					printf("Archivo %s copiado a YAMA: '%s'\n", elementosPath[cantidadElementos(elementosPath) - 1], argumentos[1]);
+					fclose(archivoNuevo);
+					free(directorio);
+					free(elementos);
+					free(informacion);
+				}else{
+					printf("No se especifico tipo de archivo");
+					}
+			}else{
+				printf("El path del fs no es un archivo valido");
+			}
+			free(elementosPath);
+		}else{
+			printf("El path de YAMA no existe");
+		}
+	}else{
+		printf("Alguno de los path no empieza con /: %s \n %s \n", argumentos[0], argumentos[1]);
 	}
-	else
-	{
-	printf("Archivo copiado a YAMA: '%s'\n", arg);
+	free(argumentos);
+}
+
+char* ocuparBloques(char* ruta){
+	int pos = 0;
+	list_sort(fs.estructuraNodos.nodos, (void*) ordenarNodoPorEspacioLibre);
+	estructuraNodo* nodo1 = list_get(fs.estructuraNodos.nodos, pos);
+	nodo1->tamanioLibreNodo--;
+	pos++;
+	estructuraNodo* nodo2 = list_get(fs.estructuraNodos.nodos, pos);
+	nodo2->tamanioLibreNodo--;
+	char* nodosUsados = string_duplicate("[");
+	string_append(&nodosUsados, nodo1->nombreNodo);
+	string_append(&nodosUsados, ", ");
+	char* rutaBitMap1 = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/");
+	char* nodoNombreMinisculo1 = string_duplicate(nodo1->nombreNodo);
+	string_to_lower(nodoNombreMinisculo1);
+	string_append(&rutaBitMap1, nodoNombreMinisculo1);
+	string_append(&rutaBitMap1,".dat");
+	t_bitarray* array1 = cargarBitmapAMemoria(rutaBitMap1);
+	int posLibre1 = buscarPosicionLibre(array1);
+	ocuparPosicionDeBitArray(array1, posLibre1);
+	escribirBitArrayEnArchivo(array1, rutaBitMap1);
+	posLibre1++;
+	string_append(&nodosUsados, string_itoa(posLibre1));
+	string_append(&nodosUsados, "],");
+	string_append(&nodosUsados, "[");
+	string_append(&nodosUsados, nodo2->nombreNodo);
+	string_append(&nodosUsados, ", ");
+	char* rutaBitMap2 = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/");
+	char* nodoNombreMinisculo2 = string_duplicate(nodo2->nombreNodo);
+	string_to_lower(nodoNombreMinisculo2);
+	string_append(&rutaBitMap2, nodoNombreMinisculo2);
+	string_append(&rutaBitMap2, ".dat");
+	t_bitarray* array2 = cargarBitmapAMemoria(rutaBitMap2);
+	int posLibre2 = buscarPosicionLibre(array2);
+	ocuparPosicionDeBitArray(array2, posLibre2);
+	escribirBitArrayEnArchivo(array2, rutaBitMap2);
+	posLibre2++;
+	string_append(&nodosUsados, string_itoa(posLibre2));
+	string_append(&nodosUsados, "]");
+	free(rutaBitMap1);
+	free(rutaBitMap2);
+	free(nodoNombreMinisculo1);
+	free(nodoNombreMinisculo2);
+	return nodosUsados;
+}
+
+int tomarTamanioDeArchivo(char* ruta){
+	struct stat st;
+	if (stat(ruta, &st) == 0){
+	   	return st.st_size;
+	}else{
+		return -1;
 	}
 }
 

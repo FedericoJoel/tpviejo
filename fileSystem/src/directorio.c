@@ -101,12 +101,11 @@ void cargarDirectorio(t_directory* directorio) {
 void crearDirectorioFisico(t_directory* directorio){
 	int reg;
 	for (reg = 0; reg <= 99; reg++) {
-		if (directorio[reg].nombre[0] != '\0' && directorio[reg].padre != -1)
-			{
+		if ((directorio[reg].nombre[0] != '\0' && directorio[reg].padre != -1) ||
+				(string_equals_ignore_case(directorio[reg].nombre, "/root") && directorio[reg].padre == -1)){
 			char* mkdir = string_new();
 			directorio[reg].index = reg;
 			string_append(&mkdir, "mkdir /home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/");
-//			string_append(&mkdir, agregarPadreARuta(directorio[reg].padre, directorio));
 			string_append(&mkdir, string_itoa(directorio[reg].index));
 			system(mkdir);
 			free(mkdir);

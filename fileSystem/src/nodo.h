@@ -17,8 +17,11 @@ typedef struct{
 }estructuraNodo;
 
 void vaciarBitMap(char* path);
+int buscarPosicionLibre(t_bitarray* bitArray);
+void ocuparPosicionDeBitArray(t_bitarray* bitArray, int posLibre);
 void escribirBitArrayEnArchivo(t_bitarray* bitArray, char* nodo);
 int ordenarNodo(estructuraNodo* nodo1, estructuraNodo* nodo2);
+int ordenarNodoPorEspacioLibre(estructuraNodo* nodo1, estructuraNodo* nodo2);
 int obtenerId (char* nodo);
 estructuraNodo* levantarNodo(int pos);
 char* sacar (char* palabra, char* caracter);

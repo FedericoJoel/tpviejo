@@ -19,6 +19,8 @@
 #include <sys/socket.h>
 #include <protocolos.h>
 #include <string.h>
+#include <sys/stat.h>
+
 //CANTIDAD MAXIMA DE CLIENTES CONCURRENTES
 #define clientes_max 10
 
@@ -29,7 +31,6 @@ typedef struct nodo{
 	int socket;
 	int bloque_cant;
 }t_nodo;
-
 
 
 typedef struct{
@@ -69,6 +70,8 @@ void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados);
 //CARGA LOS NODOS EXISTENTES EN EL ARCHIO AL FS
 void cargarNodosAFs(estructuraFs* fs);
 
+int tomarTamanioDeArchivo(char* ruta);
+char* ocuparBloques(char* ruta);
 void actualizarArchivo(char* ruta);
 int nodoVive(char* nodoBloque);
 

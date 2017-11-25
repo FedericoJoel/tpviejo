@@ -6,6 +6,21 @@ char* rutaNodo =
 char* rutaBitMap =
 		"/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/bitArrayNodo.dat";
 
+int buscarPosicionLibre(t_bitarray* bitArray){
+	int pos = 0;
+	int tamanio = bitarray_get_max_bit(bitArray) / 8;
+	for (; pos < tamanio; pos++){
+		if (bitarray_test_bit(bitArray, pos) == 0){
+			return pos;
+		}
+	}
+	return -1;
+}
+
+void ocuparPosicionDeBitArray(t_bitarray* bitArray, int posLibre){
+	bitarray_set_bit(bitArray, posLibre);
+}
+
 void escribirBitArrayEnArchivo(t_bitarray* bitArray, char* nodo){
 	int tamanio = bitarray_get_max_bit(bitArray) / 8;
 	int pos = 0;
@@ -17,6 +32,7 @@ void escribirBitArrayEnArchivo(t_bitarray* bitArray, char* nodo){
 	fputs(lectura, archivo);
 	fclose(archivo);
 	free(lectura);
+	bitarray_destroy(bitArray);
 }
 
 void vaciarBitMap(char* path){
@@ -44,6 +60,12 @@ int ordenarNodo(estructuraNodo* nodo1, estructuraNodo* nodo2){
 	int id1 = obtenerId(nodo1->nombreNodo);
 	int id2 = obtenerId(nodo2->nombreNodo);
 	return(id1<id2);
+}
+
+int ordenarNodoPorEspacioLibre(estructuraNodo* nodo1, estructuraNodo* nodo2){
+	int porcentageNodo1 = nodo1->tamanioLibreNodo*100/nodo1->tamanioTotalNodo;
+	int porcentageNodo2 = nodo2->tamanioLibreNodo*100/nodo2->tamanioTotalNodo;
+	return(porcentageNodo1>porcentageNodo2);
 }
 
 int obtenerId (char* nodo){
@@ -157,8 +179,7 @@ t_bitarray* cargarBitmapAMemoria(char* path){
 }
 
 void cargarLinea(int pos, char* linea, t_bitarray* bitArray){
-	char* copia = string_new();
-	string_append_with_format(&copia, "%s!", linea);
+	char* copia = string_duplicate(linea);
 	if (copia[pos] == '1'){
 		bitarray_set_bit(bitArray, pos);
 	}else{
