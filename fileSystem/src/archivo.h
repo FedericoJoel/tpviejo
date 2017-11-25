@@ -12,14 +12,16 @@
 //ARCHIVO//
 
 typedef struct{
-	char* bloqueCopia;
-	char* nodoBloque;
-	char* bloqueCopia1;
-	char* nodoBloque1;
-	char* nombreTamanioBloque;
-	int tamanioBloque;
+	char* bloqueCopia; //BLOQUE0COPIA0 nro bloque nro copia // guardo la ip del nodobloque copia en t_copia.ip
+	char* nodoBloque; //[Nodo1,33] nodo 1 bloque 33 funcion dameIDNodo guardo en t_copia.nodo , damebloquedelnodo lo guardo en t_copia.bloque_nodo
+	char* bloqueCopia1; //lo mismo
+	char* nodoBloque1;//lo mismo
+	char* nombreTamanioBloque; //BLOQUE0BYTES //de aca tengo que tomar el nro y guardarlo en t_bloque_archivo bloque_archivo
+	int tamanioBloque; //TamañoBloque guardo en t_bloque_archivo bytes
 }estructuraBloque;
 
+//TODO enviar lista de t_bloque_archivo tiene la info de un bloque que contiene las dos copias y su info.
+//funciones para serializar y deserializar bloquearchivofromstring y bloquearchivotostring.
 typedef struct{
 	int tamanio;
 	char* tipo;

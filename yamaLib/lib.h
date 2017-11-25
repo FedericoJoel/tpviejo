@@ -16,7 +16,7 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
-
+#include "protocolos.h"
 
 //---------------structs filesystem-----------------
 
@@ -29,10 +29,8 @@ typedef struct copia{
 typedef struct bloque_archivo{
 	int bloque_archivo;
 	int bytes;
-	char* ruta_temporal;
 	t_copia* copia0;
 	t_copia* copia1;
-	int elegida;
 }t_bloque_archivo;
 
 typedef struct estado {

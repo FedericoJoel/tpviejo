@@ -104,79 +104,72 @@ t_list* iterate_bloques_from_string(char* bloques, int cantidad) {
 	return lista;
 }
 
-char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
-	char* char_bloque = string_new();
+//char* bloque_archivo_to_string(t_bloque_archivo* bloque) {
+//	char* char_bloque = string_new();
+//
+//	char* char_bloque_archivo;
+//	char_bloque_archivo = int_to_string(bloque->bloque_archivo);
+//	char *char_bytes = int_to_string(bloque->bytes);
+//	char* char_copia0 = copia_to_string(bloque->copia0);
+//	char* char_copia1 = copia_to_string(bloque->copia1);
+//
+//	char* tamanio = string_new();
+//	string_append(&char_bloque, char_bloque_archivo);
+//	string_append(&char_bloque, char_bytes);;
+//	string_append(&char_bloque, tamanio);
+//	free(tamanio);
+//	tamanio = int_to_string(strlen(char_copia0));
+//	string_append(&char_bloque, tamanio);
+//	free(tamanio);
+//	string_append(&char_bloque, char_copia0);
+//	tamanio = int_to_string(strlen(char_copia1));
+//	string_append(&char_bloque, tamanio);
+//	free(tamanio);
+//	string_append(&char_bloque, char_copia1);
+//	free(char_bloque_archivo);
+//	free(char_bytes);
+//	free(char_copia0);
+//	free(char_copia1);
+//	return char_bloque;
+//}
 
-	char* char_bloque_archivo;
-	char_bloque_archivo = int_to_string(bloque->bloque_archivo);
-	char *char_bytes = int_to_string(bloque->bytes);
-	char* char_ruta_temporal = bloque->ruta_temporal;
-	char* char_copia0 = copia_to_string(bloque->copia0);
-	char* char_copia1 = copia_to_string(bloque->copia1);
-	char* char_elegida = int_to_string(bloque->elegida);
+//char* respuesta_master_to_string(t_resp_master* respuesta){
+//	char* char_respuesta = string_new();
+//
+//	char* char_worker = int_to_string(respuesta->worker);
+//	char* char_etapa = int_to_string(respuesta->etapa);
+//	char* char_estado = int_to_string(respuesta->estado);
+//
+//	string_append(char_respuesta,char_worker);
+//	string_append(char_respuesta,char_estado);
+//	string_append(char_respuesta,char_etapa);
+//
+//	free(char_estado);
+//	free(char_etapa);
+//	free(char_worker);
+//
+//	return char_respuesta;
+//}
 
-	string_append(&char_bloque, char_bloque_archivo);
-	string_append(&char_bloque, char_bytes);
-	char* tamanio = int_to_string(strlen(char_ruta_temporal));
-	string_append(&char_bloque, tamanio);
-	free(tamanio);
-	string_append(&char_bloque, char_ruta_temporal);
-	tamanio = int_to_string(strlen(char_copia0));
-	string_append(&char_bloque, tamanio);
-	free(tamanio);
-	string_append(&char_bloque, char_copia0);
-	tamanio = int_to_string(strlen(char_copia1));
-	string_append(&char_bloque, tamanio);
-	free(tamanio);
-	string_append(&char_bloque, char_copia1);
-	string_append(&char_bloque, char_elegida);
-
-	free(char_bloque_archivo);
-	free(char_bytes);
-	free(char_ruta_temporal);
-	free(char_copia0);
-	free(char_copia1);
-	free(char_elegida);
-	return char_bloque;
-}
-
-char* respuesta_master_to_string(t_resp_master* respuesta){
-	char* char_respuesta = string_new();
-
-	char* char_worker = int_to_string(respuesta->worker);
-	char* char_etapa = int_to_string(respuesta->etapa);
-	char* char_estado = int_to_string(respuesta->estado);
-
-	string_append(char_respuesta,char_worker);
-	string_append(char_respuesta,char_estado);
-	string_append(char_respuesta,char_etapa);
-
-	free(char_estado);
-	free(char_etapa);
-	free(char_worker);
-
-	return char_respuesta;
-}
-
-t_resp_master* respuesta_master_from_string(char* char_respuesta){
-	t_resp_master* respuesta;
-	respuesta = malloc(sizeof(t_resp_master));
-	int puntero = 0;
-
-	char* char_worker = extraer_string(char_respuesta,puntero,puntero + 3);
-	respuesta->worker = char_worker;
-	puntero += 4;
-
-	char* char_estado = extraer_string(char_respuesta,puntero,puntero + 3);
-	respuesta->estado = char_estado;
-	puntero += 4;
-
-	char* char_etapa = extraer_string(char_respuesta,puntero,puntero + 3);
-	respuesta->etapa = char_etapa;
-	puntero += 4;
-
-	return respuesta;
-}
+//t_resp_master* respuesta_master_from_string(char* char_respuesta){
+//	t_resp_master* respuesta;
+//	respuesta = malloc(sizeof(t_resp_master));
+//	int puntero = 0;
+//
+//	char* char_worker = extraer_string(char_respuesta,puntero,puntero + 3);
+//	respuesta->worker = char_worker;
+//	puntero += 4;
+//
+//	char* char_estado = extraer_string(char_respuesta,puntero,puntero + 3);
+//	respuesta->estado = char_estado;
+//	puntero += 4;
+//
+//	char* char_etapa = extraer_string(char_respuesta,puntero,puntero + 3);
+//	respuesta->etapa = char_etapa;
+//	puntero += 4;
+//
+//	return respuesta;
+//}
 
 t_reg_planificacion* reg_planificacion_from_string(char* char_reg) {
 	t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
@@ -265,7 +258,6 @@ t_bloque_archivo* bloque_archivo_from_string(char* char_bloque) {
 	puntero += 4;
 
 	char* char_archivo_temporal = extraer_string(char_bloque, puntero, puntero + tamanio_temporal -1);
-	bloque->ruta_temporal = string_from_format(char_archivo_temporal);
 	puntero += tamanio_temporal;
 
 
@@ -288,7 +280,6 @@ t_bloque_archivo* bloque_archivo_from_string(char* char_bloque) {
 
 
 	char* char_elegida = extraer_string(char_bloque, puntero, puntero + 3);
-		bloque->elegida = atoi(char_elegida);
 
 	return bloque;
 }
