@@ -32,6 +32,10 @@ typedef struct nodo{
 	int bloque_cant;
 }t_nodo;
 
+typedef struct bloque{
+	int size;
+	char* bloque;
+}t_bloque;
 
 typedef struct{
 	int tamanioTotalFs;
@@ -77,6 +81,8 @@ void actualizarArchivo(char* ruta);
 int nodoVive(char* nodoBloque);
 
 t_list* cortar_texto(char* mensaje);
+t_list* cortar_binario(char* mensaje);
+
 int size_in_bloks(char* mensaje);
 
 void ejecutarConsola();
@@ -84,9 +90,11 @@ void str_array_print(char ** array);
 void esperar_conexiones();
 void iniciar_servidor();
 void atender_dn();
+void atender_yama();
 
 int set_bloque(int s_nodo,char* datos,int bloque);
 char* get_bloque(int s_nodo, int bloque);
+t_nodo *find_nodo_by_id(int id);
 int keep_alive(int socket);
 t_list * cortar_datos(int numeroDePalabra,char** palabras, t_list * bloques);
 

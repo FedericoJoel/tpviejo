@@ -1,27 +1,52 @@
 #include "fileSystem.h"
 
 int s_servidor;
+int s_yama;
 int s_clientes[clientes_max];
-t_list *t_dataNodes;
 t_list *lista_dataNodes;
 pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
 int bloque_size=1048576;
 
 int main(void) {
+
+	lista_dataNodes = list_create();
+	t_nodo* nodo = malloc(sizeof(t_nodo));
+	nodo->id = 21;
+	nodo->ip = "221.21.21.21";
+	nodo->bloque_cant = 10;
+	nodo->socket = 5;
+	//Lo agrego a la lista de datanodes's sockets
+	int posicion = list_add(lista_dataNodes, (void *) nodo);
+	printf("guardado, posicicon %d\n", posicion);
+	nodo = malloc(sizeof(t_nodo));
+	nodo->id = 3;
+	nodo->ip = "331.3.3.3";
+	nodo->bloque_cant = 30;
+	nodo->socket = 21;
+	//Lo agrego a la lista de datanodes's sockets
+	posicion = list_add(lista_dataNodes, (void *) nodo);
+	printf("guardado, posicicon %d\n", posicion);
+	t_nodo* encontrado = malloc(sizeof(t_nodo));
+	encontrado = find_nodo_by_id(21);
+	printf("id %d, ip %s, bloque cant %d, socket %d \n",encontrado->id,encontrado->ip,encontrado->bloque_cant,encontrado->socket);
+
 	printf("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA");
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.}
 //	int cant_bloques = size_in_bloks("ESTO FUNCIONA ESPECTACULAR;;JAJAJA");
 
-//	t_list* lista = list_create();
+
 //	char** palabras = string_split("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJAJA","\n");
 //	t_list* resultado = cortar_texto("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA",lista);
-//	char* bloque0 = (char*)list_get(resultado,0);
-//	char* bloque1 = (char*)list_get(resultado,1);
-//	char* bloque2= (char*)list_get(resultado,2);
-//	printf("bloque 0: %s \n", bloque0);
-//	printf("bloque 1: %s \n", bloque1);
-//	printf("bloque 2: %s \n", bloque2);
+	t_list* resultado = cortar_binario("hola1hola2hola3hola4hola5hola");
+	char* bloque0 = (char*)list_get(resultado,0);
+	char* bloque1 = (char*)list_get(resultado,1);
+	char* bloque2= (char*)list_get(resultado,2);
+	char* bloque3= (char*)list_get(resultado,3);
+	printf("bloque 0: %s \n", bloque0);
+	printf("bloque 1: %s \n", bloque1);
+	printf("bloque 2: %s \n", bloque2);
+	printf("bloque 3: %s \n", bloque3);
 //	t_list* resultado = cortar_datos(0,palabras,lista);
 //	iniciar_servidor();
 	//TODO puedo hacer 2 servidores, uno para yama y uno para los dn? o tengo que armar una especie de handshake para saber quien se me conecta?
@@ -184,42 +209,6 @@ void ejecutarConsola(){
 	  }
 
 }
-//
-//void esperar_data_nodes(){
-//	//Creamos un servidor
-//	s_servidor = crearServidor(PUERTO_FS);
-//
-//
-//	//Creo lista de sockets
-//	s_dataNodes = list_create();
-//
-//
-//	while(1){
-//
-//		char * AUTH = string_new();
-//		//BLOQUEANTE espero una conexion de un DN
-//		int socket = esperarConexion(s_servidor);
-//		printf("la autorizacion es %s \n",AUTH);
-//
-//		//Lo agrego a la lista de datanodes's sockets
-//		int posicion = list_add(s_dataNodes, (void *) &socket);
-//		printf("Escuchamos una nueva coneccion,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
-//
-//		//LE MANDO UN MENSAJE PARA QUE ESCRIBA UN BLOQUE
-//		void* respuesta = list_get(s_dataNodes, 0);
-//		int * s_nodo = (int*) respuesta;
-//		set_bloque(s_nodo,"datosdatos");
-////		int tam = sizeof(t_atiende_dn)/sizeof(*t_atiende_dn);
-////		pthread_create(&t_atiende_dn + tam,NULL,(void*)&atender_dn, &socket);
-////		printf("el tamaño de t_espera_data_nodes ahora es de %d \n",tam);
-//	}
-//}
-
-//void atender_dn(void* soc){
-//	int *socket = (int *) soc;
-//	printf("voy a ejecutar una escritura \n",*socket);
-//	enviarMensajeConProtocolo(*socket, "DATOSDATOSDATOS", DN_SETBLOQUE);
-//}
 
 //TERMINADO
 void fs_format(){
@@ -940,6 +929,12 @@ void esperar_conexiones(){
 
 			printf("Se conecto un nuevo DATANODE,en el socket %d se asigno a la posicion %d de la lista \n",socket,posicion);
 			if(!set_bloque(socket,"datosdatosdatosdatos",5)) printf("el nodo no responde");
+		}else if(autenticacion == YAMA){
+			enviarMensajeConProtocolo(socket, string_itoa(YAMA_OKCONN), YAMA_OKCONN); //CONFIRMO CONEXION Y RECIBO LA INFO
+			s_yama = socket;
+			//GENERAMOS UN THREAD PARA ATENDER A YAMA
+			pthread_t t_yama;
+			pthread_create(&t_yama,NULL,(void*)&atender_yama, NULL);
 		}
 	}
 }
@@ -948,15 +943,18 @@ void iniciar_servidor(){
 	pthread_create(&t_espera_data_nodes,NULL,(void*)&esperar_conexiones, NULL);
 }
 
-int set_bloque(int s_nodo,char* datos,int bloque){
-	if (keep_alive(s_nodo)==0){
-		printf("grabo un bloque en el nodo sockeft %d \n",s_nodo);
+int set_bloque(int id_nodo,char* datos,int bloque){
+	t_nodo* encontrado = malloc(sizeof(t_nodo));
+	encontrado = find_nodo_by_id(id_nodo);
+	if (keep_alive(encontrado->socket)==0){
+		printf("Grabo un bloque en el nodo sockeft %d \n",encontrado->socket);
 		char* bloqueS = string_itoa(bloque);
 		char* mensaje = generar_string_separador2(bloqueS, datos, ";");
-		enviarMensajeConProtocolo(s_nodo, mensaje, DN_SETBLOQUE);
+		enviarMensajeConProtocolo(encontrado->socket, mensaje, DN_SETBLOQUE);
 		return EXIT_SUCCESS;
-	}else
-	return EXIT_FAILURE;
+	}else{//TODO aca puedo manejar la desconeccion de nodos.
+		return EXIT_FAILURE;
+	}
 }
 
 int leer_cliente(int s_nodo, char* buffer){
@@ -970,17 +968,32 @@ int leer_cliente(int s_nodo, char* buffer){
 	return 1;
 }
 
-char* get_bloque(int s_nodo, int bloque){
-	char* bloqueS = string_itoa(bloque);
-	enviarMensajeConProtocolo(s_nodo,bloqueS,DN_GETBLOQUE);
-	char* respuesta = esperarMensaje(s_nodo);
-/*	char* respuesta;
-	if (s_nodo == 1 && bloque == 33){
-		respuesta = string_duplicate("Hola ");
-	}else if (s_nodo == 1 && bloque == 34){
-		respuesta = string_duplicate("como estas?");
-	}*/
-	return respuesta;
+t_nodo *find_nodo_by_id(int id) {
+	int i;
+	//t_link_element *puntTabla = estados->head;
+
+	for(i=0; i<list_size(lista_dataNodes); i++){
+		//t_estado *estado = puntTabla->data;
+		t_nodo *nodo = list_get(lista_dataNodes, i);
+		if(nodo->id == id)
+		{
+			return nodo;
+		}
+	}
+	return EXIT_FAILURE;
+}
+
+char* get_bloque(int id_nodo, int bloque){
+	t_nodo* encontrado = malloc(sizeof(t_nodo));
+	encontrado = find_nodo_by_id(id_nodo);
+	if (keep_alive(encontrado->socket)==0){
+		char* bloqueS = string_itoa(bloque);
+		enviarMensajeConProtocolo(encontrado->socket,bloqueS,DN_GETBLOQUE);
+		char* respuesta = esperarMensaje(encontrado->socket);
+		return respuesta;
+	}else{//TODO aca puedo manejar la desconeccion de nodos.
+		return "ERROR";
+	}
 }
 
 int keep_alive(int socket){
@@ -995,11 +1008,12 @@ int keep_alive(int socket){
 int size_in_bloks(char* mensaje){
 	size_t mensaje_size = strlen(mensaje);
 	int cantidad_bloques = mensaje_size / bloque_size;
+	int sobrante = mensaje_size - (cantidad_bloques*bloque_size);
+	if (sobrante >0){
+		return (cantidad_bloques +1);
+	}
 	return cantidad_bloques;
 }
-
-//t_list* cortar_datos(char* mensaje){
-// cortar_datos(0, palabras, bloques)
 
 t_list* cortar_texto(char* mensaje) {
 	t_list* lista = list_create();
@@ -1034,40 +1048,38 @@ t_list* cortar_texto(char* mensaje) {
 	}
 	list_add(lista,(void*) bloque);
 	return lista;
-
 }
 
-//t_list* cortar_texto(char* mensaje, t_list* lista) {
-//char** palabras = string_split(mensaje,"\n");
-//int i = 0;
-//int ocupado = 0;
-//int cant_palabras = str_array_size(palabras);
-//char* bloque = calloc(bloque_size, sizeof(char));
-//for(i=0; i< cant_palabras; i++) {
-//	int tam_palabra = string_length((palabras[i]));
-//	char* palabra_actual = malloc(tam_palabra+1);
-//	palabra_actual = palabras[i];
-//	palabra_actual[tam_palabra+1] = '\n';
-//	if(tam_palabra <= bloque_size) {
-//		if((ocupado + tam_palabra) <= bloque_size) {
-//			memcpy(bloque+ ocupado,palabra_actual,tam_palabra);
-//			ocupado += tam_palabra;
-//			free(palabra_actual);
-//		}else {
-//			list_add(lista,(void*) bloque);
-////			printf("contenido \n %s",bloque[i+1]);
-//			ocupado = 0;
-//			bloque = calloc(bloque_size, sizeof(char));
-//			memcpy(bloque,palabra_actual,tam_palabra);
-//			ocupado += tam_palabra;
-//			free(palabra_actual);
+t_list* cortar_binario(char* mensaje) {
+	t_list* lista = list_create();
+	int i = 0;
+	int j=0;
+	int c_bloques = size_in_bloks(mensaje);
+	for (i=0; i<c_bloques;i++){
+		char* bloque = calloc(bloque_size, sizeof(char));
+		for (j=0;j<bloque_size-1;j++){
+			memcpy(bloque + j,mensaje+(i*bloque_size) + j,1);
+		}
+		list_add(lista,(void*) bloque);
+	}
+	return lista;
+}
+
+void atender_yama(){
+//	while (1){
+//		int answ = recibirProtocolo(s_yama);
+//		if(answ == YM_FS_RUTA){
+//			char* ruta_archivo= esperarMensaje(s_yama);
+//			t_archivo* archivo = malloc(sizeof(t_archivo));
+//			char* ruta_metadata = obtener_ruta_metadata(ruta);
+//			cargarTablaArchivo(archivo, ruta);
+//			archivo->bloques->
 //		}
 //	}
 //}
-//list_add(lista,(void*) bloque);
-//return lista;
+//int guardar_archivo_yamafs(char* archivo, ){
 //
-//}
+}
 
 void actualizarArchivo(char* ruta){
 	t_archivo* archivo = malloc(sizeof(t_archivo));

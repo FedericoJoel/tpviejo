@@ -23,6 +23,7 @@ char* data;
 
 const char *filepath = "info.bin";
 
+//TODO levantar archivo de configuracion.
 int main(void) {
 
 	map_data();
