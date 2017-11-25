@@ -18,7 +18,7 @@
 #include <commons/string.h>
 #include "protocolos.h"
 #include <commons/collections/list.h>
-
+#include "protocolos.h"
 
 //---------------structs filesystem-----------------
 

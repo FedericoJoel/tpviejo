@@ -261,7 +261,6 @@ t_planificacion_worker* planificacion_worker_from_string(char* char_respuesta){
 }
 
 
-
 t_reg_planificacion* reg_planificacion_from_string(char* char_reg) {
 	t_reg_planificacion* reg = malloc(sizeof(t_reg_planificacion));
 	int puntero;
