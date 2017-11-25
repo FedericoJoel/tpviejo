@@ -84,6 +84,8 @@ int get_char_archivo(char* ruta, char** archivo_serializado) {
 
 	while((leido = getline(&linea, &len, archivo)) != -1) {
 		string_append(archivo_serializado,linea);
+		linea = NULL;
+		len = 0;
 	}
 
 	fclose(archivo);
