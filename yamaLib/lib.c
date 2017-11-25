@@ -189,7 +189,8 @@ char* respuesta_master_to_string(t_resp_master* respuesta){
 	return char_respuesta;
 }
 
-t_resp_master* respuesta_master_from_string(char* char_respuesta){
+/*
+ * t_resp_master* respuesta_master_from_string(char* char_respuesta){
 	t_resp_master* respuesta;
 	respuesta = malloc(sizeof(t_resp_master));
 	int puntero = 0;
@@ -258,7 +259,7 @@ t_planificacion_worker* planificacion_worker_from_string(char* char_respuesta){
 	puntero += tamanio;
 
 	return respuesta;
-}
+}*/
 
 
 

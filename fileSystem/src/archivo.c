@@ -65,9 +65,10 @@ void vaciarListaNodos(t_list* lista){
 	}
 }
 
-void informacionNodoBloque(t_archivo* archivo){
+char* informacionNodoBloque(t_archivo* archivo){
 	int pos = 0;
 	int tamanio = list_size(archivo->bloques);
+	char* informacion = string_new();
 	for(; pos < tamanio; pos++){
 		estructuraBloque* estructuraBloqueDeLista = list_get(archivo->bloques, pos);
 		if(!(string_equals_ignore_case(estructuraBloqueDeLista->nodoBloque, "VACIO")) ||
@@ -85,8 +86,7 @@ void informacionNodoBloque(t_archivo* archivo){
 			int idBloque = atoi(bloque);
 			int tamanio = estructuraBloqueDeLista->tamanioBloque;
 
-
-			//PEDIR AL YAMA INFORMACION DEL NODO Y BLOQUE
+			string_append(&informacion, get_bloque(idNodo, idBloque));
 
 			free(nodoALeer);
 			free(palabras);
@@ -94,6 +94,7 @@ void informacionNodoBloque(t_archivo* archivo){
 			free(bloque);
 		}
 	}
+	return informacion;
 }
 
 void eliminarNodoDeArchivo(t_archivo* archivo, int idNodo, int idBloque){
@@ -211,6 +212,25 @@ void eliminarBloqueDeArchivo(t_archivo* archivo, char* numeroBloque, char* numer
 		}
 	}
 	free(nodoBloqueASacar);
+}
+
+void mostrarArchivo(t_archivo* nuevoArchivo, char* rutaArchivo){
+	FILE * archivo = fopen(rutaArchivo, "r");
+	char * lineaElem = NULL;
+	char * lineaDatos = NULL;
+	size_t len = 0;
+	int cantidad = 0;
+
+	if (getline(&lineaElem, &len, archivo) != EOF){
+		printf("%s \n", lineaElem);
+		len=0;
+		if (getline(&lineaDatos, &len, archivo) != EOF){
+			printf("%s \n", lineaDatos);
+		}
+	}
+	fclose(archivo);
+	free(lineaDatos);
+	free(lineaElem);
 }
 
 void cargarTablaArchivo(t_archivo* nuevoArchivo, char* rutaArchivo) {

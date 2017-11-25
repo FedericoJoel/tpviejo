@@ -19,6 +19,8 @@
 #include <sys/socket.h>
 #include <protocolos.h>
 #include <string.h>
+#include <sys/stat.h>
+
 //CANTIDAD MAXIMA DE CLIENTES CONCURRENTES
 #define clientes_max 10
 
@@ -29,7 +31,6 @@ typedef struct nodo{
 	int socket;
 	int bloque_cant;
 }t_nodo;
-
 
 
 typedef struct{
@@ -54,6 +55,7 @@ pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
 
 
+void generarBloqueCopiaBytes(char** elementos, int cantidad);
 //DEVUELVE LA POSICION DE UN NODO SEGUN EL NOMBRE
 int encontrarPosicion(t_list* fs, char* nombre);
 
@@ -69,7 +71,12 @@ void modificarNodoDeFs(estructuraFs* fs, int id,int bloquesOcupados);
 //CARGA LOS NODOS EXISTENTES EN EL ARCHIO AL FS
 void cargarNodosAFs(estructuraFs* fs);
 
-t_list* cortar_texto(char* mensaje, t_list* lista);
+int tomarTamanioDeArchivo(char* ruta);
+char* ocuparBloques(char* ruta, char* contenidoBloque);
+void actualizarArchivo(char* ruta);
+int nodoVive(char* nodoBloque);
+
+t_list* cortar_texto(char* mensaje);
 int size_in_bloks(char* mensaje);
 
 void ejecutarConsola();
@@ -104,4 +111,8 @@ void fs_cpblok(char * arg);
 void fs_md5(char * arg);
 void fs_ls(char * arg);
 void fs_info(char * arg);
+char* obtener_ruta_metadata(char* ruta);
+char* obtenerInformacionDeBloquesDeUnArchivo(char* rutaArchivo);
+void vaciarListaNodo(t_list* nodos);
+
 #endif /* FILESYSTEM_H_ */

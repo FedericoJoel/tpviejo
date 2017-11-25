@@ -6,25 +6,24 @@ t_list *t_dataNodes;
 t_list *lista_dataNodes;
 pthread_t* t_atiende_dn;
 pthread_t t_espera_data_nodes;
-int bloque_size=12;
+int bloque_size=1048576;
 
 int main(void) {
 	printf("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA");
-
 	//INICIAMOS UN SERVIDOR Y LE MANDAMOS UN MENSAJE PARA QUE GUARDE UN PAQUETE.}
-	int cant_bloques = size_in_bloks("ESTO FUNCIONA ESPECTACULAR;;JAJAJA");
+//	int cant_bloques = size_in_bloks("ESTO FUNCIONA ESPECTACULAR;;JAJAJA");
 
-	t_list* lista = list_create();
+//	t_list* lista = list_create();
 //	char** palabras = string_split("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJAJA","\n");
-	t_list* resultado = cortar_texto("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA",lista);
-	char* bloque0 = (char*)list_get(resultado,0);
-	char* bloque1 = (char*)list_get(resultado,1);
-	char* bloque2= (char*)list_get(resultado,2);
-	printf("bloque 0: %s \n", bloque0);
-	printf("bloque 1: %s \n", bloque1);
-	printf("bloque 2: %s \n", bloque2);
+//	t_list* resultado = cortar_texto("ESTO FUNCI\nONA E\nSPEC\nTAC\nULAR;;JAJA",lista);
+//	char* bloque0 = (char*)list_get(resultado,0);
+//	char* bloque1 = (char*)list_get(resultado,1);
+//	char* bloque2= (char*)list_get(resultado,2);
+//	printf("bloque 0: %s \n", bloque0);
+//	printf("bloque 1: %s \n", bloque1);
+//	printf("bloque 2: %s \n", bloque2);
 //	t_list* resultado = cortar_datos(0,palabras,lista);
-	iniciar_servidor();
+//	iniciar_servidor();
 	//TODO puedo hacer 2 servidores, uno para yama y uno para los dn? o tengo que armar una especie de handshake para saber quien se me conecta?
 
 	//GENERAMOS UN THREAD PARA LA CONSOLA
@@ -82,10 +81,8 @@ int encontrarPosicion(t_list* nodos, char* nombre){
 		estructuraNodo* nodo = malloc(sizeof (estructuraNodo));
 		nodo = list_get(nodos, posicion);
 		if(string_equals_ignore_case(nodo->nombreNodo, nombre)){
-//			free(nodo);
 			break;
 		}
-//		free(nodo);
 		posicion++;
 	}
 	return posicion;
@@ -224,7 +221,7 @@ void ejecutarConsola(){
 //	enviarMensajeConProtocolo(*socket, "DATOSDATOSDATOS", DN_SETBLOQUE);
 //}
 
-
+//TERMINADO
 void fs_format(){
 	printf("Formateo de disco \n");
 	eliminarArchivosDeDirectorio(fs.directorio);
@@ -307,6 +304,7 @@ void eliminarNodos(estructuraFs* fs){
 	free(touch);
 }
 
+//TERMINADO
 void fs_rm(char * arg){
 	// recordar que C maneja los string como array de char, por lo tanto array de string es char **
 	char ** argumentos;
@@ -322,20 +320,23 @@ void fs_rm(char * arg){
 
 	if (string_equals_ignore_case(*argumentos, "-d")){
 		if (string_starts_with(argumentos[1], "/")){
-			char* rm = string_new();
-			string_append(&rm, "rm -d ");
-			string_append(&rm, argumentos[cantidadDeElementos - 1]);
-			int finalizo = system(rm);
+			int finalizo = comprobarDirectorio(fs.directorio, argumentos[cantidadDeElementos - 1]);
 			if (finalizo == 0){
-				path = string_split(argumentos[cantidadDeElementos-1], "/");
-				int cantidadDeElementosPath = cantidadElementos(path);
-				eliminarUnDirectorio(fs.directorio, path);
-				printf("Se eliminó el directorio %s \n",path[cantidadDeElementosPath - 1]);
-			}else if (finalizo == 256){
-
+				int vacio = carpetaVacia(fs.directorio, argumentos[cantidadDeElementos - 1]);
+				if (vacio == 0){
+					path = string_split(argumentos[cantidadDeElementos-1], "/");
+					int cantidadDeElementosPath = cantidadElementos(path);
+					eliminarUnDirectorio(fs.directorio, path);
+					printf("Se eliminó el directorio %s \n",path[cantidadDeElementosPath - 1]);
+				}else{
+					path = string_split(argumentos[cantidadDeElementos-1], "/");
+					int cantidadDeElementosPath = cantidadElementos(path);
+					printf("El directorio no se encuentra vacio %s \n", path[cantidadDeElementosPath - 1]);
+				}
+			}else{
+				printf("El directorio no existe");
 			}
 			guardarDirectorioEnMemoria(fs.directorio);
-			free(rm);
 			free(path);
 		}
 		else
@@ -364,19 +365,10 @@ void fs_rm(char * arg){
 	if(string_starts_with(*argumentos, "/"))
 		{
 		path = string_split(arg, "/");
-		char* rm = string_new();
-		string_append(&rm, "rm -d ");
-		string_append(&rm, argumentos[cantidadDeElementos - 1]);
 		vaciarArchivo(argumentos[0]);
-		int finalizo = system(rm);
-		if (finalizo == 0){
 			path = string_split(arg, "/");
 			int cantidadDeElementosPath = cantidadElementos(path);
 			printf("Archivo Eliminado %s\n",path[cantidadDeElementosPath - 1]);
-		}else if (finalizo == 256){
-
-		}
-		free(rm);
 		free(path);
 		}
 	else{
@@ -386,6 +378,7 @@ void fs_rm(char * arg){
 	free(argumentos);
 }
 
+//TERMINADO
 void fs_rename(char * arg){
 	char** argumentos;
 	argumentos = string_split(arg, " ");
@@ -405,24 +398,40 @@ void fs_rename(char * arg){
 				pos++;
 			}
 			if (pos == cantidadParametrosPath){
-				string_append(&rename, argumentos[0]);
-				string_append(&rename, " ");
-				string_append(&rename, argumentos[1]);
-				int finalizo = system(rename);
-				if(finalizo == 0){
-					char** nombre = string_split(argumentos[0], "/");
-					char** nombre1 = string_split(argumentos[1], "/");
-					int cantidad = cantidadElementos(nombre);
-					int cantidad1 = cantidadElementos(nombre1);
-					modificarDirectorio(fs.directorio, nombre[cantidad-1], nombre1[cantidad1-1]);
-					guardarDirectorioEnMemoria(fs.directorio);
-					free(nombre);
-					free(nombre1);
-					printf("Se renombro de %s a %s \n", argumentos[0], argumentos[1]);
-				}else if(finalizo == 256){
-
-				}else{
-
+				char** archivo = string_split(path[cantidadParametrosPath], ".");
+				char** archivo1 = string_split(path1[cantidadParametrosPath1], ".");
+				if(cantidadElementos(archivo) == 1 && cantidadElementos(archivo1) == 1){
+					if (comprobarDirectorio(fs.directorio, argumentos[0]) == 0 &&
+							comprobarDirectorio(fs.directorio, argumentos[1]) == 0){
+						modificarDirectorio(fs.directorio, path[cantidadParametrosPath], path1[cantidadParametrosPath1]);
+						guardarDirectorioEnMemoria(fs.directorio);
+						printf("Se renombro de %s a %s \n", argumentos[0], argumentos[1]);
+					}else{
+						printf("Uno de los directorios no existe");
+				}
+				}else if(cantidadElementos(archivo) == 2 && cantidadElementos(archivo1) == 2){
+					char* ruta = obtener_ruta_metadata(argumentos[0]);
+					char** listaNueva = string_split(ruta, "/");
+					int cantidad = cantidadElementos(listaNueva);
+					cantidad--;
+					int largoTotal = string_length(ruta);
+					int largoArchivo = string_length(listaNueva[cantidad]);
+					int largoRuta = largoTotal - largoArchivo;
+					char* nuevoNombre = string_new();
+					string_append(&nuevoNombre, path1[cantidadParametrosPath1]);
+					int largoNuevoNombre = string_length(path1[cantidadParametrosPath1]) - 3; //SACA LA EXTENCION .TXT INGRESADA POR CONSOLA
+					char* nuevaRuta = calloc(largoRuta+largoNuevoNombre+1, sizeof(char));
+					memcpy(nuevaRuta, ruta, largoRuta);
+					memcpy(nuevaRuta+largoRuta, nuevoNombre, largoNuevoNombre);
+					string_append(&rename, ruta);
+					string_append(&rename, " ");
+					string_append(&nuevaRuta, "csv");
+					string_append(&rename, nuevaRuta);
+					system(rename);
+					printf("Se cambio el archivo de %s a %s", path[cantidadParametrosPath], path1[cantidadParametrosPath1]);
+					free(nuevaRuta);
+					free(nuevoNombre);
+					free(ruta);
 				}
 			}else{
 				printf("No se puede renombrar, ya que los path no coinciden \n");
@@ -436,6 +445,26 @@ void fs_rename(char * arg){
 	free(rename);
 }
 
+char* obtener_ruta_metadata(char* ruta){
+	char** lista = string_split(ruta, "/");
+	int cantidadDeElementos = cantidadElementos(lista);
+	cantidadDeElementos--;
+	char* nombre = string_duplicate("/");
+	string_append(&nombre, lista[cantidadDeElementos-1]);
+	int posicion = damePosicionDeElemento(nombre, fs.directorio);
+	char* index = string_itoa(posicion);
+	char* rutaNueva = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/");
+	string_append(&rutaNueva, index);
+	string_append(&rutaNueva, "/");
+	char** listaNueva = string_split(lista[cantidadDeElementos], ".");
+	string_append(&rutaNueva, listaNueva[0]);
+	string_append(&rutaNueva, ".csv");
+	free(index);
+	free(nombre);
+	return rutaNueva;
+}
+
+//TERMINADO
 void fs_mv(char * arg){
 	char** argumentos;
 	argumentos = string_split(arg, " ");
@@ -448,61 +477,116 @@ void fs_mv(char * arg){
 		int cantidadParametrosPath1 = cantidadElementos(path1);
 		cantidadParametrosPath1--;
 
-		if (string_equals_ignore_case(path[cantidadParametrosPath], path1[cantidadParametrosPath1]) ){
-			char* rename = string_new();
-			string_append(&rename, "mv ");
-			string_append(&rename, argumentos[0]);
-			string_append(&rename, " ");
-			string_append(&rename, argumentos[1]);
-			system(rename);
-			printf("Se movio de %s a %s", argumentos[0], argumentos[1]);
-			free(rename);
-		}else{
-			printf("El nombre no coincide");
+		if (cantidadElementos(string_split(path[cantidadParametrosPath], ".")) == 1){
+		//AFECTA A DIRECTORIO
+			char* rutaVieja = string_duplicate("/");
+			char* rutaNueva = string_duplicate("/");
+			string_append(&rutaVieja, path[cantidadParametrosPath]);
+			string_append(&rutaNueva, path1[cantidadParametrosPath1]);
+			if (comprobarDirectorio(fs.directorio, argumentos[0]) == 0 &&
+					comprobarDirectorio(fs.directorio, argumentos[1]) == 0){
+				char* directorioNuevo = string_duplicate("/");
+				string_append(&directorioNuevo, path[cantidadParametrosPath]);
+				int posicionNueva = damePosicionDeElemento(directorioNuevo, fs.directorio);
+				char* directorioPadre = string_duplicate("/");
+				string_append(&directorioPadre, path1[cantidadParametrosPath1]);
+				int posicionPadre = damePosicionDeElemento(directorioPadre, fs.directorio);
+				fs.directorio[posicionNueva].padre = posicionPadre;
+				guardarDirectorioEnMemoria(fs.directorio);
+				printf("Se movio de %s a %s", argumentos[0], argumentos[1]);
+				free(directorioPadre);
+				free(directorioNuevo);
+				free(rutaNueva);
+				free(rutaVieja);
+			}else{
+				free(rutaNueva);
+				free(rutaVieja);
+				printf("Algun directorio no existe");
+			}
+		}else if (cantidadElementos(string_split(path[cantidadParametrosPath], ".")) == 2){
+			//AFECTA A ARCHIVO
+			int largoTotal = string_length(argumentos[0]);
+			int largoArchivo = string_length(path[cantidadParametrosPath]);
+			int largoRuta = largoTotal - largoArchivo - 1; //1 x la ultima barra
+			char* ruta = calloc(largoRuta, sizeof(char));
+			memcpy(ruta, argumentos[0],largoRuta);
+			if (comprobarDirectorio(fs.directorio, argumentos[1]) == 0 &&
+					comprobarDirectorio(fs.directorio, ruta) == 0){
+				char* mv = string_duplicate("mv ");
+				char* rutaVieja = obtener_ruta_metadata(argumentos[0]);
+				string_append(&mv, rutaVieja);
+				char* nuevoDirectorio = string_duplicate("/");
+				string_append(&nuevoDirectorio, path1[cantidadParametrosPath1]);
+				int posicionNueva = damePosicionDeElemento(nuevoDirectorio, fs.directorio);
+				char* rutaNueva = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/");
+				string_append(&rutaNueva, string_itoa(fs.directorio[posicionNueva].index));
+				string_append(&mv, " ");
+				string_append(&mv, rutaNueva);
+				system(mv);
+				free(mv);
+				free(nuevoDirectorio);
+				free(rutaNueva);
+				free(rutaVieja);
+			}else{
+				printf("Uno de los directorios no existe");
+			}
+			free(ruta);
 		}
+
 	}else{
 		printf("Uno de los argumentos no comienza con /");
 	}
 }
 
-//DESARROLLANDO
+//DESARROLLADO
 void fs_cat(char * arg){
-	char** path;
-	int cantidadDeElementos = cantidadElementos(arg);
 	if (string_starts_with(arg, "/")){
-//		t_archivo* archivo = malloc(sizeof(t_archivo));
-//		cargarTablaArchivo(archivo,arg);
-//		informacionNodoBloque(archivo);
-//		vaciarListaNodo(archivo->bloques);
-//		free(archivo);
-		path = string_split(arg, "/");
-		printf("Archivo a mostrar '%s'\n",path[cantidadDeElementos - 1]);
-	}
-	else
-	{
+		char* directorio = string_new();
+		char** argumentosSinBarra = string_split(arg, "/");
+		int cantidadDeElementos = cantidadElementos(argumentosSinBarra);
+		int pos = 0;
+		for(; pos < cantidadDeElementos-1; pos++){
+			string_append(&directorio, "/");
+			string_append(&directorio, argumentosSinBarra[pos]);
+		}
+		if (comprobarDirectorio(fs.directorio, directorio) == 0){
+			char* informacion = obtenerInformacionDeBloquesDeUnArchivo(arg);
+			printf("Archivo a mostrar '%s'\n",argumentosSinBarra[cantidadDeElementos - 1]);
+			printf("%s \n", informacion);
+			free(informacion);
+		}else{ printf("No existe el directorio");}
+	free(directorio);
+	}else{
 		printf("Path ingresado, no valido %s \n",arg);
 	}
-	free(path);
+}
+
+char* obtenerInformacionDeBloquesDeUnArchivo(char* rutaArchivo){
+	t_archivo* archivo = malloc(sizeof(t_archivo));
+	char* rutaMetadata = obtener_ruta_metadata(rutaArchivo);
+	cargarTablaArchivo(archivo,rutaMetadata);
+	char* informacion = informacionNodoBloque(archivo);
+	vaciarListaNodo(archivo->bloques);
+	free(archivo);
+	return informacion;
+}
+
+void vaciarListaNodo(t_list* nodos){
+	int pos = 0;
+	int tamanio = list_size(nodos);
+	for(; pos < tamanio; pos++){
+		estructuraNodo* nodo = list_get(nodos, pos);
+		free(nodo);
+	}
 }
 
 void fs_mkdir(char * arg){
 	if (string_starts_with(arg, "/")){
-		char* mkdir = string_new();
-		string_append(&mkdir, "mkdir ");
-		string_append(&mkdir, arg);
-		int finalizo = system(mkdir);
 		char** path = string_split(arg, "/");
 		int cantidadDeElementos = cantidadElementos(path);
-
-		if(finalizo == 0){
-			agregarPath(fs.directorio, arg);
-			guardarDirectorioEnMemoria(fs.directorio);
-			printf("Directorio creado '%s'\n",path[cantidadDeElementos - 1]);
-		}else if (finalizo == 256){
-				printf("Existe el directorio %s \n", path[cantidadDeElementos - 1]);
-			}else{
-				printf("Error");
-			}
+		agregarPath(fs.directorio, arg);
+		guardarDirectorioEnMemoria(fs.directorio);
+		printf("Se creo el directorio %s \n", path[cantidadDeElementos -1]);
 	}
 	else
 	{
@@ -510,35 +594,228 @@ void fs_mkdir(char * arg){
 	}
 }
 
-//FALTA DESARROLLAR
+//FALTA DESARROLLAR BLOQUE0BYTES Y SETEO EN NODO
 void fs_cpfrom(char * arg){
-	char** path;
 	char** argumentos;
-	int cantidadElementos = sizeof(path)/sizeof(path[0]);
-
-	if (string_starts_with(arg, "/")){
 	argumentos = string_split(arg, " ");
-	path = string_split(argumentos[0], "/");
-	printf("Archivo copiado a YAMA: '%s'\n", strcat(argumentos[1], path[cantidadElementos - 1]));
+
+	if (string_starts_with(argumentos[0], "/") && string_starts_with(argumentos[1], "/")){
+		if (comprobarDirectorio(fs.directorio, argumentos[1]) == 0){
+			char** elementosPath = string_split(argumentos[0], ".");
+			if (cantidadElementos(elementosPath) == 2){
+				if (string_equals_ignore_case(elementosPath[cantidadElementos(elementosPath) - 1], "bin") || string_equals_ignore_case(elementosPath[cantidadElementos(elementosPath) - 1],"txt")){
+					char* elementos = string_new();
+					char* informacion = string_new();
+					double tamanioArchivo = tomarTamanioDeArchivo(argumentos[0]);
+					int tamanioArchivoEntero = tamanioArchivo;
+					string_append(&elementos, "TAMANIO");
+					string_append(&informacion, string_itoa(tamanioArchivoEntero));
+					string_append(&informacion, ",");
+					string_append(&elementos, ",TIPO,");
+					char * linea = NULL;
+					size_t len = 0;
+					FILE* archivoLeido = fopen(argumentos[0], "r");
+					int leido = 0;
+					char* informacionArchivo = string_new();
+					while((leido = getline(&linea, &len, archivoLeido)) != -1){
+						string_append(&informacionArchivo, linea);
+						linea = NULL;
+						len = 0;
+					}
+					t_list* listaBloques;
+					if (string_equals_ignore_case(elementosPath[cantidadElementos(elementosPath) - 1], "bin")){
+						string_append(&informacion, "BINARIO,");
+//						listaBloques = cortar_datos()
+					}else{
+						string_append(&informacion, "TEXTO,");
+						listaBloques = cortar_texto(informacionArchivo);
+					}
+
+					int bloquesAUsar = list_size(listaBloques);
+					int cantidad = 0;
+					generarBloqueCopiaBytes(&elementos, cantidad);
+					int posicionLista = 0;
+					char* nodosOcupados = ocuparBloques(argumentos[0], list_get(listaBloques, posicionLista));
+					int tamanioUsadoBloque = string_length(list_get(listaBloques,posicionLista));
+					string_append(&informacion, nodosOcupados);
+					string_append(&informacion, ",");
+					string_append(&informacion, string_itoa(tamanioUsadoBloque));
+					string_append(&informacion, ",");
+					cantidad++;
+					posicionLista++;
+					while(cantidad < bloquesAUsar){
+						string_append(&elementos, ",");
+						generarBloqueCopiaBytes(&elementos, cantidad);
+						nodosOcupados = ocuparBloques(argumentos[0], list_get(listaBloques,posicionLista));
+						string_append(&informacion, nodosOcupados);
+						string_append(&informacion, ", ");
+						tamanioUsadoBloque = string_length(list_get(listaBloques,posicionLista));
+						string_append(&informacion, nodosOcupados);
+						string_append(&informacion, ",");
+						string_append(&informacion, string_itoa(tamanioUsadoBloque));
+						string_append(&informacion, ",");
+						cantidad++;
+						posicionLista++;
+//						nodosOcupados = ocuparBloques(argumentos[0]);
+//(						string_append(&informacion, nodosOcupados);
+						}
+						printf("%s \n", elementos);
+						printf("%s \n", informacion);
+						free(nodosOcupados);
+					elementosPath = string_split(argumentos[0], "/");
+					char* directorio = string_duplicate("/");
+					char** rutaYamaFS = string_split(argumentos[1], "/");
+					string_append(&directorio, rutaYamaFS[cantidadElementos(rutaYamaFS)-1]);
+					int posicionDirectorio = damePosicionDeElemento(directorio, fs.directorio);
+					char* rutaCsv = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos/");
+					string_append(&rutaCsv, string_itoa(posicionDirectorio));
+					string_append(&rutaCsv,"/");
+					char** nombreDeArchivo = string_split(elementosPath[cantidadElementos(elementosPath)-1], ".");
+					string_append(&rutaCsv,nombreDeArchivo[cantidadElementos(nombreDeArchivo)-2]);
+					string_append(&rutaCsv, ".csv");
+					free(nombreDeArchivo);
+					free(rutaYamaFS);
+					string_append(&elementos, "\n");
+					string_append(&informacion, "\n");
+					FILE* archivoNuevo = fopen(rutaCsv, "w");
+					fputs(elementos, archivoNuevo);
+					fputs(informacion, archivoNuevo);
+					printf("Archivo %s copiado a YAMA: '%s'\n", elementosPath[cantidadElementos(elementosPath) - 1], argumentos[1]);
+					fclose(archivoNuevo);
+					free(directorio);
+					free(elementos);
+					free(informacion);
+				}else{
+					printf("No se especifico tipo de archivo");
+					}
+			}else{
+				printf("El path del fs no es un archivo valido");
+			}
+			free(elementosPath);
+		}else{
+			printf("El path de YAMA no existe");
+		}
+	}else{
+		printf("Alguno de los path no empieza con /: %s \n %s \n", argumentos[0], argumentos[1]);
 	}
-	else
-	{
-	printf("Archivo copiado a YAMA: '%s'\n", arg);
+	free(argumentos);
+}
+
+void generarBloqueCopiaBytes(char** elementos, int cantidad){
+	int copia = 0;
+	string_append(elementos, "BLOQUE");
+	string_append(elementos, string_itoa(cantidad));
+	string_append(elementos,"COPIA");
+	string_append(elementos, string_itoa(copia));
+	string_append(elementos, ",");
+	string_append(elementos,"BLOQUE");
+	string_append(elementos, string_itoa(cantidad));
+	string_append(elementos,"COPIA");
+	copia++;
+	string_append(elementos, string_itoa(copia));
+	string_append(elementos, ",");
+	string_append(elementos,"BLOQUE");
+	string_append(elementos, string_itoa(cantidad));
+	string_append(elementos,"BYTES");
+}
+
+char* ocuparBloques(char* ruta, char* contenidoBloque){
+	int pos = 0;
+	list_sort(fs.estructuraNodos.nodos, (void*) ordenarNodoPorEspacioLibre);
+	estructuraNodo* nodo1 = list_get(fs.estructuraNodos.nodos, pos);
+	nodo1->tamanioLibreNodo--;
+	pos++;
+	estructuraNodo* nodo2 = list_get(fs.estructuraNodos.nodos, pos);
+	nodo2->tamanioLibreNodo--;
+	char* nodosUsados = string_duplicate("[");
+	string_append(&nodosUsados, nodo1->nombreNodo);
+	string_append(&nodosUsados, ", ");
+	char* rutaBitMap1 = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/");
+	char* nodoNombreMinisculo1 = string_duplicate(nodo1->nombreNodo);
+	string_to_lower(nodoNombreMinisculo1);
+	string_append(&rutaBitMap1, nodoNombreMinisculo1);
+	string_append(&rutaBitMap1,".dat");
+	t_bitarray* array1 = cargarBitmapAMemoria(rutaBitMap1);
+	int posLibre1 = buscarPosicionLibre(array1);
+	ocuparPosicionDeBitArray(array1, posLibre1);
+	escribirBitArrayEnArchivo(array1, rutaBitMap1);
+	int idNodo1 = obtenerId(nodo1->nombreNodo);
+	set_bloque(idNodo1, contenidoBloque, posLibre1);
+	posLibre1++;
+	string_append(&nodosUsados, string_itoa(posLibre1));
+	string_append(&nodosUsados, "],");
+	string_append(&nodosUsados, "[");
+	string_append(&nodosUsados, nodo2->nombreNodo);
+	string_append(&nodosUsados, ", ");
+	char* rutaBitMap2 = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/bitmaps/");
+	char* nodoNombreMinisculo2 = string_duplicate(nodo2->nombreNodo);
+	string_to_lower(nodoNombreMinisculo2);
+	string_append(&rutaBitMap2, nodoNombreMinisculo2);
+	string_append(&rutaBitMap2, ".dat");
+	t_bitarray* array2 = cargarBitmapAMemoria(rutaBitMap2);
+	int posLibre2 = buscarPosicionLibre(array2);
+	ocuparPosicionDeBitArray(array2, posLibre2);
+	escribirBitArrayEnArchivo(array2, rutaBitMap2);
+	int idNodo2 = obtenerId(nodo2->nombreNodo);
+	set_bloque(idNodo2, contenidoBloque, posLibre2);
+	posLibre2++;
+	string_append(&nodosUsados, string_itoa(posLibre2));
+	string_append(&nodosUsados, "]");
+	free(rutaBitMap1);
+	free(rutaBitMap2);
+	free(nodoNombreMinisculo1);
+	free(nodoNombreMinisculo2);
+	return nodosUsados;
+}
+
+int tomarTamanioDeArchivo(char* ruta){
+	struct stat st;
+	if (stat(ruta, &st) == 0){
+	   	return st.st_size;
+	}else{
+		return -1;
 	}
 }
 
-//FALTA DESARROLLAR
+//DESARROLLADO
 void fs_cpto(char * arg){
-	char** path;
-	int cantidadElementos = sizeof(path)/sizeof(path[0]);
+	char** argumentos;
 	if (string_starts_with(arg, "/")){
-	path = string_split(arg, "/");
-	printf("Archivo copiado a YAMAFs:'%s'\n", path[cantidadElementos - 1]);
+		argumentos = string_split(arg, " ");
+		char** argumentosSinBarra = string_split(argumentos[0], "/");
+		int cantidadDeElementos = cantidadElementos(argumentosSinBarra);
+		int pos = 0;
+		char* directorio = string_new();
+		for(; pos < cantidadDeElementos-1; pos++){
+			string_append(&directorio, "/");
+			string_append(&directorio, argumentosSinBarra[pos]);
+		}
+		char** esArchivo = string_split(argumentosSinBarra[cantidadDeElementos-1], ".");
+		if (comprobarDirectorio(fs.directorio, directorio) == 0 && cantidadElementos(esArchivo) == 2){
+			char* nuevaRuta = string_duplicate(argumentos[1]);
+			string_append(&nuevaRuta, "/");
+			string_append(&nuevaRuta, argumentosSinBarra[cantidadDeElementos - 1]);
+			FILE* archivo = fopen(nuevaRuta, "w");
+			char* informacion = obtenerInformacionDeBloquesDeUnArchivo(argumentos[0]);
+			fputs(informacion, archivo);
+			fclose(archivo);
+			free(informacion);
+			free(nuevaRuta);
+			printf("Archivo copiado a: %s \n", argumentos[1]);
+		}else if (comprobarDirectorio(fs.directorio, directorio) != 0){
+			printf("No existe el directorio");
+		}else{
+			printf("El path no es un archivo");
+		}
+		free(argumentosSinBarra);
+		free(directorio);
+		free(esArchivo);
 	}
 	else
 	{
-	printf("Archivo copiado a YAMAFs:'%s'\n", arg);
+		printf("La ruta no es valida \n");
 	}
+	free(argumentos);
 }
 
 //FALTA DESARROLLAR
@@ -564,28 +841,64 @@ void fs_md5(char * arg){
 	}
 }
 
+//TERMINADO
+//TODO actualmente se muestran los archivos .csv, habria que ver si se puede mostrar como el tipo de archivo que es
 void fs_ls(char * arg){
 	if( string_starts_with(arg, "/")){
-		char* ls = string_duplicate("ls ");
-		string_append(&ls, arg);
-		system(ls);
-		free(ls);
+		if (comprobarDirectorio(fs.directorio, arg) == 0){
+			char** argumentos = string_split(arg, "/");
+			int cantidadArgumentos = cantidadElementos(argumentos);
+			char* ruta = string_duplicate("/home/utnso/Escritorio/Git/tp-2017-2c-LaYamaQueLlama/metadata/archivos");
+			char* directorio = string_duplicate("/");
+			string_append(&directorio, argumentos[cantidadArgumentos-1]);
+			int posicion = damePosicionDeElemento(directorio, fs.directorio);
+			string_append(&ruta,"/");
+			string_append(&ruta, string_itoa(fs.directorio[posicion].index));
+			char* ls = string_duplicate("ls ");
+			string_append(&ls, ruta);
+			system(ls);
+			free(ls);
+			free(ruta);
+			free(directorio);
+			free(argumentos);
+		}else{printf("No existe el directorio");}
 	}else{
 		printf("El path no comienza con / ");
 	}
 }
 
-//FALTA DESARROLLAR
+//TERMINADO
 void fs_info(char * arg){
-	char** path;
-	int cantidadElementos = sizeof(path)/sizeof(path[0]);
 	if (string_starts_with(arg, "/")){
-	path = string_split(arg, "/");
-	printf("Información del archivo: '%s'\n", path[cantidadElementos - 1]);
+		char** argumentosSinBarra = string_split(arg, "/");
+		int cantidadDeElementos = cantidadElementos(argumentosSinBarra);
+		int pos = 0;
+		char* directorio = string_new();
+		for(; pos < cantidadDeElementos-1; pos++){
+			string_append(&directorio, "/");
+			string_append(&directorio, argumentosSinBarra[pos]);
+		}
+		char** esArchivo = string_split(argumentosSinBarra[cantidadDeElementos-1], ".");
+		if (comprobarDirectorio(fs.directorio, directorio) == 0 && cantidadElementos(esArchivo) == 2){
+			char* ruta = obtener_ruta_metadata(arg);
+			t_archivo* archivo = malloc(sizeof(t_archivo));
+			cargarTablaArchivo(archivo, ruta);
+			printf("Información del archivo: '%s'\n", argumentosSinBarra[cantidadDeElementos - 1]);
+			mostrarArchivo(archivo, ruta);
+			free(archivo);
+			free(ruta);
+		}else if(comprobarDirectorio(fs.directorio, directorio) != 0){
+				printf("No exise el path");
+			}else{
+				printf("El path no es de un archivo");
+			}
+		free(esArchivo);
+		free(directorio);
+		free(argumentosSinBarra);
 	}
 	else
 	{
-	printf("Información del archivo: '%s'\n", arg);
+	printf("No es un path valido \n");
 	}
 }
 
@@ -661,6 +974,12 @@ char* get_bloque(int s_nodo, int bloque){
 	char* bloqueS = string_itoa(bloque);
 	enviarMensajeConProtocolo(s_nodo,bloqueS,DN_GETBLOQUE);
 	char* respuesta = esperarMensaje(s_nodo);
+/*	char* respuesta;
+	if (s_nodo == 1 && bloque == 33){
+		respuesta = string_duplicate("Hola ");
+	}else if (s_nodo == 1 && bloque == 34){
+		respuesta = string_duplicate("como estas?");
+	}*/
 	return respuesta;
 }
 
@@ -682,7 +1001,8 @@ int size_in_bloks(char* mensaje){
 //t_list* cortar_datos(char* mensaje){
 // cortar_datos(0, palabras, bloques)
 
-t_list* cortar_texto(char* mensaje, t_list* lista) {
+t_list* cortar_texto(char* mensaje) {
+	t_list* lista = list_create();
 	char** palabras = string_split(mensaje,"\n");
 	int i = 0;
 	int ocupado = 0;
@@ -748,3 +1068,34 @@ t_list* cortar_texto(char* mensaje, t_list* lista) {
 //return lista;
 //
 //}
+
+void actualizarArchivo(char* ruta){
+	t_archivo* archivo = malloc(sizeof(t_archivo));
+	cargarTablaArchivo(archivo, ruta);
+	int tamanio = list_size(archivo->bloques);
+	int pos = 0;
+	for(;pos < tamanio; pos++){
+		estructuraBloque* bloque = list_get(archivo->bloques, pos);
+		if (nodoVive(bloque->nodoBloque) == EXIT_FAILURE){
+			char* nuevaEscritura = string_duplicate(bloque->nodoBloque);
+			string_append(&nuevaEscritura, "CAIDO");
+			bloque->nodoBloque = nuevaEscritura;
+		}
+		if (nodoVive(bloque->nodoBloque1) == EXIT_FAILURE){
+			char* nuevaEscritura = string_duplicate(bloque->nodoBloque1);
+			string_append(&nuevaEscritura, "CAIDO");
+			bloque->nodoBloque1 = nuevaEscritura;
+		}
+	}
+	guardarArchivoEnArchivo(archivo, ruta);
+}
+
+int nodoVive(char* nodoBloque){
+	char* nodo = dameNodo(nodoBloque);
+	int idNodo = obtenerId(nodo);
+	if(keep_alive(idNodo) == EXIT_FAILURE){
+		return EXIT_FAILURE;
+	}else{
+		return EXIT_SUCCESS;
+	}
+}
